@@ -21,6 +21,7 @@ Sub-packages:
 - :mod:`pipelines.text`          - normalisation + sensitive-info redaction
 - :mod:`pipelines.vectorization` - embedding + local Qdrant indexing
 - :mod:`pipelines.moderation`    - offline lexicon + cross-border block
+- :mod:`pipelines.memory_atoms`  - long-term-memory atom extraction (v0.6)
 """
 from __future__ import annotations
 
@@ -77,6 +78,7 @@ PIPELINE_MODULES: List[str] = [
     "pipelines.text",
     "pipelines.vectorization",
     "pipelines.moderation",
+    "pipelines.memory_atoms",
 ]
 
 
