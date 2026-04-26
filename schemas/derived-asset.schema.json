@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/derived-asset.schema.json",
+  "title": "DLRS Derived Asset Descriptor",
+  "description": "Provenance and lineage metadata for an artefact produced by a DLRS build pipeline (ASR transcript, cleaned text, embedding index, moderation report, ...). Every concrete pipeline implementation under pipelines/ MUST emit one descriptor next to its primary output so that downstream consumers can re-derive, verify, or audit the result. v0.5 introduces the schema; the actual emitter contracts land alongside each pipeline body (issues #31-#34).",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "derived_id",
+    "record_id",
+    "pipeline",
+    "pipeline_version",
+    "created_at",
+    "inputs",
+    "output",
+    "actor_role"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of this schema. Bump on any breaking change. Pipelines SHOULD pin to a specific schema_version so downstream verifiers can detect drift.",
+      "const": "dlrs-derived-asset/1.0"
+    },
+    "derived_id": {
+      "type": "string",
+      "description": "Stable identifier for this derived artefact within the owning record. ULID or UUID4. Once written it MUST NOT change; re-running the pipeline produces a new derived_id even if the inputs are identical, so historical descriptors stay attributable.",
+      "pattern": "^(dlrs_derived_)?[A-Za-z0-9_-]{8,}$",
+      "examples": ["01HW91QJTR4ETRBM3DNJK4Y9MA", "dlrs_derived_4f3e2a8c"]
+    },
+    "record_id": {
+      "type": "string",
+      "description": "Owning DLRS record id. MUST match the manifest.record_id of the directory under which this descriptor lives. Cross-record derivations are out of scope; emit one descriptor per record.",
+      "pattern": "^dlrs_[a-zA-Z0-9_-]{4,}$"
+    },
+    "pipeline": {
+      "type": "string",
+      "description": "Pipeline that produced this artefact. MUST equal the SPEC.name of a registered pipeline under pipelines/.",
+      "enum": ["asr", "text", "vectorization", "moderation", "custom"]
+    },
+    "pipeline_version": {
+      "type": "string",
+      "description": "Implementation version of the pipeline (NOT the model version, see model.* below). SemVer or commit SHA fragment. Used together with inputs_hash to decide whether a re-run is necessary.",
+      "minLength": 1,
+      "examples": ["0.5.0", "git:108b50c"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp at which the pipeline finished writing the output. Pipelines SHOULD use the time of write, not the time the run started."
+    },
+    "actor_role": {
+      "type": "string",
+      "description": "Who triggered the pipeline run. Mirrors the audit-event actor_role enum so emit_audit_event.py can quote it directly in a build_started event.",
+      "enum": [
+        "subject",
+        "authorized_agent",
+        "estate_executor",
+        "platform_reviewer",
+        "system",
+        "external_auditor"
+      ]
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Provenance of the inputs that fed the pipeline. The combination of source_pointers + inputs_hash is what makes a re-run reproducible.",
+      "required": ["source_pointers", "inputs_hash"],
+      "properties": {
+        "source_pointers": {
+          "type": "array",
+          "description": "Relative paths (from the record root) to every pointer.json or raw artefact consumed. Pointer files are preferred over raw paths so the hash check survives a storage migration.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "inputs_hash": {
+          "type": "string",
+          "description": "sha256 of the canonical concatenation of input file content hashes (one per source_pointer, in declared order). Pipelines MUST refuse to re-emit an identical descriptor if inputs_hash and pipeline_version both match.",
+          "pattern": "^sha256:[A-Fa-f0-9]{64}$"
+        },
+        "preprocessing": {
+          "type": "object",
+          "description": "Free-form structured record of any pre-pipeline transforms (resampling, transcoding, NFKC, ...). Schema-validated content SHOULD live in named keys.",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "model": {
+      "type": "object",
+      "description": "Optional ML model identification. REQUIRED when the pipeline is asr or vectorization; otherwise MAY be omitted.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Canonical model identifier (HF model id, local model name, ...).",
+          "minLength": 1,
+          "examples": ["faster-whisper:small", "sentence-transformers/all-MiniLM-L6-v2"]
+        },
+        "version": {
+          "type": "string",
+          "description": "Specific revision: HF revision SHA, model release tag, or pipeline-supplied version string."
+        },
+        "source": {
+          "type": "string",
+          "description": "Where the model came from. v0.5 is offline-first so this is normally a local path or a cached HF revision; hosted-API usage is forbidden in v0.5.",
+          "examples": ["local-cache:~/.cache/huggingface", "vendored:models/whisper-small.bin"]
+        },
+        "online_api_used": {
+          "type": "boolean",
+          "description": "MUST be false in v0.5 (offline-first invariant enforced by tools/validate_pipelines.py). Reserved for v0.6 online-enhanced pipelines.",
+          "const": false
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Pipeline-specific kwargs serialised verbatim (chunk size, language hint, embedding dim, lexicon path, ...). Anything that influences the output MUST be recorded here so re-runs are reproducible.",
+      "additionalProperties": true
+    },
+    "output": {
+      "type": "object",
+      "description": "Description of the canonical output artefact.",
+      "required": ["path", "outputs_hash"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative path from the record root, MUST start with derived/<pipeline>/.",
+          "pattern": "^derived/(asr|text|vectorization|moderation|custom)/.+",
+          "examples": ["derived/asr/voice_master.transcript.json"]
+        },
+        "outputs_hash": {
+          "type": "string",
+          "description": "sha256 of the produced file's bytes (or, for multi-file outputs like a Qdrant collection, of the canonical manifest of those files).",
+          "pattern": "^sha256:[A-Fa-f0-9]{64}$"
+        },
+        "byte_size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Optional convenience field; MUST equal the output file size in bytes when set."
+        }
+      },
+      "additionalProperties": false
+    },
+    "audit_event_ref": {
+      "type": ["string", "null"],
+      "description": "Optional reference to a build_started / build_completed audit event (file path + line number, e.g. 'audit/events.jsonl#L12'). Lets reviewers jump from a derived asset to the audit log entry that authorised it."
+    },
+    "moderation_outcome": {
+      "type": ["string", "null"],
+      "description": "For pipelines that produce moderation results, one of 'pass', 'flag', 'block'. Other pipelines MAY set this if their output triggers downstream policy decisions.",
+      "enum": [null, "pass", "flag", "block"]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Free-form additive metadata. Schema-validated content SHOULD live under one of the named top-level fields above instead.",
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"pipeline": {"enum": ["asr", "vectorization"]}},
+        "required": ["pipeline"]
+      },
+      "then": {
+        "required": ["model"]
+      }
+    }
+  ],
+  "additionalProperties": false
+}

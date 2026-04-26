@@ -33,6 +33,7 @@ DEFAULT_STEPS = [
     ("test_registry", [sys.executable, str(TOOLS / "test_registry.py")]),
     ("build_registry", [sys.executable, str(TOOLS / "build_registry.py")]),
     ("validate_pipelines", [sys.executable, str(TOOLS / "validate_pipelines.py")]),
+    ("test_derived_asset_schema", [sys.executable, str(TOOLS / "test_derived_asset_schema.py")]),
 ]
 
 
