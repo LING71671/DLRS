@@ -36,7 +36,51 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 - 工具完成度: 96%（validator + emitter + 6 条 pipeline + audit bridge + hosted-API gate 全部就绪）
 - 构建管线完成度: 65%（6 条离线管线 + descriptor + audit bridge + hosted-API gate；GraphRAG 真语义检索 / TTS / 微调 留给 v0.7+）
 - 审计与事件完成度: 80%（v0.4 哈希链 + v0.6 descriptor 上链）
-- 运行时完成度: 0%（v0.7 起）
+- 运行时完成度: 0%（v0.7+ 起）
+
+---
+
+## 🎯 `.life` 标准独立 semver 轨道
+
+自 v0.7-vision-shift（[epic #79](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/79)）起，DLRS 的最终定位（Ultimate）从"数字生命仓库结构标准"升级为 **`.life` 可运行数字生命档案文件标准**。`.life` 由两条**独立 semver** 推进的标准组成，与本仓库代码的 v0.x.y 版本号解耦：
+
+### Track A：`.life` Archive Standard（文件格式）
+
+> 规范：[`docs/LIFE_FILE_STANDARD.md`](docs/LIFE_FILE_STANDARD.md) ·
+> Schema：[`schemas/life-package.schema.json`](schemas/life-package.schema.json) ·
+> 示例打包器：`examples/minimal-life-package/`（#83）
+
+| `.life` 格式版本 | 状态 | 主题 | 主要交付物 |
+|---|---|---|---|
+| **life-format v0.1.0** | 进行中（v0.7-vision-shift） | 双形态档案（pointer / encrypted）+ 不透明 `signature_ref` | `LIFE_FILE_STANDARD.md`、`life-package.schema.json`、`examples/minimal-life-package/` + `build_life.sh` |
+| life-format v0.2.0 | 计划 | 加密签名规范（C2PA / 等价方案）：把不透明 `signature_ref` 替换为可验证签名；引入完整性签名而非仅 sha256 清单 | 签名规范文档、签名/校验 CLI、reference 验证脚本 |
+| life-format v0.3.0 | 计划 | 联邦撤回登记表 + 跨 runtime 同步：`withdrawal_endpoint` 之外，引入可解析的"被撤回包标识符"集合，使 runtime 在断网时也能就近查询 | 撤回登记 schema、参考客户端、跨实现互通测试 |
+
+**v0.1 范围内非目标**（明确推迟）：
+- `mixed` 模式（同包内既有指针又有加密块）
+- 加密签名验证（→ v0.2）
+- 多 `.life` 联邦撤回（→ v0.3）
+
+### Track B：`.life` Runtime Standard（运行时协议）
+
+> 规范：[`docs/LIFE_RUNTIME_STANDARD.md`](docs/LIFE_RUNTIME_STANDARD.md)
+
+| 运行时协议版本 | 状态 | 主题 | 主要交付物 |
+|---|---|---|---|
+| **life-runtime v0.1** | 进行中（v0.7-vision-shift） | 加载序列、挂载语义、运行时义务（disclosure / forbidden_uses / 撤回轮询 / 身份冒充防护）、终止条件 | `LIFE_RUNTIME_STANDARD.md`（spec only） |
+| life-runtime v0.2 | 计划 | 跨实现互操作测试套件 + 加密签名验证（与 life-format v0.2 配套） | conformance suite、`tools/test_life_runtime.py`、签名验证测试 |
+| life-runtime v0.3 | 计划 | 多 `.life` ensemble 协议（一个 runtime 同时挂载多个 `.life`，各自独立实例 + 跨实例隔离 invariants） | ensemble 协议文档、隔离不变量测试 |
+
+**v0.1 范围内非目标**（明确推迟）：
+- 参考实现（runtime 实现本身推迟到 DLRS v0.8+，或下游项目独立实现）
+- 具体 transport（WebSocket / gRPC / REST 任选；spec 只规定语义）
+- LLM / TTS / avatar 选型（不在 spec 控制内）
+
+### 与本仓库 v0.x.y 的关系
+
+- 本仓库 v0.x.y 跟踪**配套基础设施**：仓库结构、JSON schema、离线管线、audit hash chain、descriptor 桥接、hosted-API gate、`.life` 打包器、文档刷新。
+- `.life` Archive 与 `.life` Runtime 两条 track 各自独立 semver。一个 `.life` 文件**只**声明 `schema_version` (即 life-format 版本) 和 `runtime_compatibility[]` (即声明所需 runtime 接口集合)，**不**绑定本仓库的 v0.x.y。
+- v0.7-vision-shift 同时启动 life-format v0.1 + life-runtime v0.1 的 spec 交付，但**不**交付 reference runtime（推迟到 v0.8+）。
 
 ---
 
@@ -765,6 +809,38 @@ DLRS Hub is committed to building a **global, standardized, and auditable digita
 - Repository Structure: 90%
 - Tools: 50%
 - Runtime: 0%
+
+## 🎯 `.life` Standards on Independent Semver Tracks
+
+As of v0.7-vision-shift ([epic #79](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/79)), DLRS's *Ultimate* positioning has shifted from "digital life repository structure standard" to **`.life` runnable digital-life archive standard**. `.life` is composed of two standards each on its **own independent semver track**, decoupled from this repo's v0.x.y version:
+
+### Track A — `.life` Archive Standard (file format)
+
+> Spec: [`docs/LIFE_FILE_STANDARD.md`](docs/LIFE_FILE_STANDARD.md) ·
+> Schema: [`schemas/life-package.schema.json`](schemas/life-package.schema.json) ·
+> Example builder: `examples/minimal-life-package/` (#83)
+
+| `.life` format version | Status | Theme |
+|---|---|---|
+| **life-format v0.1.0** | In progress (v0.7-vision-shift) | Dual-mode archive (pointer / encrypted) + opaque `signature_ref` |
+| life-format v0.2.0 | Planned | Cryptographic signature scheme (C2PA / equivalent): replace opaque `signature_ref` with a verifiable signature; integrity signature alongside sha256 inventory |
+| life-format v0.3.0 | Planned | Federated revocation registry + cross-runtime sync: beyond `withdrawal_endpoint`, introduce a resolvable "revoked-package identifier" set so runtimes can query nearby caches when offline |
+
+### Track B — `.life` Runtime Standard (runtime protocol)
+
+> Spec: [`docs/LIFE_RUNTIME_STANDARD.md`](docs/LIFE_RUNTIME_STANDARD.md)
+
+| Runtime protocol version | Status | Theme |
+|---|---|---|
+| **life-runtime v0.1** | In progress (v0.7-vision-shift) | Load sequence; mount semantics; runtime obligations (disclosure / forbidden_uses / withdrawal polling / impersonation safeguards); termination conditions |
+| life-runtime v0.2 | Planned | Cross-implementation conformance suite + signature verification (paired with life-format v0.2) |
+| life-runtime v0.3 | Planned | Multi-`.life` ensemble protocol (one runtime mounting multiple `.life` files as separate instances + cross-instance isolation invariants) |
+
+### Relation to this repo's v0.x.y
+
+- This repo's v0.x.y tracks **supporting infrastructure**: directory structure, JSON schemas, offline pipelines, audit hash chain, descriptor bridge, hosted-API gate, `.life` builder, doc refreshes.
+- The `.life` Archive and `.life` Runtime tracks each have their own independent semver. A `.life` file declares **only** `schema_version` (its life-format version) and `runtime_compatibility[]` (the runtime interface tokens it requires) — it does **not** bind to this repo's v0.x.y.
+- v0.7-vision-shift initiates spec delivery for life-format v0.1 + life-runtime v0.1; **no reference runtime is delivered** (deferred to v0.8+).
 
 ## 🗓️ Version Planning
 
