@@ -108,6 +108,11 @@
               "memorial_metadata": { "$ref": "#/$defs/memorial_metadata" },
               "frozen": { "const": true }
             }
+          },
+          "else": {
+            "properties": {
+              "memorial_metadata": { "type": "null" }
+            }
           }
         },
         {
@@ -137,8 +142,8 @@
         "last_mutation_at": { "type": "string", "format": "date-time" },
         "mutation_log_ref": {
           "type": "string",
-          "description": "Path inside the `.life` zip (e.g. `lifecycle/voice-master-v1.mutations.jsonl`). Required when the asset has any non-creation mutation events. The referenced file MUST be JSONL where each line validates against `#/$defs/mutation_event`.",
-          "pattern": "^lifecycle/[A-Za-z0-9_./-]+\\.mutations\\.jsonl$"
+          "description": "Path inside the `.life` zip (e.g. `lifecycle/voice-master-v1.mutations.jsonl`). Required when the asset has any non-creation mutation events. The referenced file MUST be JSONL where each line validates against `#/$defs/mutation_event`. The pattern explicitly rejects `..` segments to prevent path traversal out of the `lifecycle/` directory (matching the convention enforced by `life-package.schema.json` `contents[].path`).",
+          "pattern": "^lifecycle/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.mutations\\.jsonl$"
         },
         "expires_at": {
           "type": "string",

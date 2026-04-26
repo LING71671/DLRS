@@ -180,6 +180,16 @@ def main() -> int:
     bad = _good_memorial_package_lifecycle(); bad["memorial_metadata"]["dispute_window_status"] = "frozen"
     cases.append(("pkg: dispute_window_status off-enum", pkg_v, bad, False))
 
+    # active state with non-null memorial_metadata MUST be rejected (spec §4.3
+    # says "MUST be null otherwise"). The schema enforces this via an `else`
+    # clause on the memorial allOf.
+    bad = _good_package_lifecycle()
+    bad["memorial_metadata"] = {
+        "triggered_at": "2026-04-26T14:00:00Z",
+        "trigger_kind": "executor",
+    }
+    cases.append(("pkg: active state with non-null memorial_metadata", pkg_v, bad, False))
+
     # ----- asset_lifecycle -----
     cases.append(("asset: good active", asset_v, _good_asset_lifecycle(), True))
     cases.append(("asset: good tainted with reason", asset_v, _good_tainted_asset_lifecycle(), True))
@@ -199,6 +209,11 @@ def main() -> int:
     # mutation_log_ref pattern violation
     bad = _good_asset_lifecycle(); bad["mutation_log_ref"] = "audit/voice.jsonl"
     cases.append(("asset: mutation_log_ref wrong path", asset_v, bad, False))
+
+    # mutation_log_ref MUST reject `..` path-traversal (defense in depth,
+    # matches the convention used by life-package.schema.json contents[].path).
+    bad = _good_asset_lifecycle(); bad["mutation_log_ref"] = "lifecycle/../etc/passwd.mutations.jsonl"
+    cases.append(("asset: mutation_log_ref with .. traversal rejected", asset_v, bad, False))
 
     # version not semver
     bad = _good_asset_lifecycle(); bad["version"] = "1.3"

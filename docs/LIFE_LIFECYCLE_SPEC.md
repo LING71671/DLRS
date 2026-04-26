@@ -206,7 +206,7 @@ Each asset's `genesis/<asset_id>.genesis.json` (Topic 1) gains a
 | `supersedes` | array | no | At most ONE predecessor `asset_id` (decision **D2=C**). |
 | `created_at` | datetime | yes | First creation timestamp. |
 | `last_mutation_at` | datetime | no | Datetime of the latest entry in the asset's mutation log. |
-| `mutation_log_ref` | path | no | `lifecycle/<...>.mutations.jsonl`. REQUIRED when any non-creation mutation exists. |
+| `mutation_log_ref` | path | no | `lifecycle/<...>.mutations.jsonl`. REQUIRED when any non-creation mutation exists. The pattern explicitly rejects `..` path-traversal segments (matching the `life-package.schema.json` `contents[].path` convention). |
 | `expires_at` | datetime | no | Hard expiry for THIS asset (independent of the package's expiry). |
 | `state` | enum | yes | `active` / `superseded` / `withdrawn` / `tainted` / `frozen`. |
 | `tainted_reason` | string | yes when `state == tainted` | Free-form short explanation. |
