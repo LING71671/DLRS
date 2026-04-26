@@ -61,10 +61,36 @@ Sub-issues #100–#105.
   `tools/batch_validate.py`. The 42 reflects the post-merge fixes
   applied in #110 (memorial `else` clause + `..` path-traversal
   rejection on `mutation_log_ref`) plus the asset_id pattern fix
-  in this follow-up. [#102]
+  in #112. [#102]
+- `docs/LIFE_TIER_SPEC.md` — per-topic normative spec for Topic 3
+  (Tier System). Defines a six-dimensional credit rating
+  (`identity_verification`, `asset_completeness`,
+  `consent_completeness`, `detail_level`, `audit_chain_strength`,
+  `jurisdiction_clarity`), a normative weighted-score formula
+  (consent + identity ×2, others ×1), 12 score → level boundaries
+  (I–XII), and a back-compat mapping from v0.7 `verification_level`
+  to `tier.dimensions.identity_verification`. [#104]
+- `schemas/tier.schema.json` — JSON Schema for the v0.8 tier block
+  (`dlrs-life-tier/0.1` shape via `$defs`). 12 `allOf` / `if`-`then`
+  rules bind `score` ranges to Roman-numeral `level` values;
+  `computed_by` pattern requires `<path>@<semver>` so hand-rolled
+  tier blocks fail validation. Standalone for v0.8; integration into
+  `life-package.schema.json` deferred to a follow-on PR. [#104]
+- `docs/appendix/TIER_NAMING_SCHEMA_D.md` — versioned naming
+  appendix listing the 12 Schema D tiers (Cosmic Evolution: Quark →
+  Singularity), their canonical names, glyphs, score ranges, and
+  cosmological reading. The appendix is decoupled from
+  `LIFE_TIER_SPEC.md` so future naming schemes can ship without a
+  spec major bump. [#104]
+- `tools/test_tier_schema.py` — 81 sanity-test cases (26 happy-path
+  + 55 negative) covering both ends of every score → level range,
+  every score → level mismatch boundary, every required-field
+  removal, every dimension off-enum, and the auto-computation guard
+  on `computed_by`. Wired into `tools/batch_validate.py`. [#104]
 
 [#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
 [#102]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/102
+[#104]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/104
 
 
 ## v0.7-vision-shift (2026-04-26)
