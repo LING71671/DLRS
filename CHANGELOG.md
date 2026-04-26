@@ -79,11 +79,13 @@ Sub-issues #100–#105.
   hybrid keyspace; `additionalProperties: false` makes unknown
   non-`x-` keys reject statically (decision D4=C fail-close at schema
   layer). [#103]
-- `tools/test_binding_schema.py` — 55 sanity-test cases (9 happy-path
-  + 46 negative) wired into `tools/batch_validate.py`. The 55 includes
-  three new negatives covering `providers_whitelist_ref` path-traversal
-  rejection (absolute paths and `..` segments), tightening the
-  schema-layer defence in depth introduced after PR #111 review. [#103]
+- `tools/test_binding_schema.py` — 63 sanity-test cases (11 happy-path
+  + 52 negative) wired into `tools/batch_validate.py`. The 63 includes
+  three negatives for `providers_whitelist_ref` path-traversal (added
+  in #111 review fix-up) and eight more cases (6 negative + 2 happy)
+  for path-traversal rejection on `surface.ui_hints.avatar_image_ref`
+  and `surface.ui_hints.background_audio_ref`, applying the same
+  cross-schema convention. [#103]
 - `docs/LIFE_TIER_SPEC.md` — per-topic normative spec for Topic 3
   (Tier System). Defines a six-dimensional credit rating
   (`identity_verification`, `asset_completeness`,

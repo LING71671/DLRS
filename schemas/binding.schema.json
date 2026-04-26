@@ -186,8 +186,8 @@
           "properties": {
             "disclosure_label": { "type": "string", "minLength": 1, "maxLength": 1024 },
             "color_scheme": { "type": "string", "enum": ["light", "dark", "auto"] },
-            "avatar_image_ref": { "type": "string", "minLength": 1 },
-            "background_audio_ref": { "type": "string", "minLength": 1 }
+            "avatar_image_ref": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*\\.\\.).+$" },
+            "background_audio_ref": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*\\.\\.).+$" }
           },
           "additionalProperties": false
         }
