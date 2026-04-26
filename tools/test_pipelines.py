@@ -31,6 +31,7 @@ PIPELINE_TESTS: list[tuple[str, Path]] = [
     ("vectorization", TOOLS / "test_vectorization_pipeline.py"),
     ("moderation", TOOLS / "test_moderation_pipeline.py"),
     ("memory_atoms", TOOLS / "test_memory_atoms_pipeline.py"),
+    ("knowledge_graph", TOOLS / "test_knowledge_graph_pipeline.py"),
 ]
 
 
