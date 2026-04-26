@@ -253,6 +253,18 @@ def main() -> int:
     g = _good_binding(); g["hosted_api_preference"]["providers_whitelist_ref"] = ""
     cases.append(("hosted_api_preference.providers_whitelist_ref empty", g, False))
 
+    # Cross-schema convention: path-inside-.life fields reject absolute paths
+    # and `..` segments at the schema layer (matches life-package.schema.json
+    # contents[].path and lifecycle.schema.json mutation_log_ref).
+    g = _good_binding(); g["hosted_api_preference"]["providers_whitelist_ref"] = "/etc/passwd"
+    cases.append(("hosted_api_preference.providers_whitelist_ref absolute path", g, False))
+
+    g = _good_binding(); g["hosted_api_preference"]["providers_whitelist_ref"] = "../etc/passwd"
+    cases.append(("hosted_api_preference.providers_whitelist_ref parent-dir traversal", g, False))
+
+    g = _good_binding(); g["hosted_api_preference"]["providers_whitelist_ref"] = "policy/../etc/passwd"
+    cases.append(("hosted_api_preference.providers_whitelist_ref embedded `..` segment", g, False))
+
     g = _good_binding(); g["hosted_api_preference"]["unknown"] = 1
     cases.append(("hosted_api_preference unknown field", g, False))
 

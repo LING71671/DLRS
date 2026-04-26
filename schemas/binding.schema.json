@@ -222,8 +222,9 @@
         },
         "providers_whitelist_ref": {
           "type": "string",
-          "description": "Optional path inside `.life` (typically `policy/hosted_api.json`) referencing the issuer's whitelist of acceptable hosted providers. Loaders MUST refuse providers outside the whitelist when present.",
-          "minLength": 1
+          "description": "Optional path inside `.life` (typically `policy/hosted_api.json`) referencing the issuer's whitelist of acceptable hosted providers. Loaders MUST refuse providers outside the whitelist when present. Path is relative to the `.life` root; absolute paths and `..` segments are rejected at the schema layer (cross-schema convention with `life-package.schema.json::contents[].path` and `lifecycle.schema.json::mutation_log_ref`).",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*\\.\\.).+$"
         }
       },
       "additionalProperties": false

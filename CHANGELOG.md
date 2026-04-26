@@ -79,8 +79,11 @@ Sub-issues #100–#105.
   hybrid keyspace; `additionalProperties: false` makes unknown
   non-`x-` keys reject statically (decision D4=C fail-close at schema
   layer). [#103]
-- `tools/test_binding_schema.py` — 52 sanity-test cases (9 happy-path
-  + 43 negative) wired into `tools/batch_validate.py`. [#103]
+- `tools/test_binding_schema.py` — 55 sanity-test cases (9 happy-path
+  + 46 negative) wired into `tools/batch_validate.py`. The 55 includes
+  three new negatives covering `providers_whitelist_ref` path-traversal
+  rejection (absolute paths and `..` segments), tightening the
+  schema-layer defence in depth introduced after PR #111 review. [#103]
 
 [#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
 [#102]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/102

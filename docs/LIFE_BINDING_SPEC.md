@@ -341,7 +341,7 @@ no hosted calls without an explicit issuer green light).
 
 ## 11. Sanity tests
 
-`tools/test_binding_schema.py` ships **52 cases** (4 happy-path + 48
+`tools/test_binding_schema.py` ships **55 cases** (9 happy-path + 46
 negative) covering every required field, every conditional, every
 hybrid-vocabulary boundary, and every `additionalProperties: false`
 boundary. Run via:
