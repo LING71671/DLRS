@@ -265,24 +265,6 @@ Thanks to all contributors and community members for their support!
 
 ---
 
-## 📌 Suggested GitHub About
-
-Maintainers may set the GitHub About to:
-
-```
-DLRS: Privacy-first digital life archive standard for consent governance, AI avatars, and digital legacy records | 数字生命仓库标准
-```
-
-Suggested Topics:
-```
-digital-life, digital-human, ai-avatar, digital-legacy, digital-identity, 
-privacy, privacy-by-design, consent-management, data-governance, 
-data-portability, schema, json-schema, standard, open-standard, 
-archive, template-repository, ai-ethics
-```
-
----
-
 <div align="center">
 
 **Making digital life archives safer, more transparent, and more controllable**
