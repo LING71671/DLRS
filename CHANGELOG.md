@@ -111,7 +111,7 @@ ship a working runtime — that is deferred to v0.8+.
 
 - #80 — housekeeping (PR #88)
 - #81 — `docs/LIFE_FILE_STANDARD.md` (PR #89)
-- #82 — `schemas/life-package.schema.json` + 51 sanity tests (PR #92)
+- #82 — `schemas/life-package.schema.json` + 54 sanity tests (PR #92)
 - #83 — `examples/minimal-life-package/` + `tools/build_life_package.py`
   (PR #98)
 - #84 — `docs/LIFE_RUNTIME_STANDARD.md` (PR #93)
