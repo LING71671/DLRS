@@ -67,6 +67,31 @@ jobs:
           path: reports/
           if-no-files-found: warn
 
+  pipelines:
+    name: v0.5 pipelines (asr / text / vectorization / moderation)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r tools/requirements.txt
+
+      - name: Run pipeline test suite
+        run: python tools/test_pipelines.py
+
   docs:
     name: Lint docs (markdownlint + linkcheck)
     runs-on: ubuntu-latest
