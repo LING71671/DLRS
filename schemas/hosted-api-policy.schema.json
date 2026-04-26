@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/hosted-api-policy.schema.json",
+  "title": "DLRS Hosted-API Opt-In Policy",
+  "description": "Declarative per-record policy that explicitly opts into running hosted (online) AI APIs against a record's data. Default DLRS pipelines are offline-first; this document is the *only* mechanism by which a hosted-API code path may execute. Lives at <record>/policy/hosted_api.json. See pipelines/_hosted_api.py for the runtime gate.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "opt_in",
+    "allowed_providers",
+    "allowed_pipelines",
+    "consent_evidence_ref",
+    "issued_at",
+    "expires_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "dlrs-hosted-api-policy/1.0",
+      "description": "Schema version pin. Bump in lock-step with this file's $id when breaking changes happen."
+    },
+    "opt_in": {
+      "type": "boolean",
+      "description": "Master switch. MUST be set to true for any hosted-API code path to be permitted; setting it to false short-circuits every other field. Absence of this file is treated identically to opt_in=false."
+    },
+    "allowed_providers": {
+      "type": "array",
+      "description": "Whitelist of provider identifiers permitted under this policy. The runtime gate checks `provider in allowed_providers`; an empty list denies everything regardless of opt_in.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "openai",
+          "anthropic",
+          "google_generativeai",
+          "cohere",
+          "deepl",
+          "replicate",
+          "aliyun_bailian",
+          "azure_openai",
+          "aws_bedrock",
+          "custom"
+        ]
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "allowed_pipelines": {
+      "type": "array",
+      "description": "Whitelist of pipeline names (matching pipelines.PipelineSpec.name) that may invoke hosted APIs under this policy. A pipeline NOT in this list MUST refuse to run any hosted-API code path even if other fields would permit it.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "consent_evidence_ref": {
+      "type": "string",
+      "description": "Pointer to the consent artefact that authorises hosted-API processing for this record. MUST resolve inside the record (relative path) or be an opaque ticket id documented in audit/events.jsonl. Examples: 'consent/hosted_api_consent.pointer.json', 'consent/hosted_api_consent.video.pointer.json'.",
+      "minLength": 1
+    },
+    "issued_at": {
+      "type": "string",
+      "description": "ISO-8601 UTC timestamp at which the data subject (or their authorised agent) issued this opt-in.",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "description": "ISO-8601 UTC timestamp after which this opt-in MUST be re-issued. The runtime gate refuses to authorise hosted-API calls past this point. Setting expires_at <= issued_at is invalid.",
+      "format": "date-time"
+    },
+    "data_residency": {
+      "type": ["string", "null"],
+      "description": "Optional human-readable note about which region the hosted provider processes data in (e.g. 'EU only', 'US-East'). Free-form; consumers SHOULD log it but MUST NOT branch policy on it.",
+      "minLength": 1
+    },
+    "rate_limits": {
+      "type": "object",
+      "description": "Optional, additive per-provider rate guidance. Schema-validated content goes under named subkeys; this is for additive context.",
+      "additionalProperties": true
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "description": "Free-form contextual note (e.g. 'reviewed by legal 2026-04-01'). Sensitive identifiers MUST NOT be embedded here.",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}

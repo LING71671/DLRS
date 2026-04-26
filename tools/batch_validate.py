@@ -38,6 +38,7 @@ DEFAULT_STEPS = [
     ("test_entity_graph_schema", [sys.executable, str(TOOLS / "test_entity_graph_schema.py")]),
     ("pipelines", [sys.executable, str(TOOLS / "test_pipelines.py")]),
     ("descriptor_audit_bridge", [sys.executable, str(TOOLS / "test_descriptor_audit_bridge.py")]),
+    ("hosted_api_policy", [sys.executable, str(TOOLS / "test_hosted_api_policy.py")]),
     ("asr_demo", [sys.executable, str(TOOLS / "test_asr_demo.py")]),
 ]
 
