@@ -55,16 +55,39 @@ Sub-issues #100–#105.
   `state == "tainted"` requires `tainted_reason`;
   `action == "state_changed"` requires `from_state` + `to_state`;
   `supersedes.maxItems: 1` enforces fork-yes / merge-no statically.
+  Post-review tightening: `else` clause forces `memorial_metadata`
+  to null on non-memorial states; `mutation_log_ref` pattern uses
+  the same `..`-rejection lookahead as `life-package.schema.json`.
   [#102]
 - `tools/test_lifecycle_schema.py` — 42 sanity-test cases (4
   happy-path + 38 negative) covering all four shapes, wired into
   `tools/batch_validate.py`. The 42 reflects the post-merge fixes
   applied in #110 (memorial `else` clause + `..` path-traversal
   rejection on `mutation_log_ref`) plus the asset_id pattern fix
-  in this follow-up. [#102]
+  in #112. [#102]
+- `docs/LIFE_BINDING_SPEC.md` — per-topic normative spec for Topic 3
+  (Runtime Binding). Defines `binding/runtime_binding.json` and
+  encodes the four locked Topic-3 decisions: hybrid capability
+  vocabulary (D1=C, ~20 core enum + `x-` extension); issuer-self
+  -decided engine strictness (D2=C, `strict: true | false`); hybrid
+  hard-constraints keys with runtime fail-close on unknown keys
+  (D4=C); AND-gate hosted-API decision (D5=A, issuer half only —
+  user half is `policy/hosted_api.json` from v0.6). [#103]
+- `schemas/binding.schema.json` — JSON Schema for the binding file
+  format (`dlrs-life-binding/0.1`). `patternProperties` enforce both
+  the capability-name hybrid vocabulary and the hard-constraints
+  hybrid keyspace; `additionalProperties: false` makes unknown
+  non-`x-` keys reject statically (decision D4=C fail-close at schema
+  layer). [#103]
+- `tools/test_binding_schema.py` — 55 sanity-test cases (9 happy-path
+  + 46 negative) wired into `tools/batch_validate.py`. The 55 includes
+  three new negatives covering `providers_whitelist_ref` path-traversal
+  rejection (absolute paths and `..` segments), tightening the
+  schema-layer defence in depth introduced after PR #111 review. [#103]
 
 [#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
 [#102]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/102
+[#103]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/103
 
 
 ## v0.7-vision-shift (2026-04-26)
