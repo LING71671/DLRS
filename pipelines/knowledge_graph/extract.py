@@ -40,8 +40,11 @@ _ALIAS_CAP = 64
 
 # Conservative capitalised-token-run pattern. Matches up to 4 tokens so a
 # whole sentence of capitalised words doesn't collapse into a single
-# absurd "entity".
-_CANDIDATE_RE = re.compile(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3})\b")
+# absurd "entity". The inter-token separator is a *literal space* — not
+# ``\s+`` — so capitalised words on adjacent lines (line-wrapped prose)
+# do NOT merge into a single multi-line entity with a literal ``\n``
+# embedded in its label. See issue #70 for the regression repro.
+_CANDIDATE_RE = re.compile(r"\b([A-Z][a-z]+(?: [A-Z][a-z]+){0,3})\b")
 
 # Tokens that, when they appear as a single-word candidate, are almost
 # never proper nouns. Multi-word phrases starting with one of these (e.g.
