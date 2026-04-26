@@ -26,6 +26,22 @@ Sub-issues #100–#105.
   appendix preserving institutional memory of options considered and
   declined. Entry point for sub-issues #101–#105 which deliver the
   per-topic normative specs and schemas. [#100]
+- `docs/LIFE_GENESIS_SPEC.md` — per-topic normative spec for Topic 1
+  (Asset Genesis). Defines `genesis/<asset_id>.genesis.json` and
+  encodes the five Topic-1 decisions: base pretrained models as
+  virtual assets (D1=C); hosted-API use declared but not blocking
+  (D2=B); graded `reproducibility_level` enum (D3=C); fixed
+  `consent_scope` enum (D4=A); separate `genesis/` directory (D5=B).
+  [#101]
+- `schemas/genesis.schema.json` — JSON Schema for the genesis file
+  format (`dlrs-life-genesis/0.1`). Conditional rule:
+  `compute.hosted_api_used: true` requires at least one entry in
+  `compute.hosted_api_providers[]`. [#101]
+- `tools/test_genesis_schema.py` — 33 sanity-test cases (3 happy-path
+  + 30 negative) wired into `tools/batch_validate.py`. [#101]
+
+[#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
+
 
 ## v0.7-vision-shift (2026-04-26)
 

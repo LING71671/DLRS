@@ -37,6 +37,7 @@ DEFAULT_STEPS = [
     ("test_memory_atom_schema", [sys.executable, str(TOOLS / "test_memory_atom_schema.py")]),
     ("test_entity_graph_schema", [sys.executable, str(TOOLS / "test_entity_graph_schema.py")]),
     ("test_life_package_schema", [sys.executable, str(TOOLS / "test_life_package_schema.py")]),
+    ("test_genesis_schema", [sys.executable, str(TOOLS / "test_genesis_schema.py")]),
     # The 'pipelines' step calls tools/test_pipelines.py, which itself
     # dispatches every per-pipeline test plus the v0.6 cross-cutting
     # tests transitively. The cross-cutting tests are also listed
