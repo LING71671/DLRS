@@ -12,6 +12,23 @@ each merged sub-PR.
 
 ### Added
 
+- `schemas/hosted-api-policy.schema.json` + `pipelines/_hosted_api.py` —
+  per-record opt-in policy gate for hosted (online) AI APIs. Default DLRS
+  remains offline-first; the only way to authorise a hosted-API code
+  path is to commit a record-scoped `policy/hosted_api.json` document
+  that declares `opt_in: true`, an `allowed_providers` whitelist, an
+  `allowed_pipelines` whitelist, a `consent_evidence_ref`, and an
+  `[issued_at, expires_at)` window. `pipelines._hosted_api.assert_allowed`
+  refuses to authorise any combination outside the policy and raises
+  `HostedApiNotAllowed`. Pipelines lazy-import the SDK *inside* the
+  gated branch so the static `tools/validate_pipelines.py` ban on
+  hosted-API imports continues to pass. (#59, this PR)
+- `tools/test_hosted_api_policy.py` covers schema golden + 6 negative
+  schema cases, default-deny when no policy file, `opt_in=false`
+  short-circuit, provider/pipeline whitelists, `[issued_at, expires_at)`
+  bounds, malformed-JSON refusal, and `list_allowed_providers`
+  consistency. Wired into `tools/batch_validate.py` (now 15 steps)
+  and the pipelines CI matrix. (#59, this PR)
 - `pipelines/_audit_bridge.py` — descriptor → `audit/events.jsonl` bridge.
   Every pipeline (asr / text / vectorization / moderation / memory_atoms /
   knowledge_graph) now appends one `derived_asset_emitted` event per

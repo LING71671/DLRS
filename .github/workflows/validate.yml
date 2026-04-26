@@ -95,6 +95,9 @@ jobs:
       - name: Run descriptor->audit bridge test (#58)
         run: python tools/test_descriptor_audit_bridge.py
 
+      - name: Run hosted-API opt-in policy gate test (#59)
+        run: python tools/test_hosted_api_policy.py
+
   docs:
     name: Lint docs (markdownlint + linkcheck)
     runs-on: ubuntu-latest
