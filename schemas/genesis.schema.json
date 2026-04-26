@@ -249,6 +249,17 @@
     }
   },
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["reproducibility_level"],
+        "properties": { "reproducibility_level": { "enum": ["bit_identical", "param_identical"] } }
+      },
+      "then": {
+        "properties": { "method": { "required": ["name", "version", "code_commit"] } }
+      }
+    }
+  ],
   "$defs": {
     "consent_scope_enum": {
       "type": "string",

@@ -37,8 +37,8 @@ Sub-issues #100–#105.
   format (`dlrs-life-genesis/0.1`). Conditional rule:
   `compute.hosted_api_used: true` requires at least one entry in
   `compute.hosted_api_providers[]`. [#101]
-- `tools/test_genesis_schema.py` — 33 sanity-test cases (3 happy-path
-  + 30 negative) wired into `tools/batch_validate.py`. [#101]
+- `tools/test_genesis_schema.py` — 36 sanity-test cases (4 happy-path
+  + 32 negative) wired into `tools/batch_validate.py`. [#101]
 
 [#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
 

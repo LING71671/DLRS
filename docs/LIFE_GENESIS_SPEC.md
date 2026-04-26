@@ -448,7 +448,8 @@ Or as part of the full repository validation:
 python tools/batch_validate.py
 ```
 
-The genesis test suite ships 33 cases (3 happy-path + 30 negative)
+The genesis test suite ships 36 cases (4 happy-path + 32 negative)
 exercising every required field, every enum, every conditional
-(`hosted_api_used → providers required`), and every
-`additionalProperties: false` boundary.
+(`hosted_api_used → providers required`,
+`reproducibility_level ∈ {bit_identical, param_identical} → method.code_commit required`),
+and every `additionalProperties: false` boundary.

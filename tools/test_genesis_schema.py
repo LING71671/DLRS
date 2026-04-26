@@ -239,6 +239,21 @@ def main() -> int:
     g = _good_genesis(); g["notes"] = "x" * 5000
     cases.append(("notes > 4096 chars", g, False))
 
+    # 31. reproducibility_level=param_identical without method.code_commit -> reject
+    # (LIFE_GENESIS_SPEC.md §5.3 requires code_commit when level is bit_identical
+    # or param_identical).
+    g = _good_genesis(); g["reproducibility_level"] = "param_identical"; g["method"].pop("code_commit")
+    cases.append(("param_identical without method.code_commit", g, False))
+
+    # 32. reproducibility_level=bit_identical without method.code_commit -> reject.
+    g = _good_genesis(); g["reproducibility_level"] = "bit_identical"; g["method"].pop("code_commit")
+    cases.append(("bit_identical without method.code_commit", g, False))
+
+    # 33. reproducibility_level=not_reproducible without method.code_commit -> accept
+    # (the conditional only fires for bit_identical/param_identical).
+    g = _good_genesis(); g["reproducibility_level"] = "not_reproducible"; g["method"].pop("code_commit")
+    cases.append(("not_reproducible without method.code_commit (allowed)", g, True))
+
     failures = 0
     for name, doc, expect_valid in cases:
         errors = list(validator.iter_errors(doc))
