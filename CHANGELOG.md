@@ -39,6 +39,29 @@ Sub-issues #100–#105.
   `compute.hosted_api_providers[]`. [#101]
 - `tools/test_genesis_schema.py` — 36 sanity-test cases (4 happy-path
   + 32 negative) wired into `tools/batch_validate.py`. [#101]
+- `docs/LIFE_LIFECYCLE_SPEC.md` — per-topic normative spec for Topic 2
+  (Asset Lifecycle). Defines four document shapes
+  (`package_lifecycle`, `asset_lifecycle`, `mutation_event`,
+  `cascade_index`) and encodes the five Topic-2 decisions: dual
+  human/machine identity (D1=D); forks allowed, merges forbidden
+  (D2=C); withdrawal cascade marks derived assets `tainted` instead
+  of deleting (D3=B); memorial trigger from executor / next-of-kin /
+  court order with 7-day reverse-attestation window (D4=C+(a)+(c));
+  `recommended_re_consent_after` is a soft hint that never blocks
+  (D5=C). [#102]
+- `schemas/lifecycle.schema.json` — JSON Schema exporting four
+  reusable shapes via `$defs`. Conditional rules: `lifecycle_state ==
+  "memorial"` requires `memorial_metadata` + `frozen: true`;
+  `state == "tainted"` requires `tainted_reason`;
+  `action == "state_changed"` requires `from_state` + `to_state`;
+  `supersedes.maxItems: 1` enforces fork-yes / merge-no statically.
+  Post-review tightening: `else` clause forces `memorial_metadata`
+  to null on non-memorial states; `mutation_log_ref` pattern uses
+  the same `..`-rejection lookahead as `life-package.schema.json`.
+  [#102]
+- `tools/test_lifecycle_schema.py` — 41 sanity-test cases (4
+  happy-path + 37 negative) covering all four shapes, wired into
+  `tools/batch_validate.py`. [#102]
 - `docs/LIFE_BINDING_SPEC.md` — per-topic normative spec for Topic 3
   (Runtime Binding). Defines `binding/runtime_binding.json` and
   encodes the four locked Topic-3 decisions: hybrid capability
@@ -57,6 +80,7 @@ Sub-issues #100–#105.
   + 48 negative) wired into `tools/batch_validate.py`. [#103]
 
 [#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
+[#102]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/102
 [#103]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/103
 
 
