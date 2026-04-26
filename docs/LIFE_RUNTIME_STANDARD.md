@@ -431,3 +431,244 @@ A runtime that does not enforce all five is **not** compatible with
 - Interop conformance test suite (deferred to `life-runtime v0.2`).
 - Cryptographic signature verification of `signature_ref` (waits on
   `life-format v0.2`).
+
+---
+
+# Part B — v0.8 normative additions (Topic 4)
+
+> Status: **normative** for any runtime claiming `life-runtime ≥ 0.8`
+> conformance. v0.7 runtimes MAY ignore Part B. The eight-step load
+> sequence in §2 remains correct: Part B does not contradict it,
+> rather it imposes a richer, named, five-stage discipline on top of
+> it and adds three new normative concepts (Provider Registry,
+> sandboxing tiers, bootstrap) that were not specified in v0.7.
+>
+> Closes sub-issue [#105](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/105) of epic
+> [#106](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/106).
+>
+> Cross-references:
+>
+> - Architecture overview: [`docs/LIFE_ASSET_ARCHITECTURE.md`](LIFE_ASSET_ARCHITECTURE.md) §6
+> - Binding spec: [`docs/LIFE_BINDING_SPEC.md`](LIFE_BINDING_SPEC.md)
+> - Tier spec: [`docs/LIFE_TIER_SPEC.md`](LIFE_TIER_SPEC.md)
+> - Lifecycle spec: [`docs/LIFE_LIFECYCLE_SPEC.md`](LIFE_LIFECYCLE_SPEC.md)
+> - Genesis spec: [`docs/LIFE_GENESIS_SPEC.md`](LIFE_GENESIS_SPEC.md)
+
+## B.1 Five-stage assembly pipeline
+
+The v0.7 load sequence (§2) is grouped into five named stages.
+Loaders MUST execute them in order; any failure aborts assembly,
+emits an audit event, and surfaces a structured rejection reason.
+
+| Stage | v0.7 §-mapping | New normative additions in v0.8 |
+|---|---|---|
+| **1. Verify** | §2.1 + §2.2 + §2.3 + §2.4 + §2.5 | Lifecycle-state gate (`active` / `superseded` / `frozen+memorial` / `withdrawn`); withdrawal endpoint pre-flight; audit-chain hash-link integrity. |
+| **2. Resolve** | (new) | Read `binding/runtime_binding.json`; map each capability to a Provider via the Provider Registry (B.2); apply tier-aware fallback (B.3). |
+| **3. Assemble** | §2.6 + §2.7 + §2.8 | Instantiate Providers in their declared sandboxing class (B.4); inject `hard_constraints` + `surface.ui_hints.disclosure_label`; emit `capability_bound` audit event per capability. |
+| **4. Run** | §3 + §4 (existing) | All v0.7 obligations remain. v0.8 adds: `forbidden_uses` MUST be applied via the same key namespace as `binding.hard_constraints` (hybrid: ~30 core keys + `x-` extensions, fail-close on unknown — see binding spec §7). |
+| **5. Guard** | §4.3 + §5 + §6 | Withdrawal watcher (≥ every 24 h); lifecycle watcher (`superseded` / `frozen` / `withdrawn` transitions); expiry watcher; audit emitter. |
+
+### B.1.1 Stage gating (decision **D6=fail-close**)
+
+If any stage fails, loaders MUST:
+
+1. Emit an audit event of type `assembly_aborted` with a `stage`
+   field (`verify | resolve | assemble | run | guard`) and a
+   structured `reason`.
+2. Tear down any partially constructed Provider state.
+3. Surface a localised rejection reason to the user (no opaque
+   "Failed to load" messages).
+4. NOT silently fall back to a degraded mount.
+
+This generalises the existing §2 hard-fail rule across the new
+named stages.
+
+## B.2 Provider Registry
+
+A **Provider** is the v0.8 unit of capability execution. Each
+Provider implements one or more capabilities declared in
+`binding.capabilities` (e.g. `voice_synthesis`, `memory_recall`).
+
+Loaders MUST maintain a **Provider Registry** with at least the
+following operations:
+
+- `list_providers(capability) -> [ProviderRef]` — enumerate every
+  Provider known to the runtime that exposes the given capability,
+  in deterministic priority order.
+- `resolve(capability, engine_compatibility[]) -> ProviderRef` —
+  walk `engine_compatibility[]` (issuer-declared, ordered) and
+  return the first Provider whose `(name, version)` satisfies the
+  entry's `version_range` and `strict` flag (see binding spec §5.2).
+- `metadata(ProviderRef) -> ProviderMetadata` — return at least the
+  Provider's `(name, version, sandbox_class)` so Stage 3 (Assemble)
+  can pick the correct sandbox.
+
+The registry's storage shape is implementation-defined. Conformant
+implementations are encouraged to expose it via a config file
+(`~/.config/dlrs/providers.json` or equivalent) plus a `lifectl
+provider list` CLI for inspection.
+
+### B.2.1 The `LifeCapabilityProvider` interface
+
+Every Provider MUST satisfy the following abstract interface
+(language-agnostic; the names below are normative; signatures are
+illustrative):
+
+```
+LifeCapabilityProvider:
+  capability_name() -> string                        # e.g. "voice_synthesis"
+  provider_name()    -> string                        # e.g. "xtts-v2"
+  provider_version() -> semver
+  sandbox_class()    -> "built_in" | "user_installed" | "bundled_in_life"
+
+  # Lifecycle (called by Stage 3 Assemble)
+  initialize(asset_paths: [path], params: dict, hard_constraints: dict) -> void
+  teardown() -> void
+
+  # Hot path (called by Stage 4 Run; per turn / per call)
+  invoke(input: dict) -> dict
+```
+
+Loaders MUST call `initialize` exactly once per mount, after
+sandbox setup; MUST call `teardown` exactly once on unmount or
+withdrawal; and MUST treat any exception from `invoke` as a
+recoverable per-turn error (logged, audited, no automatic
+unmount).
+
+## B.3 Tier-aware resolution
+
+Loaders SHOULD use the package's `tier` block (defined by
+[`docs/LIFE_TIER_SPEC.md`](LIFE_TIER_SPEC.md)) when more than one
+Provider matches an `engine_compatibility[]` entry:
+
+| Tier band (level) | RECOMMENDED Provider preference |
+|---|---|
+| I–IV (low) | Lighter / offline / lower-fidelity Providers; preserve playability over fidelity. |
+| V–VIII (mid) | Whatever the issuer's first `engine_compatibility[]` entry resolves to; no special bias. |
+| IX–XII (high) | Higher-fidelity Providers; for capabilities permitted by `hosted_api_preference` (see B.5), MAY prefer hosted Providers. |
+
+This is a SHOULD, not a MUST: loaders are free to ignore the tier
+band if their environment dictates a fixed Provider choice (e.g. an
+embedded runtime with one TTS engine only).
+
+Loaders MUST honour `capability_binding.tier_floor` (binding spec
+§5.1) when present: if the package's `tier.level` is below the
+floor, the loader SHOULD warn the user before binding; whether to
+proceed is a user / policy decision, not a hard refusal.
+
+## B.4 Sandboxing classes (decision **D1=C, graded sandbox**)
+
+Every Provider declares a sandbox class via `sandbox_class()`. The
+runtime MUST enforce the following minimum boundary per class:
+
+| Class | Trust assumption | Minimum boundary |
+|---|---|---|
+| `built_in` | Ships with the runtime; signed by the runtime vendor. | Same OS process as the runtime; no extra sandbox required. |
+| `user_installed` | Installed by the user via OS package manager or `lifectl`. The user accepts that this code runs on their machine. | Runtime MUST run the Provider in a separate OS process with IPC; a stricter sandbox (firejail / nsjail / seccomp / wasm) is RECOMMENDED but not required. |
+| `bundled_in_life` | Vendored inside the `.life` zip itself; untrusted. | **REJECTED at v0.8** (decision **D2=B**, see B.4.1). Not loadable until v1.0+ when a whitelisted-issuer scheme exists (decision **D2=C**). |
+
+Loaders MUST refuse to bind a capability whose chosen Provider has
+`sandbox_class() == "bundled_in_life"` until the v1.0+ whitelist
+scheme lands. The binding schema rejects
+`engine_kind: bundled_in_life` statically (binding spec §5.2), but
+runtimes MUST also enforce this at Stage 2 (Resolve) as defence in
+depth.
+
+### B.4.1 Why `bundled_in_life` is forbidden in v0.8 (D2=B)
+
+Letting an arbitrary `.life` ship arbitrary code is equivalent to
+running an unsigned binary downloaded from the internet. The v0.8
+ecosystem has no trust anchor that could authorise a third-party
+`.life` to execute its own code; until issuer-whitelisting and
+revocation are spec'd (target: v1.0+), `bundled_in_life` Providers
+are unconditionally refused. This is intentional and is **not** a
+schema bug.
+
+## B.5 Hosted-API AND-gate (decision **D5=mixed**)
+
+A hosted-API call MAY fire **only if** both halves of the AND-gate
+say "allow":
+
+```
+ALLOW HOSTED CALL  ⇔  binding.hosted_api_preference.allowed == true
+                       AND policy/hosted_api.json permits this provider/capability
+```
+
+Either rejecting is sufficient. The default for a missing
+`hosted_api_preference` block is `allowed: false` (binding spec §9).
+
+The package's tier MAY influence the default user-side preference
+in a runtime's UI (e.g. "this is a Tier IX package — would you like
+to use hosted higher-fidelity providers? Y/N"), but the underlying
+AND-gate is unchanged: the user retains the final veto. There is no
+"recommend offline" or "recommend hosted" baked into the spec —
+both modes are first-class (decision **D3=mixed**).
+
+## B.6 Bootstrap (decision **D5=C, OS package manager**)
+
+Users acquire a runtime via the host OS's package manager:
+
+```
+brew install dlrs-runtime         # macOS
+apt  install dlrs-runtime          # Debian / Ubuntu
+winget install dlrs-runtime        # Windows
+```
+
+The `.life` archive MUST NOT carry a self-extracting bootstrap
+stub. Loaders MUST NOT auto-fetch the runtime from a `.life`. This
+preserves the trust boundary: the runtime is something the user
+explicitly installed, not something a `.life` can install on their
+behalf.
+
+When the OS does not have an associated `.life` handler, the OS
+fallback (e.g. "find application to open this file") is permitted
+to direct the user to `https://dlrs.standard/install` or an
+equivalent canonical install page. The `.life` itself is inert
+until a runtime is installed.
+
+## B.7 Audit additions (v0.8)
+
+In addition to the v0.7 audit-event vocabulary, conformant runtimes
+MUST emit:
+
+| Event type | When | Required fields |
+|---|---|---|
+| `capability_bound` | Once per capability after Stage 3 Assemble succeeds. | `capability`, `provider_name`, `provider_version`, `sandbox_class`. |
+| `assembly_aborted` | Stage failure (B.1.1). | `stage`, `reason`. |
+| `withdrawal_check` | Each withdrawal-watcher poll (Stage 5 Guard). | `endpoint`, `result`. |
+| `lifecycle_transition_observed` | Stage 5 Guard observes a `lifecycle_state` transition (`active` → `superseded` / `frozen` / `withdrawn`). | `from_state`, `to_state`, `package_id`. |
+
+Existing v0.7 events (`session_started`, `turn_emitted`, etc.) are
+unchanged.
+
+## B.8 What this update does NOT add
+
+- **Provider sandbox implementation** — runtimes pick their own
+  sandbox technology (firejail, nsjail, wasm, etc.) per platform.
+  Spec only mandates the boundary.
+- **Provider distribution registry** — Providers are distributed
+  via OS package managers / `lifectl` repositories; the spec does
+  not standardise the registry format itself yet (deferred to
+  `life-runtime 0.2`).
+- **Runtime cryptographic identity** — Providers do not yet ship
+  signatures; trust is anchored on the OS package manager. A
+  signed-Provider scheme is deferred to v1.0+ alongside the
+  `bundled_in_life` whitelisting work.
+- **Failover across runtimes** — if a Provider crashes, the runtime
+  MUST treat it as a per-turn error (B.2.1); migrating an active
+  mount to a different runtime instance is out of scope.
+
+## B.9 Decisions encoded
+
+| # | Decision | Realised in |
+|---|---|---|
+| **D1=C** | Graded sandbox (built-in / user-installed / `.life`-bundled) | B.4 |
+| **D2=B** | v0.8: no bundled Providers | B.4 + B.4.1 |
+| **D2=C** | v1.0+: whitelisted-issuer Providers (deferred) | B.8 |
+| **D3=mixed** | Both offline and hosted are first-class | B.5 |
+| **D4=C** | Three-field surface shape (`supported`, `preferred`, `minimum_required`) | binding spec §8 |
+| **D5=C** | OS package manager bootstrap | B.6 |
+| **D6=fail-close** | Stage failure aborts assembly, no degraded mount | B.1.1 |
+
+[#105]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/105
+[#106]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/106

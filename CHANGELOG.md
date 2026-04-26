@@ -111,11 +111,27 @@ Sub-issues #100–#105.
   every score → level mismatch boundary, every required-field
   removal, every dimension off-enum, and the auto-computation guard
   on `computed_by`. Wired into `tools/batch_validate.py`. [#104]
+- `docs/LIFE_RUNTIME_STANDARD.md` — appends Part B with normative
+  v0.8 additions for Topic 4 (Runtime / Assembly): the five-stage
+  assembly pipeline (Verify / Resolve / Assemble / Run / Guard),
+  the Provider Registry concept, the abstract
+  `LifeCapabilityProvider` interface, the three-tier sandbox class
+  (`built_in` / `user_installed` / `bundled_in_life`), the
+  hosted-API AND-gate, and the OS-package-manager bootstrap rule.
+  Encodes Topic 4 decisions D1=C (graded sandbox), D2=B (no
+  bundled providers in v0.8), D3=mixed (offline + hosted both
+  first-class), D4=C (three-field surface — already in binding
+  spec), D5=C (OS package manager bootstrap), and the new D6
+  (fail-close stage gating). Adds four new audit event types:
+  `capability_bound`, `assembly_aborted`, `withdrawal_check`, and
+  `lifecycle_transition_observed`. Part A (the v0.7 eight-step
+  load sequence) is unchanged. [#105]
 
 [#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
 [#102]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/102
 [#103]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/103
 [#104]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/104
+[#105]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/105
 
 
 ## v0.7-vision-shift (2026-04-26)
