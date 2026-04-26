@@ -15,7 +15,7 @@
 Cross-references:
 
 - File format spec — [`docs/LIFE_FILE_STANDARD.md`](LIFE_FILE_STANDARD.md)
-- Runtime protocol spec — [`docs/LIFE_RUNTIME_STANDARD.md`](LIFE_RUNTIME_STANDARD.md)
+- Runtime protocol spec — [`docs/LIFE_RUNTIME_STANDARD.md`](LIFE_RUNTIME_STANDARD.md) (Topic 4 Assembly update lands via [#105])
 - Package schema — [`schemas/life-package.schema.json`](../schemas/life-package.schema.json)
 - Genesis spec — `docs/LIFE_GENESIS_SPEC.md` ([#101], to be delivered)
 - Lifecycle spec — `docs/LIFE_LIFECYCLE_SPEC.md` ([#102], to be delivered)
@@ -362,7 +362,7 @@ opt-in without adding a third concept.
 
 ---
 
-## 5. Topic 3 — Tier System (multi-dimensional credit rating)
+## 5. Tier System (Topic 3 supplement, multi-dimensional credit rating)
 
 ### 5.1 Problem
 
@@ -383,7 +383,7 @@ weighted score (0–100), which lands in one of 12 named tiers
 ```json
 {
   "tier": {
-    "score": 67,
+    "score": 55,
     "level": "VII",
     "name": "Main Sequence",
     "glyph": "★",
@@ -699,7 +699,7 @@ new evidence.
 #### Tier naming alternatives
 
 The user explicitly chose "和星空有关的吧" — anything related to the
-starry sky. Cosmic Evolution (Schema D) was selected. Three other
+starry sky. Cosmic Evolution (Schema D) was selected. Five other
 serious schemas were considered:
 
 - **Moon phases** (New Moon → Eclipse): rejected because it carries
