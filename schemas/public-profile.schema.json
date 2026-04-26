@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/dlrs/schemas/public-profile.schema.json",
+  "$id": "https://dlrs.standard/schemas/public-profile.schema.json",
   "title": "DLRS Public Profile",
+  "description": "Public-facing profile that describes how a record appears in the public registry. Only fields that are safe to publish belong here. Sensitive material MUST stay in private storage and MUST NOT be referenced from this file.",
   "type": "object",
   "required": [
     "record_id",
@@ -12,28 +13,69 @@
   ],
   "properties": {
     "record_id": {
-      "type": "string"
+      "type": "string",
+      "description": "Stable record identifier. MUST match manifest.json#/record_id.",
+      "pattern": "^dlrs_[a-zA-Z0-9_-]{4,}$"
     },
     "display_name": {
-      "type": "string"
+      "type": "string",
+      "description": "Public display name. MUST NOT include private legal names."
     },
     "summary": {
-      "type": "string"
+      "type": "string",
+      "description": "One-paragraph public summary suitable for the registry listing.",
+      "maxLength": 2000
     },
     "avatar_preview_uri": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": ["string", "null"],
+      "description": "Optional URI to a low-fidelity public preview image (S0_PUBLIC, no biometric leakage).",
+      "pattern": "^(https?://|repo://).+|^$"
     },
     "ai_disclosure": {
-      "type": "string"
+      "type": "string",
+      "description": "Mandatory disclosure that interactions are AI-mediated and not the real person.",
+      "minLength": 16
     },
     "allowed_public_interactions": {
       "type": "array",
+      "minItems": 1,
       "items": {
-        "type": "string"
-      }
+        "type": "string",
+        "enum": [
+          "view_profile",
+          "request_private_contact",
+          "text_chat",
+          "voice_chat",
+          "avatar_video_chat",
+          "search_only",
+          "memorial_view"
+        ]
+      },
+      "description": "What kinds of interactions the registry may surface for this record."
+    },
+    "languages": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "BCP-47 language tags supported by the public-facing runtime."
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Free-form public tags (e.g. 'memorial', 'researcher', 'public_data_only')."
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "url"],
+        "properties": {
+          "label": {"type": "string"},
+          "url": {"type": "string", "pattern": "^https?://.+"}
+        },
+        "additionalProperties": false
+      },
+      "description": "Public links (website, attribution, etc). MUST NOT include private contact info."
     }
-  }
+  },
+  "additionalProperties": true
 }

@@ -163,7 +163,7 @@ validation_rules:
 
 # Contact information for translation team
 translation_team:
-  email: "i18n@example.org"
+  email: "https://github.com/Digital-Life-Repository-Standard/DLRS/discussions"
   discord: "https://discord.gg/dlrs-i18n"
   github_label: "i18n"
   coordinator: "@i18n-coordinator"

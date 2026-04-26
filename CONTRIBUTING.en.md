@@ -46,11 +46,11 @@ There are many ways to contribute to DLRS Hub:
 
 ```bash
 # Fork the repository on GitHub, then clone your fork
-git clone https://github.com/YOUR-USERNAME/dlrs-hub.git
-cd dlrs-hub
+git clone https://github.com/YOUR-USERNAME/DLRS.git
+cd DLRS
 
 # Add upstream remote
-git remote add upstream https://github.com/original-org/dlrs-hub.git
+git remote add upstream https://github.com/Digital-Life-Repository-Standard/DLRS.git
 ```
 
 ### 2. Install Dependencies
@@ -327,7 +327,7 @@ Once approved:
 **Do NOT open public issues for security vulnerabilities!**
 
 Instead:
-- Email: security@example.org
+- Email: https://github.com/Digital-Life-Repository-Standard/DLRS/security/advisories/new
 - Use GitHub Security Advisories (if available)
 - Provide detailed information privately
 
@@ -348,7 +348,7 @@ If you need to report:
 ### Process
 
 1. **Use the takedown issue template** OR
-2. **Email**: security@example.org with:
+2. **Email**: https://github.com/Digital-Life-Repository-Standard/DLRS/security/advisories/new with:
    - Your identity and contact info
    - Record ID in question
    - Nature of the complaint
@@ -397,7 +397,7 @@ Need help with your contribution?
 
 - **General questions**: Open a GitHub Discussion
 - **Technical issues**: Open a GitHub Issue
-- **Email**: contact@example.org
+- **Email**: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 - **Documentation**: [docs/](docs/)
 
 ## 📄 License

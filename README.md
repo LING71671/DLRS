@@ -1,4 +1,4 @@
-# Digital Life Repository Standard (DLRS) v0.2 Draft
+# Digital Life Repository Standard (DLRS) v0.3 Draft
 
 <div align="center">
 
@@ -10,7 +10,7 @@
 > 这是早期开放标准草案。欢迎反馈、翻译、Schema 改进和伦理审查。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.2%20Draft-orange.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.3%20Draft-orange.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/CHANGELOG.md)
 [![i18n](https://img.shields.io/badge/i18n-2%20languages-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/tree/master/docs/i18n)
 [![RFC](https://img.shields.io/badge/RFC-Open%20for%20Comment-green.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/docs/community/RFC-DLRS-v0.2.md)
 

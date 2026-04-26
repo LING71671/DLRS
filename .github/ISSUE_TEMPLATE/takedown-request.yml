@@ -1,0 +1,96 @@
+name: "Takedown request"
+description: "Request freeze, delisting, or full takedown of a DLRS record."
+title: "[Takedown] <record_id>"
+labels: ["takedown", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Privacy warning — please read before submitting
+
+        DLRS reviewers do **not** need raw biometric or identity material to
+        process a takedown request. **Do NOT attach** any of the following to
+        this public issue:
+
+        - Government-issued ID documents (passport, driver's licence, ID card).
+        - Photographs of the subject's face.
+        - Voice recordings of the subject.
+        - Medical, financial, or other sensitive personal data.
+
+        If we need verification material, a maintainer will contact you via the
+        secure channel below to arrange private exchange.
+
+        For especially sensitive cases, please use the
+        [private security advisory channel](https://github.com/Digital-Life-Repository-Standard/DLRS/security/advisories/new)
+        instead of opening this public issue.
+  - type: input
+    id: record_id
+    attributes:
+      label: Record ID
+      description: "The DLRS record ID, e.g. dlrs_94f1c9b8."
+      placeholder: dlrs_xxxxxxxx
+    validations:
+      required: true
+  - type: input
+    id: record_path
+    attributes:
+      label: Record path (optional)
+      description: "Repo-relative path to the manifest, e.g. humans/asia/cn/dlrs_94f1c9b8_lin-example/."
+    validations:
+      required: false
+  - type: dropdown
+    id: relationship
+    attributes:
+      label: Your relationship to the subject
+      options:
+        - subject (myself)
+        - guardian / legal representative
+        - estate executor
+        - authorised agent
+        - third party with evidence of harm
+    validations:
+      required: true
+  - type: dropdown
+    id: action
+    attributes:
+      label: Requested action
+      options:
+        - delist from public registry only
+        - freeze runtime (subject can no longer be invoked)
+        - delete derived data
+        - full deletion of all non-legal-hold material
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason for the request
+      description: "Briefly describe why this record should be taken down. Avoid attaching sensitive evidence — describe it instead."
+      placeholder: "e.g. The subject has revoked consent for voice cloning."
+    validations:
+      required: true
+  - type: textarea
+    id: evidence_description
+    attributes:
+      label: Evidence (description only)
+      description: "Describe the evidence you have. **Do not paste it here.** A maintainer will request it via a private channel if needed."
+    validations:
+      required: false
+  - type: input
+    id: contact
+    attributes:
+      label: Private contact channel
+      description: "Provide a contact (e-mail, Signal, etc.) for private follow-up. This will be hidden by maintainers if posted publicly."
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: "I have NOT attached identity documents, biometric data, or other sensitive personal data to this issue."
+          required: true
+        - label: "I understand maintainers may redact / delete my issue if it contains sensitive material."
+          required: true
+        - label: "I understand response timelines are governed by [policies/takedown.md](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/policies/takedown.md)."
+          required: true

@@ -92,6 +92,6 @@ Translator: @your-username
 
 ## 🆘 Need Help?
 
-- Email: i18n@example.org
+- Email: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 - GitHub: Use `[i18n]` label
 - Discord: https://discord.gg/dlrs-i18n

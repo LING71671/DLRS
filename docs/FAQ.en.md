@@ -313,9 +313,9 @@ See the [Contributing Guide](../CONTRIBUTING.md) for details. You can:
 
 ### Where can I get help?
 
-- **GitHub Issues**: https://github.com/your-org/dlrs-hub/issues
-- **Email**: contact@example.org
-- **Security Issues**: security@example.org
+- **GitHub Issues**: https://github.com/Digital-Life-Repository-Standard/DLRS/issues
+- **Email**: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
+- **Security Issues**: https://github.com/Digital-Life-Repository-Standard/DLRS/security/advisories/new
 - **Documentation**: [docs/](.)
 
 ### Can I use DLRS Hub for my project?
@@ -370,8 +370,8 @@ See [Architecture](architecture.md) for deployment guidance.
 If your question isn't answered here:
 
 1. Check the [complete documentation](.)
-2. Search [GitHub Issues](https://github.com/your-org/dlrs-hub/issues)
+2. Search [GitHub Issues](https://github.com/Digital-Life-Repository-Standard/DLRS/issues)
 3. Open a new issue with the `question` label
-4. Email us at contact@example.org
+4. Email us at https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 
 We're here to help! 💙

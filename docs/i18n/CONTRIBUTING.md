@@ -238,7 +238,7 @@ Reviewer: @reviewer-github-username (optional)
 ### Questions?
 
 - Open an issue with `[i18n]` prefix
-- Email: i18n@example.org
+- Email: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 - Join our Discord: https://discord.gg/dlrs-i18n
 
 ### Want to Become a Maintainer?
@@ -248,7 +248,7 @@ If you're interested in maintaining translations for a specific language:
 1. Complete at least 3 high-quality translations
 2. Demonstrate consistency and attention to detail
 3. Be available to review PRs in your language
-4. Contact us at i18n@example.org
+4. Contact us at https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 
 ## 📜 License
 

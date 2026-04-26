@@ -666,9 +666,9 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 ## 📞 联系方式
 
-- **GitHub**: https://github.com/your-org/dlrs-hub
-- **Discord**: https://discord.gg/dlrs-hub
-- **Email**: roadmap@example.org
+- **GitHub**: https://github.com/Digital-Life-Repository-Standard/DLRS
+- **Discord**: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
+- **Email**: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 - **Twitter**: @DLRSHub
 
 ---

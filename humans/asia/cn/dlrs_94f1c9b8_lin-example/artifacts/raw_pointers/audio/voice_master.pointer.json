@@ -4,6 +4,26 @@
   "region": "CN",
   "format": "wav",
   "size_bytes": 98765432,
+  "artifact_type": "audio",
   "sensitivity": "S3_BIOMETRIC",
-  "access_policy": "private_runtime_only"
+  "access_policy": "private_runtime_only",
+  "encryption": {
+    "at_rest": "AES-256",
+    "in_transit": "TLS1.2+",
+    "kms_ref": "kms://example/voice-key"
+  },
+  "retention_days": 3650,
+  "withdrawal_supported": true,
+  "consent_ref": "consent/consent_statement.md",
+  "review_status": "approved",
+  "media_metadata": {
+    "duration_seconds": 1800,
+    "sample_rate_hz": 48000,
+    "bit_depth": 24,
+    "channels": 1,
+    "loudness_lufs": -18.0,
+    "true_peak_dbfs": -3.0,
+    "codec": "pcm_s24le",
+    "format": "wav"
+  }
 }

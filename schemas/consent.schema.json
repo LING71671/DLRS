@@ -1,39 +1,95 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/dlrs/schemas/consent.schema.json",
+  "$id": "https://dlrs.standard/schemas/consent.schema.json",
   "title": "DLRS Consent Metadata",
+  "description": "Structured consent metadata for a DLRS record. Mirrors the consent block inside manifest.json#/consent and is also used for standalone consent_metadata.json files.",
   "type": "object",
   "required": [
-    "subject_role",
     "consent_version",
     "captured_at",
-    "scopes",
-    "withdrawal_endpoint"
+    "withdrawal_endpoint",
+    "allowed_scopes"
   ],
   "properties": {
     "subject_role": {
-      "type": "string"
+      "type": "string",
+      "description": "Role of the consenting party.",
+      "enum": ["self", "guardian", "authorized_agent", "estate_executor", "researcher"]
     },
     "consent_version": {
-      "type": "string"
+      "type": "string",
+      "description": "Version of the consent statement template that was signed.",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+      "examples": ["0.2.0", "0.3.0"]
     },
     "captured_at": {
-      "type": "string"
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp at which consent was captured."
+    },
+    "expires_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Optional ISO-8601 timestamp at which consent expires. Null = no scheduled expiry."
+    },
+    "withdrawal_endpoint": {
+      "type": "string",
+      "description": "URL or mailto: that accepts withdrawal requests for this record. MUST be reachable.",
+      "pattern": "^(https?://|mailto:).+"
+    },
+    "allowed_scopes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "storage",
+          "structured_processing",
+          "text_persona",
+          "voice_clone",
+          "avatar_clone",
+          "video_avatar",
+          "research_use",
+          "commercial_use",
+          "public_listing",
+          "model_finetune"
+        ]
+      },
+      "description": "Scopes that are explicitly allowed by this consent."
     },
     "scopes": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": {"type": "string"},
+      "description": "Free-form additional scope tags (deprecated; prefer allowed_scopes)."
     },
-    "withdrawal_endpoint": {
-      "type": "string"
+    "separate_biometric_consent": {
+      "type": "boolean",
+      "description": "True if a SEPARATE biometric consent was obtained (required for voice/avatar cloning or storage of S3+ assets)."
+    },
+    "guardian_consent": {
+      "type": "boolean",
+      "description": "True if guardian/legal-representative consent applies (required for minors)."
     },
     "evidence_refs": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": {"type": "string"},
+      "description": "Repo-relative paths to consent evidence (signed statement, signature manifest, consent video pointer, ID verification pointer)."
+    },
+    "signer": {
+      "type": "object",
+      "description": "Information about the party that signed the consent.",
+      "properties": {
+        "display_name": {"type": "string"},
+        "role": {"type": "string"},
+        "signing_method": {
+          "type": "string",
+          "enum": ["wet_signature_scanned", "digital_signature", "video_consent", "platform_attestation"]
+        },
+        "signature_hash": {"type": "string"},
+        "id_verification_ref": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
     }
-  }
+  },
+  "additionalProperties": true
 }

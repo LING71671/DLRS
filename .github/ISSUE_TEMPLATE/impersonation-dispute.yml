@@ -1,0 +1,86 @@
+name: "Impersonation / dispute"
+description: "Dispute the existence, content, or authority behind a DLRS record."
+title: "[Dispute] <record_id>"
+labels: ["dispute", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Privacy warning — please read before submitting
+
+        Use this template to report:
+
+        - A record that **impersonates** you or someone you represent.
+        - A record where the **uploader lacks authority** (e.g. unauthorised use of a deceased person's identity).
+        - A record whose **public content is materially false** about the subject.
+
+        **Do NOT attach** identity documents, faces, voice samples, or other
+        biometrics. Describe the evidence; a maintainer will contact you via a
+        private channel to collect it.
+
+        For sensitive disputes, use the
+        [private security advisory channel](https://github.com/Digital-Life-Repository-Standard/DLRS/security/advisories/new) instead.
+  - type: input
+    id: record_id
+    attributes:
+      label: Disputed record ID
+      placeholder: dlrs_xxxxxxxx
+    validations:
+      required: true
+  - type: dropdown
+    id: nature
+    attributes:
+      label: Nature of dispute
+      options:
+        - impersonation of a living person
+        - unauthorised use (no consent / lapsed consent)
+        - misrepresentation of a deceased person
+        - public content materially false / defamatory
+        - rights / legal claim (DMCA, GDPR right-to-erasure, PIPL, etc.)
+        - other
+    validations:
+      required: true
+  - type: dropdown
+    id: claimant_relationship
+    attributes:
+      label: Your relationship to the subject
+      options:
+        - subject (myself)
+        - guardian / legal representative
+        - estate executor
+        - rights-holder (e.g. trademark, copyright)
+        - third party with evidence of harm
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: Summary of the dispute
+      description: "What is wrong with this record? Be concrete."
+    validations:
+      required: true
+  - type: textarea
+    id: evidence_description
+    attributes:
+      label: Evidence (description only)
+      description: "Describe what evidence you have. **Do not attach raw evidence in this issue.** Maintainers will request it privately."
+    validations:
+      required: false
+  - type: input
+    id: contact
+    attributes:
+      label: Private contact channel
+      description: "How can maintainers reach you privately to collect evidence?"
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: "I have NOT attached identity documents or biometric material to this issue."
+          required: true
+        - label: "I understand maintainers may redact this issue or convert it to a private advisory."
+          required: true
+        - label: "I understand dispute resolution follows [GOVERNANCE.md](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/GOVERNANCE.md) and [policies/](https://github.com/Digital-Life-Repository-Standard/DLRS/tree/master/policies)."
+          required: true
