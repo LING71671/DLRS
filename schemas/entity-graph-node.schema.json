@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/entity-graph-node.schema.json",
+  "title": "DLRS Entity Graph Node",
+  "description": "A single node in the v0.6 personal knowledge graph (a person, organisation, location, event, etc.). Nodes are produced by pipelines/knowledge_graph/ from cleaned text and / or memory atoms. Like memory atoms, every node MUST be redaction-safe at write time: any value that would have triggered the v0.5 redaction pass (email, phone, ID, etc.) MUST be substituted with its category placeholder before being stored as a label or alias. v0.6 introduces this schema; the emitter lands in issue #57.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "node_id",
+    "record_id",
+    "kind",
+    "label",
+    "aliases",
+    "salience",
+    "sensitivity",
+    "redaction_safe",
+    "created_at",
+    "pipeline_version"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of this schema. Bump on any breaking change.",
+      "const": "dlrs-entity-graph-node/1.0"
+    },
+    "node_id": {
+      "type": "string",
+      "description": "Stable identifier for this node within the owning record. ULID or UUIDv4. MUST be immutable once written; re-running the pipeline produces a new node_id even when the entity is the same, so historical edges and audit trails remain valid.",
+      "pattern": "^(dlrs_node_)?[A-Za-z0-9_-]{8,}$",
+      "examples": ["01HW91QJTR4ETRBM3DNJK4Y9MA", "dlrs_node_4f3e2a8c"]
+    },
+    "record_id": {
+      "type": "string",
+      "description": "Owning DLRS record identifier. Same record_id pattern as the rest of DLRS so nodes can be re-attributed, redacted, or erased on consent withdrawal.",
+      "pattern": "^dlrs_[A-Za-z0-9_-]{4,}$",
+      "examples": ["dlrs_94f1c9b8_lin-example"]
+    },
+    "kind": {
+      "type": "string",
+      "description": "Coarse entity kind. The set is intentionally small so that downstream tooling can mechanically partition the graph; finer-grained typing belongs in the label / aliases or in pipeline-specific parameters on the descriptor, not here.",
+      "enum": ["person", "organization", "location", "event", "object", "concept", "other"]
+    },
+    "label": {
+      "type": "string",
+      "description": "Canonical human-readable label for the entity (the form most likely to be used for display and matching). MUST be redaction-safe; if the recognised name itself is sensitive (e.g. it matches a redaction rule), the pipeline MUST substitute the category placeholder before writing.",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "aliases": {
+      "type": "array",
+      "description": "Other surface forms by which the entity is referred to in the source text. MAY be empty. Each alias MUST be redaction-safe.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "maxItems": 64
+    },
+    "salience": {
+      "type": "number",
+      "description": "Importance of this entity in the source corpus, in [0, 1]. Deterministic baseline backends MAY pin this to a heuristic (e.g. mention_count / max_mentions); model-based backends should propagate the model's own salience score.",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "sensitivity": {
+      "type": "string",
+      "description": "Sensitivity tier inherited from the source record's manifest. Nodes MAY NOT be promoted to a less restrictive tier than their source.",
+      "enum": [
+        "S0_PUBLIC",
+        "S1_INTERNAL",
+        "S2_SENSITIVE",
+        "S2_CONFIDENTIAL",
+        "S3_BIOMETRIC",
+        "S4_RESTRICTED",
+        "S4_IDENTITY"
+      ]
+    },
+    "redaction_safe": {
+      "type": "boolean",
+      "description": "Schema-enforced const true. Pipelines MUST run their label and aliases through the v0.5 redaction pass before writing. Consumers SHOULD reject any node where redaction_safe != true.",
+      "const": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the node was emitted."
+    },
+    "pipeline_version": {
+      "type": "string",
+      "description": "Version of the pipeline that emitted the node. SemVer, or 'git:<sha>' when the pipeline is built directly from a commit.",
+      "pattern": "^(?:\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?|git:[0-9a-f]{7,40})$",
+      "examples": ["0.6.0", "0.6.0-rc1", "git:abcd1234"]
+    },
+    "audit_event_ref": {
+      "type": "string",
+      "description": "Optional pointer to the audit/events.jsonl line emitted when this node was written. Format: 'audit/events.jsonl#L<n>'. Populated by the descriptor->audit bridge (issue #58).",
+      "pattern": "^audit/events\\.jsonl#L[1-9][0-9]*$",
+      "examples": ["audit/events.jsonl#L142"]
+    }
+  }
+}

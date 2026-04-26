@@ -35,6 +35,7 @@ DEFAULT_STEPS = [
     ("validate_pipelines", [sys.executable, str(TOOLS / "validate_pipelines.py")]),
     ("test_derived_asset_schema", [sys.executable, str(TOOLS / "test_derived_asset_schema.py")]),
     ("test_memory_atom_schema", [sys.executable, str(TOOLS / "test_memory_atom_schema.py")]),
+    ("test_entity_graph_schema", [sys.executable, str(TOOLS / "test_entity_graph_schema.py")]),
     ("pipelines", [sys.executable, str(TOOLS / "test_pipelines.py")]),
     ("asr_demo", [sys.executable, str(TOOLS / "test_asr_demo.py")]),
 ]

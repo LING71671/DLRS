@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/entity-graph-edge.schema.json",
+  "title": "DLRS Entity Graph Edge",
+  "description": "A single relation in the v0.6 personal knowledge graph (e.g. a 'works at' edge from a person node to an organisation node). Edges are produced alongside nodes by pipelines/knowledge_graph/ (issue #57). The relation field is open-string (not enum) on purpose: the standard set will accumulate over time and we want the schema to accept new relation namespaces without a schema bump. Like nodes and atoms, edges MUST be redaction-safe at write time. v0.6 introduces this schema; the emitter lands in issue #57.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "edge_id",
+    "record_id",
+    "subject_node_id",
+    "object_node_id",
+    "relation",
+    "evidence_pointer",
+    "confidence",
+    "sensitivity",
+    "redaction_safe",
+    "created_at",
+    "pipeline_version"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of this schema. Bump on any breaking change.",
+      "const": "dlrs-entity-graph-edge/1.0"
+    },
+    "edge_id": {
+      "type": "string",
+      "description": "Stable identifier for this edge within the owning record. ULID or UUIDv4. MUST be immutable; re-running the pipeline produces a new edge_id.",
+      "pattern": "^(dlrs_edge_)?[A-Za-z0-9_-]{8,}$",
+      "examples": ["01HW91QJTR4ETRBM3DNJK4Y9MA", "dlrs_edge_4f3e2a8c"]
+    },
+    "record_id": {
+      "type": "string",
+      "description": "Owning DLRS record identifier.",
+      "pattern": "^dlrs_[A-Za-z0-9_-]{4,}$",
+      "examples": ["dlrs_94f1c9b8_lin-example"]
+    },
+    "subject_node_id": {
+      "type": "string",
+      "description": "node_id of the subject (the 'from' side of the relation). MUST refer to an existing node in the same record's graph. Cross-record edges are not permitted by this schema; downstream tooling that needs them should encode them at the registry level.",
+      "pattern": "^(dlrs_node_)?[A-Za-z0-9_-]{8,}$"
+    },
+    "object_node_id": {
+      "type": "string",
+      "description": "node_id of the object (the 'to' side of the relation).",
+      "pattern": "^(dlrs_node_)?[A-Za-z0-9_-]{8,}$"
+    },
+    "relation": {
+      "type": "string",
+      "description": "Relation label. Recommended namespace 'dlrs.<verb>' (e.g. 'dlrs.knows', 'dlrs.member_of', 'dlrs.located_in'); custom namespaces 'x_<vendor>.<verb>' are permitted. Free-text relations without a namespace are accepted but consumers MAY downgrade their confidence in such edges.",
+      "minLength": 1,
+      "maxLength": 128,
+      "examples": ["dlrs.knows", "dlrs.member_of", "dlrs.located_in", "x_acme.attended"]
+    },
+    "evidence_pointer": {
+      "type": "string",
+      "description": "Path (relative to the owning record root) of the artefact whose content backs this edge. Typically a derived/text/<stem>.clean.txt or a derived/memory_atoms/<stem>.atoms.jsonl fragment. MUST NOT be an absolute path or external URL.",
+      "pattern": "^(?!/)(?!https?://)(?!s3://)(?!gs://)[^\\s].*$",
+      "examples": [
+        "derived/text/diary_2026-04-01.clean.txt",
+        "derived/memory_atoms/diary_2026-04-01.atoms.jsonl"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Confidence the relation is supported by the evidence, in [0, 1].",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "sensitivity": {
+      "type": "string",
+      "description": "Sensitivity tier inherited from the source record's manifest. Edges MAY NOT be promoted to a less restrictive tier than their source.",
+      "enum": [
+        "S0_PUBLIC",
+        "S1_INTERNAL",
+        "S2_SENSITIVE",
+        "S2_CONFIDENTIAL",
+        "S3_BIOMETRIC",
+        "S4_RESTRICTED",
+        "S4_IDENTITY"
+      ]
+    },
+    "redaction_safe": {
+      "type": "boolean",
+      "description": "Schema-enforced const true. Edges referring to entities whose label / aliases would trigger the v0.5 redaction pass MUST go through that pass before being written.",
+      "const": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the edge was emitted."
+    },
+    "pipeline_version": {
+      "type": "string",
+      "description": "Version of the pipeline that emitted the edge. SemVer, or 'git:<sha>'.",
+      "pattern": "^(?:\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?|git:[0-9a-f]{7,40})$",
+      "examples": ["0.6.0", "0.6.0-rc1", "git:abcd1234"]
+    },
+    "audit_event_ref": {
+      "type": "string",
+      "description": "Optional pointer to the audit/events.jsonl line emitted when this edge was written. Format: 'audit/events.jsonl#L<n>'. Populated by the descriptor->audit bridge (issue #58).",
+      "pattern": "^audit/events\\.jsonl#L[1-9][0-9]*$",
+      "examples": ["audit/events.jsonl#L142"]
+    }
+  }
+}
