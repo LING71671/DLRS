@@ -2,6 +2,84 @@
 
 All notable changes to the DLRS project will be documented in this file.
 
+## v0.5 Draft (2026-04-26)
+
+**Status**: RFC. Introduces the v0.5 offline-first build pipelines (ASR / text /
+vectorization / moderation), a derived-asset provenance schema, and the
+single-entrypoint pipeline CLI. No breaking changes to v0.4 manifests; the new
+pipelines write everything under `derived/<name>/` so existing records are
+untouched until a pipeline is explicitly run against them.
+
+### Added
+
+- `pipelines/` directory with the v0.5 pipeline contract:
+  - `pipelines/__init__.py` — `PipelineSpec` registry + dispatcher.
+  - `pipelines/_descriptor.py` — shared `DescriptorBuilder` that emits
+    `<output>.descriptor.json` validated against
+    `schemas/derived-asset.schema.json`.
+  - `pipelines/asr/` — `dummy` (deterministic, no model) and `faster-whisper`
+    (lazy-imported, opt-in) backends.
+  - `pipelines/text/` — NFKC normalisation + conservative redaction
+    (priority order: URLs with embedded credentials, emails, CN ID
+    cards, CN mobile phones, IPv4 addresses, credit-card-like 13–19
+    digit runs, generic phone numbers). Replacements use stable
+    category placeholders (`<EMAIL>`, `<PHONE_CN>`, `<ID_CN>`, `<IPV4>`,
+    `<CARD>`, `<PHONE>`, `<URL_WITH_CREDENTIALS>`). `redactions.json`
+    sidecar carries `rule_name + start/end + replacement` only and is
+    auditable without re-leaking matched substrings.
+  - `pipelines/vectorization/` — paragraph-aware chunking with absolute char
+    offsets, `hash` (deterministic 64-D) and `sentence-transformers` backends,
+    optional Qdrant push (`backend` and `model_id` stored as separate
+    payload keys so downstream filters work without ambiguity).
+  - `pipelines/moderation/` — deterministic regex/wordlist policy with
+    severity-based outcome aggregation (`pass | flag | block`). Built-in
+    v0.5 policy + `--policy-file` for JSON/YAML overrides. Flags carry
+    rule + span only, **never** the matched substring.
+- `tools/run_pipeline.py` — single CLI entrypoint (`python tools/run_pipeline.py
+  <name> --record path/to/record …`) shared by every pipeline.
+- `tools/validate_pipelines.py` — static guard: enforces the
+  `derived/<spec.name>/` output-prefix invariant and refuses any module that
+  imports a hosted-API client (`openai`, `anthropic`, `google.generativeai`,
+  `cohere`, `aliyun_sdk_bailian`, …). This is what turns "offline-first" into
+  machine-checked policy.
+- `tools/test_pipelines.py` — umbrella test driver. Runs the four
+  per-pipeline test scripts as subprocesses so an import failure in one
+  pipeline cannot mask test results in another.
+- `tools/test_asr_demo.py` — end-to-end test for `examples/asr-demo`.
+- `schemas/derived-asset.schema.json` — provenance descriptor schema
+  (`schema_version` / `derived_id` / `record_id` / top-level `pipeline` +
+  `pipeline_version` / `actor_role` / `inputs.{source_pointers,inputs_hash}`
+  / `output.{path,outputs_hash}` / optional `model.{id,version?,source?,
+  online_api_used: false}` (required when pipeline is `asr` or
+  `vectorization`) / optional `moderation_outcome`).
+- `examples/asr-demo/` — self-contained fixture record. `run_demo.sh`
+  regenerates a deterministic placeholder WAV (DLRS is pointer-first so
+  audio is never committed) and walks all four pipelines end-to-end with
+  no model download.
+- `docs/PIPELINE_GUIDE.md` — companion to the example. Covers the contract,
+  the descriptor, every pipeline's CLI, authoring guide, and what v0.5
+  deliberately is not.
+- `.github/workflows/validate.yml`: dedicated `pipelines` job parallel to
+  `validate`, matrix over Python 3.11 and 3.12.
+
+### Changed
+
+- `tools/batch_validate.py`: collapsed the four per-pipeline tests into a
+  single `pipelines` step delegating to `tools/test_pipelines.py`, then
+  added `asr_demo` for the end-to-end fixture. Local report:
+  `11/11 passed`.
+- `docs/GAP_ANALYSIS.md` and `docs/IMPLEMENTATION_STATUS.md` rewritten to
+  reflect v0.5 (overall completion ~83%).
+- `ROADMAP.md`: v0.5 marked as released, with the `Closes #N`-per-PR
+  governance rule appended to the v0.5 section so future major versions
+  inherit it.
+
+### Closes
+
+#28 (epic), #29, #30, #31, #32, #33, #34, #35, #36, #37, #38.
+
+---
+
 ## v0.4 Draft (2026-04-26)
 
 **Status**: RFC. Tightens the v0.3 schemas, makes AI disclosure machine-checked

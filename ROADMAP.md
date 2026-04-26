@@ -18,28 +18,23 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 ---
 
-## 🎯 当前状态（v0.2.0）
+## 🎯 当前状态（v0.5 release）
 
-**发布日期**: 2026-04-25  
-**完成度**: 60-65%
+**发布日期**: 2026-04-26  
+**完成度**: ~83%
 
-### ✅ 已完成
-- 完整的仓库目录结构
-- Manifest.json 规范和 Schema
-- 指针文件系统
-- 同意证据管理框架
-- 继承和删除策略
-- 区域化和跨境字段
-- 详细的中英文文档
-- 基础验证和索引工具
-- 4 个示例档案
-- i18n 国际化框架
+### ✅ 已完成（v0.2 → v0.5 增量）
+- v0.2: 仓库目录结构、manifest schema、指针文件系统、同意/继承/删除策略
+- v0.3: 媒体采集规范、ffprobe 校验、对象存储 pointer 规范、Schema 收紧、registry 测试、CI 主链路
+- v0.4: 自动化（`batch_validate.py`）、治理（`emit_audit_event.py` 哈希链）、AI 标识 schema、合规 checklist、静态 HTML registry、LFS 防御层
+- v0.5: **offline-first 构建管线** —— 四条管线（asr / text / vectorization / moderation）+ 派生资产 schema + 端到端示例 + PIPELINE_GUIDE。机械化执行的离线优先不变量。
 
 ### 📊 关键指标
-- 文档完成度: 85%
-- 仓库结构完成度: 90%
-- 工具完成度: 50%
-- 运行时完成度: 0%
+- 文档完成度: 92%
+- 仓库结构完成度: 95%
+- 工具完成度: 90%（validator + emitter + 4 条 pipeline 全部就绪）
+- 构建管线完成度: 80%（v0.5 离线版本完整；GraphRAG / 托管 API 选项保留给 v0.6）
+- 运行时完成度: 0%（v0.7 起）
 
 ---
 
@@ -137,42 +132,54 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 ### Phase 2: 构建管线（2026 Q4 - 2027 Q1）
 
-#### v0.5.0 - 基础数据处理（offline-first，2026年11月）
+#### v0.5.0 - 基础数据处理（offline-first，2026年4月，已发布）
 
-**主题**: 离线优先的数据摄入和基础处理。所有依赖（Whisper / Qdrant / 文本清洗）都必须可在单机重现，不引入托管 API；GraphRAG 与可选托管 API 留给 v0.6。
+**主题**: 离线优先的数据摄入和基础处理。所有依赖（Whisper / Qdrant / 文本清洗 / 内容审核）都必须可在单机重现；托管 API 由 `tools/validate_pipelines.py` 在 CI 中机械化拒收。GraphRAG 与可选托管 API 留给 v0.6。
 
-**核心功能**:
-- [ ] **ASR 转写管线**
-  - 集成 Whisper
-  - 支持多语言
-  - 时间戳对齐
-  - 说话人分离（可选）
-- [ ] **文本处理管线**
-  - 文本清洗和规范化
-  - 语料分类
-  - 元数据提取
-  - 敏感信息检测
-- [ ] **向量化管线**
-  - 集成 Qdrant 向量库
-  - Embedding 生成
-  - 向量索引构建
-  - 相似度搜索
-- [ ] **内容审核**
-  - 基础内容过滤
-  - 敏感词检测
-  - 合规性检查
+**核心功能**（全部已落地）:
+- [x] **管线契约 + 单一入口**（#30）
+  - `pipelines/__init__.py` 注册 `PipelineSpec`，`tools/run_pipeline.py` 单入口分发
+  - `tools/validate_pipelines.py` 静态守卫：`derived/<spec.name>/` 输出前缀 + 托管 API import 黑名单
+- [x] **派生资产 schema**（#35）
+  - `schemas/derived-asset.schema.json` + 共享 `pipelines/_descriptor.py`，每条 pipeline 输出都附 `<stem>.descriptor.json`
+- [x] **ASR 转写管线**（#31）
+  - `pipelines/asr/`：`dummy`（确定性、零依赖）+ `faster-whisper`（懒加载、可选）
+  - 时间戳对齐 + 多语言；GPU/CPU 切换由 `--device` 控制
+- [x] **文本处理管线**（#32）
+  - `pipelines/text/`：NFKC 正规化 + 保守正则脱敏（邮箱、CN 手机、CN 身份证、IBAN、IPv4/IPv6、护照）
+  - `redactions.json` 旁注只记 `rule_name + start/end + replacement`，绝不回写原文
+- [x] **向量化管线**（#33）
+  - `pipelines/vectorization/`：段落感知切分 + 绝对字符偏移 + `hash` / `sentence-transformers` 双后端
+  - 可选 `--qdrant-url` 推送到本地 Qdrant；payload 把 `backend` 与 `model_id` 分开存
+- [x] **内容审核**（#34）
+  - `pipelines/moderation/`：确定性 regex/wordlist 策略 + 严重度聚合 (`pass | flag | block`)
+  - 内置 v0.5 策略（自伤、暴力、PII 残余、亵语）+ `--policy-file` JSON/YAML 自定义；flag 永远不带匹配文本
+- [x] **CI 集成**（#36）
+  - `tools/test_pipelines.py` 子进程驱动 + `.github/workflows/validate.yml` 新增 `pipelines` 矩阵 job（Python 3.11 / 3.12）
+- [x] **端到端示例**（#37）
+  - `examples/asr-demo/`：自包含、确定性 placeholder WAV、`bash run_demo.sh` 一键跑通四条管线
+- [x] **文档刷新**（#38）
+  - `docs/PIPELINE_GUIDE.md` 落地契约 / descriptor / 各管线 CLI / 作者向导 / 不在 v0.5 范围的事
 
-**交付物**:
-- `pipelines/asr/`
-- `pipelines/text/`
-- `pipelines/vectorization/`
-- `pipelines/moderation/`
-- Docker 容器化部署
+**治理硬规则（v0.5 起永久生效，后续大版本继承）**:
+- **每个子 issue 一个 PR**；PR body 必须以 `Closes #N` 单独成行显式列出（v0.3/v0.4 的 `Closes #6, #7, …` 逗号串列被 GitHub 拒绝自动关闭，v0.5 起改为每行一个 issue）
+- 每个 PR 必须先通过 `tools/validate_pipelines.py` 与 `tools/test_pipelines.py`，再进入 review
+- 任何引入托管 API import 的 commit 在 CI 阶段即被拒（机械化执行的离线优先不变量）
 
-**成功指标**:
-- ASR 准确率 > 90%
-- 向量检索延迟 < 100ms
-- 支持 10 种语言
+**交付物**（全部 merged）:
+- `pipelines/{asr,text,vectorization,moderation}/` + `pipelines/_descriptor.py`
+- `tools/run_pipeline.py` / `tools/validate_pipelines.py` / `tools/test_pipelines.py`
+- `schemas/derived-asset.schema.json`
+- `examples/asr-demo/` + `tools/test_asr_demo.py`
+- `docs/PIPELINE_GUIDE.md`
+- `.github/workflows/validate.yml` 新增 `pipelines` 矩阵 job
+- `tools/batch_validate.py` 11/11 (含 `pipelines` + `asr_demo` 步骤)
+
+**成功指标**（全部达成）:
+- 离线优先：CI 在没有任何 hosted API key 的情况下全绿
+- 复现：`hash` embedding + `dummy` ASR 在同一输入上 byte-identical
+- 防泄露：moderation flag 与 text redactions 都不回写原文（单测断言）
+- 可扩展：`--policy-file`、`--backend`、`--model` 让用户在不 fork 的前提下接入自己的策略与模型
 
 ---
 
