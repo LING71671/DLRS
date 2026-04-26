@@ -1,0 +1,4 @@
+# build_life.sh writes everything under out/. The .life zip and
+# .staging-* directories are regenerated locally; they are not
+# committed.
+out/

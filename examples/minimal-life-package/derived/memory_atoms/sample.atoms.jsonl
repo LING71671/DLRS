@@ -1,0 +1,3 @@
+{"atom_id": "atom_0001", "source_ref": "manifest.json", "source_offset": 0, "source_length": 0, "text": "Subject's preferred greeting: hello there.", "language": "en", "created_at": "2026-04-25T10:35:00+00:00", "redaction_safe": true}
+{"atom_id": "atom_0002", "source_ref": "manifest.json", "source_offset": 0, "source_length": 0, "text": "Subject prefers conversation in English.", "language": "en", "created_at": "2026-04-25T10:35:00+00:00", "redaction_safe": true}
+{"atom_id": "atom_0003", "source_ref": "manifest.json", "source_offset": 0, "source_length": 0, "text": "Subject does not consent to voice cloning.", "language": "en", "created_at": "2026-04-25T10:35:00+00:00", "redaction_safe": true}

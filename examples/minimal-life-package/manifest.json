@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.2.0",
+  "record_id": "dlrs_EXAMPLE_minimal_life",
+  "display_slug": "minimal-life-source",
+  "visibility": "private",
+  "subject": {
+    "type": "self",
+    "display_name": "minimal-life-source",
+    "legal_name": "PRIVATE",
+    "locale": "en-GB",
+    "residency_region": "EU",
+    "is_minor": false,
+    "status": "living"
+  },
+  "rights": {
+    "uploader_role": "self",
+    "rights_basis": ["consent"],
+    "evidence_refs": ["consent/consent.md"],
+    "allow_public_listing": false,
+    "allow_commercial_use": false,
+    "allow_model_finetune": true,
+    "allow_voice_clone": true,
+    "allow_avatar_clone": false,
+    "allow_research_use": false,
+    "cross_border_transfer_basis": "none",
+    "cross_border_transfer_status": "not_needed"
+  },
+  "consent": {
+    "captured_at": "2026-04-25T10:30:00+00:00",
+    "withdrawal_endpoint": "https://example.org/dlrs/withdraw/EXAMPLE_minimal_life",
+    "separate_biometric_consent": true,
+    "guardian_consent": false,
+    "consent_version": "0.2.0",
+    "allowed_scopes": ["storage", "structured_processing", "text_persona"]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "a001",
+      "type": "voice_sample",
+      "format": "wav",
+      "storage_uri": "s3://example-bucket/voice/master.wav",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "region": "EU",
+      "sensitivity": "S3_BIOMETRIC",
+      "contains_sensitive_data": true
+    },
+    {
+      "artifact_id": "a002",
+      "type": "manifest",
+      "format": "json",
+      "storage_uri": "repo://manifest.json",
+      "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "region": "EU",
+      "sensitivity": "S0_PUBLIC",
+      "contains_sensitive_data": false
+    }
+  ],
+  "deletion_policy": {
+    "allow_delete": true,
+    "allow_export": true,
+    "withdrawal_effect": "freeze_runtime_then_delete",
+    "legal_hold": false
+  },
+  "inheritance_policy": {
+    "policy_ref": "profile/inheritance_policy.json",
+    "default_action_on_death": "freeze",
+    "executor_contact_ref": null
+  },
+  "security": {
+    "primary_region": "EU",
+    "replication_regions": [],
+    "encryption_at_rest": true,
+    "kms_ref": "kms://example/key-placeholder",
+    "watermark_policy": "visible_and_invisible",
+    "c2pa_enabled": true
+  },
+  "review": {
+    "status": "submitted",
+    "verified_consent_badge": false,
+    "public_data_only_badge": false,
+    "risk_level": "low",
+    "reviewer_notes_ref": null
+  },
+  "audit": {
+    "created_at": "2026-04-25T10:45:00+00:00",
+    "last_modified_at": "2026-04-25T10:45:00+00:00",
+    "change_log_hash": "sha256:example_manifest_log_hash"
+  }
+}

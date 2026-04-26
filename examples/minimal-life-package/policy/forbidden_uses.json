@@ -1,0 +1,11 @@
+{
+  "forbidden_uses": [
+    "impersonation_for_fraud",
+    "political_endorsement",
+    "explicit_content",
+    "voice_clone_for_fraud",
+    "avatar_clone",
+    "memorial_reanimation_without_executor"
+  ],
+  "notes": "Same list mirrored verbatim into life-package.json::forbidden_uses[] by build_life.sh. Maintained as a separate file so the source record's compliance review can be done against this manifest before any .life package is built."
+}
