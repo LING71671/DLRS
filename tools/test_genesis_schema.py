@@ -203,6 +203,12 @@ def main() -> int:
     g = _good_genesis(); g["audit_event_ref"] = "audit/events.jsonl:42"
     cases.append(("audit_event_ref wrong separator", g, False))
 
+    # 21b. audit_event_ref pointing at line 0 -> reject (the convention used by
+    # life-package.schema.json, memory-atom.schema.json, and entity-graph-*
+    # schemas is 1-based line numbers; #L0 is semantically invalid).
+    g = _good_genesis(); g["audit_event_ref"] = "audit/events.jsonl#L0"
+    cases.append(("audit_event_ref points at #L0 (must be 1-based)", g, False))
+
     # 22. audit_event_id empty -> reject.
     g = _good_genesis(); g["audit_event_id"] = ""
     cases.append(("audit_event_id empty", g, False))

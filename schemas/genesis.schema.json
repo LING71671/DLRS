@@ -211,7 +211,7 @@
     "audit_event_ref": {
       "type": "string",
       "description": "Pointer into the package-level audit log. Format: `audit/<filename>#L<line>` matching the existing v0.6 descriptor-audit bridge convention.",
-      "pattern": "^audit/[^\\s]+#L[0-9]+$"
+      "pattern": "^audit/[^\\s]+#L[1-9][0-9]*$"
     },
     "audit_event_id": {
       "type": "string",
