@@ -64,10 +64,18 @@ def _validate_help(spec: PipelineSpec) -> list[str]:
 
 def _validate_no_hosted_api_imports() -> list[str]:
     """Cheap grep guard: nothing under pipelines/ may import hosted-API SDKs."""
+    # Single shared alternation for both ``from X ...`` and ``import X`` so we
+    # cannot accidentally end up with the two branches enumerating different
+    # packages. ``google\.generativeai`` and ``aliyun_sdk_bailian`` are dotted
+    # / underscore module paths but the same alternation handles both because
+    # ``\.`` in a ``from`` matches a literal dot and ``\b`` after the last
+    # token still terminates correctly for ``import google.generativeai``.
+    hosted_pkgs = (
+        r"openai|anthropic|google\.generativeai|cohere|deepl|"
+        r"replicate|aliyun_sdk_bailian"
+    )
     forbidden = re.compile(
-        r"^\s*(?:from\s+(openai|anthropic|google\.generativeai|cohere|deepl|"
-        r"replicate|aliyun_sdk_bailian)\b|import\s+(openai|anthropic|cohere|"
-        r"replicate|deepl)\b)",
+        rf"^\s*(?:from\s+(?:{hosted_pkgs})\b|import\s+(?:{hosted_pkgs})\b)",
         re.MULTILINE,
     )
     errors: list[str] = []
