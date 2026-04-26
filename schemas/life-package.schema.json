@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/life-package.schema.json",
+  "title": "DLRS .life Package Descriptor",
+  "description": "Top descriptor (life-package.json) of a .life archive — the portable distribution unit defined by the .life Archive + Runtime Standard (epic #79). Authoritative spec is docs/LIFE_FILE_STANDARD.md. A .life is a zip archive whose top-level life-package.json MUST validate against this schema. Two modes: pointer (default, privacy-preserving — raw assets stay upstream) and encrypted (off-grid full pack, AES-256-GCM minimum). Compatible runtimes (docs/LIFE_RUNTIME_STANDARD.md) MUST verify each entry in contents[] by sha256 at load, refuse to mount after expires_at, poll withdrawal_endpoint, honour forbidden_uses[], and always identify the result as an AI digital life instance — never as the underlying human.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "package_id",
+    "mode",
+    "record_id",
+    "created_at",
+    "expires_at",
+    "issued_by",
+    "consent_evidence_ref",
+    "verification_level",
+    "withdrawal_endpoint",
+    "runtime_compatibility",
+    "ai_disclosure",
+    "forbidden_uses",
+    "audit_event_ref",
+    "contents"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of the .life file format. Independent of DLRS repo version. v0.1.0 = pointer mode + encrypted mode framework, opaque signature_ref, no cryptographic signature scheme yet (deferred to v0.2).",
+      "const": "0.1.0"
+    },
+    "package_id": {
+      "type": "string",
+      "description": "Unique identifier for this package emission. Crockford base32 ULID (26 chars). A fresh ULID MUST be generated on each build; rebuilding the same source record produces a new package_id even when contents are byte-identical.",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+      "examples": ["01HW9PQR8XKZA9E2D5VBNRTFCZ"]
+    },
+    "mode": {
+      "type": "string",
+      "description": "Distribution mode. pointer (default) keeps raw assets in upstream object storage and ships only *.pointer.json files inside pointers/. encrypted bundles AEAD-sealed blobs inside encrypted/ for off-grid use; the encryption block MUST then be present.",
+      "enum": ["pointer", "encrypted"]
+    },
+    "record_id": {
+      "type": "string",
+      "description": "Source DLRS record identifier (humans/<id>/manifest.json::record_id). The .life is a packaged subset of this record.",
+      "pattern": "^dlrs_[A-Za-z0-9_-]{4,}$",
+      "examples": ["dlrs_94f1c9b8_lin-example"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 / ISO 8601 UTC timestamp at which this package was built."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 / ISO 8601 UTC timestamp after which compatible runtimes MUST refuse to mount this package. Bounded-time licence: a .life never grants indefinite operating rights."
+    },
+    "issued_by": {
+      "type": "object",
+      "description": "Who authorised the emission of this package. role distinguishes self-issued from representative-issued from memorial. signature_ref is opaque in v0.1 (a path or URI); a cryptographic signature scheme is deferred to life-format v0.2.",
+      "additionalProperties": false,
+      "required": ["role", "identifier", "signature_ref"],
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["self", "authorized_representative", "memorial_executor"],
+          "description": "self = the subject issued the package themselves. authorized_representative = a legal representative (guardian, agent under POA). memorial_executor = post-mortem only; requires verification_level: memorial_authorized AND a live withdrawal_endpoint."
+        },
+        "identifier": {
+          "type": "string",
+          "description": "Opaque human-readable identifier of the issuer (e.g. handle, role title, organisation name).",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "signature_ref": {
+          "type": "string",
+          "description": "Reference to the issuer's signature artefact. Path inside the .life (e.g. consent/signature.bin) or external URI. Opaque in v0.1; v0.2 will define a concrete signature format.",
+          "minLength": 1
+        }
+      }
+    },
+    "consent_evidence_ref": {
+      "type": "string",
+      "description": "Path (inside the .life zip) or external URI pointing to the consent document covering this package. Path examples: consent/consent.md, consent/consent.json. URI examples: https://example.org/consent/abc123. Compatible runtimes MAY require this to be inline (path inside .life) for offline operation.",
+      "minLength": 1
+    },
+    "verification_level": {
+      "type": "string",
+      "description": "Strength of identity verification at issuance time. self_attested = subject attested without third-party verification. third_party_verified = an independent verifier (notary, KYC provider) confirmed identity. memorial_authorized = post-mortem package authorised by an executor; requires issued_by.role == memorial_executor.",
+      "enum": ["self_attested", "third_party_verified", "memorial_authorized"]
+    },
+    "withdrawal_endpoint": {
+      "type": "string",
+      "format": "uri",
+      "description": "URI runtimes MUST poll at session start AND at least every 24h thereafter. On withdrawal, the runtime MUST complete the current turn and terminate the session. Network-unreachable endpoints in offline operation MUST cause the runtime to refuse to mount unless explicitly authorised by the issuer for offline use."
+    },
+    "runtime_compatibility": {
+      "type": "array",
+      "description": "Which runtime interfaces this package declares conformance to. Minimum is dlrs-runtime-v0. Additional entries declare extended interfaces (e.g. openai-chat-tool, vrm-1.0, audio-tts-v1). A runtime that cannot satisfy all declared interfaces MUST refuse to mount.",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "examples": [["dlrs-runtime-v0"], ["dlrs-runtime-v0", "openai-chat-tool", "vrm-1.0"]]
+    },
+    "ai_disclosure": {
+      "type": "string",
+      "description": "Minimum disclosure level the runtime MUST apply to every output produced from this package. Mirrors the v0.4 ai_disclosure enum. visible_label_required is the absolute minimum for .life — invisible-only is forbidden.",
+      "enum": ["visible_label_required", "watermark_required", "metadata_only_with_consent"]
+    },
+    "forbidden_uses": {
+      "type": "array",
+      "description": "Use cases the runtime MUST refuse to generate, regardless of user prompt. The list SHOULD include impersonation_for_fraud, political_endorsement, and explicit_content where applicable; additional use cases MAY be specified per package. Empty array is permitted but strongly discouraged.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "audit_event_ref": {
+      "type": "string",
+      "description": "Reference to the package_emitted event inside the bundled audit/events.jsonl. Format: audit/events.jsonl#L<n> where <n> is the 1-based line number. The line's prev_hash MUST chain correctly with prior events; the runtime verifies this at load.",
+      "pattern": "^audit/events\\.jsonl#L[1-9][0-9]*$",
+      "examples": ["audit/events.jsonl#L42"]
+    },
+    "encryption": {
+      "type": "object",
+      "description": "Encryption metadata. Required iff mode == \"encrypted\"; MUST be absent when mode == \"pointer\". The package itself never carries unwrapped keys — recipients[].wrapped_key_ref points to the wrapped key blob and the unwrapping key is distributed out-of-band (KMS).",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_distribution", "recipients", "assets"],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "description": "AEAD algorithm. AES-256-GCM is the v0.1 minimum; ChaCha20-Poly1305 is acceptable for resource-constrained runtimes. No non-AEAD modes permitted.",
+          "enum": ["AES-256-GCM", "ChaCha20-Poly1305"]
+        },
+        "key_distribution": {
+          "type": "string",
+          "description": "How recipients obtain unwrapped keys. external_kms = recipients fetch unwrapped keys from a KMS using the wrapped_key_ref blob. v0.1 only specifies external_kms; future revisions MAY add direct_recipient_pubkey and similar.",
+          "enum": ["external_kms"]
+        },
+        "recipients": {
+          "type": "array",
+          "description": "List of authorised key recipients. Each entry binds a key id to the wrapped-key blob inside encrypted/. At least one recipient is required.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kid", "wrapped_key_ref"],
+            "properties": {
+              "kid": {
+                "type": "string",
+                "description": "Key identifier the runtime/KMS uses to look up the unwrapping key.",
+                "minLength": 1
+              },
+              "wrapped_key_ref": {
+                "type": "string",
+                "description": "Path (inside the .life zip, under encrypted/) to the wrapped data-encryption key for this recipient.",
+                "pattern": "^encrypted/.+$"
+              }
+            }
+          }
+        },
+        "assets": {
+          "type": "array",
+          "description": "Map from logical asset → sealed blob inside encrypted/. plaintext_sha256 is the sha256 of the *unencrypted* asset; runtimes verify after decrypt.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["logical_path", "blob_path", "plaintext_sha256", "nonce", "auth_tag"],
+            "properties": {
+              "logical_path": {
+                "type": "string",
+                "description": "Logical path of the asset (e.g. voice/master.wav). Used by the runtime when resolving asset references from manifest.json or pointer descriptors.",
+                "minLength": 1
+              },
+              "blob_path": {
+                "type": "string",
+                "description": "Path inside the .life zip pointing to the AEAD ciphertext blob.",
+                "pattern": "^encrypted/.+$"
+              },
+              "plaintext_sha256": {
+                "type": "string",
+                "description": "sha256 of the *plaintext* asset. Runtime verifies this AFTER decrypt; it is the integrity check on the original bytes.",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "nonce": {
+                "type": "string",
+                "description": "Base64-encoded AEAD nonce. MUST be unique per asset within a package."
+              },
+              "auth_tag": {
+                "type": "string",
+                "description": "Base64-encoded AEAD authentication tag."
+              }
+            }
+          }
+        }
+      }
+    },
+    "contents": {
+      "type": "array",
+      "description": "Inventory of every regular file inside the .life zip *except* life-package.json itself (which is the manifest of the manifests). Runtimes MUST verify each entry's sha256 + size at load. Used for whole-package integrity.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "size"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path inside the zip (forward-slash separated, no leading / and no .. segments).",
+            "pattern": "^(?!/)(?!.*\\.\\.).+$"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "sha256 of the file as stored in the zip (compressed-size after decompression equals size below; sha256 is computed on the decompressed bytes).",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "size": {
+            "type": "integer",
+            "description": "Decompressed size in bytes.",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-form human-readable notes. Not parsed by runtimes.",
+      "maxLength": 8192
+    }
+  },
+  "allOf": [
+    {
+      "description": "encrypted mode requires the encryption block.",
+      "if": {
+        "properties": { "mode": { "const": "encrypted" } },
+        "required": ["mode"]
+      },
+      "then": {
+        "required": ["encryption"]
+      }
+    },
+    {
+      "description": "pointer mode forbids the encryption block.",
+      "if": {
+        "properties": { "mode": { "const": "pointer" } },
+        "required": ["mode"]
+      },
+      "then": {
+        "not": { "required": ["encryption"] }
+      }
+    },
+    {
+      "description": "memorial verification_level requires memorial_executor role.",
+      "if": {
+        "properties": { "verification_level": { "const": "memorial_authorized" } },
+        "required": ["verification_level"]
+      },
+      "then": {
+        "properties": {
+          "issued_by": {
+            "properties": {
+              "role": { "const": "memorial_executor" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "memorial_executor role requires memorial_authorized verification_level (reverse direction of the constraint above; together they enforce the bi-conditional).",
+      "if": {
+        "properties": { "issued_by": { "properties": { "role": { "const": "memorial_executor" } } } },
+        "required": ["issued_by"]
+      },
+      "then": {
+        "properties": {
+          "verification_level": { "const": "memorial_authorized" }
+        }
+      }
+    }
+  ]
+}
