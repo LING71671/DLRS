@@ -1,33 +1,66 @@
 # DLRS 实现与终极标准的差距分析
 
-> 版本：v0.6 release（2026-04 刷新）
-> 上一版基线：v0.5 release，整体完成度 83%
-> 本次基线：post-v0.6 epic #52（PRs #64–#75），整体完成度 **~88%**
+> 版本：v0.7-vision-shift release（2026-04 刷新，epic #79 收尾）
+> 上一版基线：v0.6 release（epic #52），整体完成度 88%
+> 本次基线：post-v0.7-vision-shift epic #79（PRs #88、#89、#91、#92、#93、#94、#95、#97、#98），整体完成度 **~80%**（ULTIMATE 重新定位带来的 scope 扩展 → 分母后移）
 
 ## 📊 执行摘要
 
-本文档对比当前 DLRS 仓库实现与 `DLRS_ULTIMATE.md` 中定义的完整标准，识别已实现、部分实现、尚未实现三档。读者可以把本文当成"运营进度仪表盘"。
+epic #79 把 `DLRS_ULTIMATE.md` 的目标态从"Git-shaped 仓库结构标准"升级为"`.life` 文件格式 + runtime 协议双标准"。本 epic 只交付 specs + schema + example builder，**不**实现 runtime（推迟到 v0.8+）。本文档在保留 v0.6 原本 1–12 节的同时，在 §0 新增两条 ULTIMATE 重定位后的主线维度（`.life` Archive Standard / `.life` Runtime Standard），并在 §13 阐释维度差距。
 
-| 维度 | v0.2.0 基线 | v0.3 | v0.4 | v0.5 | v0.6 (本次) | ULTIMATE 目标 |
-|---|---|---|---|---|---|---|
-| 仓库与目录 | 90% | 95% | 95% | 95% | **95%** | 100%（pointer-first 完成） |
-| 数据采集规范 | 40% | 80% | 85% | 85% | **85%** | 100% |
-| 数据分层与存储 | 50% | 65% | 70% | 75% | **80%**（`derived/memory_atoms/` + `derived/knowledge_graph/` 落地） | 100% |
-| 同意与权益 | 70% | 85% | 88% | 88% | **88%** | 100% |
-| 公开层与注册表 | 30% | 70% | 80% | 80% | **80%** | 100% |
-| 审计与事件 | 40% | 50% | 70% | 70% | **80%**（descriptor→audit 桥接上链 + `derived_asset_emitted` 入 enum） | 100%（含 Ledger / 联邦审计） |
-| 权限模型 (RBAC/ReBAC/ABAC) | 0% | 0% | 0% | 0% | **0%** | 100%（v0.7+ 实施） |
-| 构建管线 (ASR/KG/微调) | 0% | 0% | 0% | 45% | **65%**（6 条离线管线 + descriptor + audit bridge + hosted-API gate + CI；GraphRAG 语义搜索 / 微调 留 v0.7+） | 100% |
-| 运行层 (REST/WS/3D) | 0% | 0% | 0% | 0% | **0%** | 100%（v0.7+ 实施） |
-| AI 标识 / 水印 / C2PA | 5% | 10% | 35% | 40% | **45%**（descriptor 机械化离线证明 + hosted-API gate 机械化"何时允许 online"） | 100%（v1.0 实施） |
-| 跨境 / 法域引擎 | 30% | 50% | 55% | 55% | **55%** | 100% |
-| 工具与自动化 | 40% | 75% | 88% | 94% | **96%**（+ memory_atoms / KG / audit_bridge / hosted_api_policy / memory_graph_demo 测试） | 100% |
+| 维度 | v0.2.0 基线 | v0.3 | v0.4 | v0.5 | v0.6 | v0.7-vision-shift（本次） | ULTIMATE 目标 |
+|---|---|---|---|---|---|---|---|
+| **`.life` Archive Standard**（文件格式） | n/a | n/a | n/a | n/a | n/a | **70%**（specs + schema + pointer-mode builder + 54/54 测试用例） | 100%（life-format v0.3.0：encrypted-mode + signing + transfer） |
+| **`.life` Runtime Standard**（runtime 协议） | n/a | n/a | n/a | n/a | n/a | **30%**（specs only：加载序列 / mount 语义 / runtime 义务 / 终止触发器 / 伦理全部定义；零 runtime 实现） | 100%（life-runtime v0.3：hot-reload 与联邦审计） |
+| 仓库与目录 | 90% | 95% | 95% | 95% | 95% | **95%** | 100%（pointer-first 完成） |
+| 数据采集规范 | 40% | 80% | 85% | 85% | 85% | **85%** | 100% |
+| 数据分层与存储 | 50% | 65% | 70% | 75% | 80% | **80%** | 100% |
+| 同意与权益 | 70% | 85% | 88% | 88% | 88% | **90%**（`.life` issuer 责任链明确、`consent_evidence_ref` 强制、`expires_at` 强制、`forbidden_uses[]` 强制） | 100% |
+| 公开层与注册表 | 30% | 70% | 80% | 80% | 80% | **80%** | 100% |
+| 审计与事件 | 40% | 50% | 70% | 70% | 80% | **82%**（`package_emitted` 入 enum；builder 在源记录审计链上追加事件；life-package.json::audit_event_ref 双向反填） | 100%（含 Ledger / 联邦审计） |
+| 权限模型 (RBAC/ReBAC/ABAC) | 0% | 0% | 0% | 0% | 0% | **0%** | 100%（v0.8+ 实施） |
+| 构建管线 (ASR/KG/微调) | 0% | 0% | 0% | 45% | 65% | **65%** | 100% |
+| 运行层 (REST/WS/3D / `.life` runtime 实现) | 0% | 0% | 0% | 0% | 0% | **0%** | 100%（v0.8+ 实施） |
+| AI 标识 / 水印 / C2PA | 5% | 10% | 35% | 40% | 45% | **50%**（`ai_disclosure` 当 `.life` 强制元字段，`visible_label_required` 是最低线） | 100%（v1.0 实施） |
+| 跨境 / 法域引擎 | 30% | 50% | 55% | 55% | 55% | **55%** | 100% |
+| 工具与自动化 | 40% | 75% | 88% | 94% | 96% | **97%**（+ `tools/build_life_package.py` + `tools/test_minimal_life_package.py` + `tools/test_life_package_schema.py` 54 用例） | 100% |
 
-**总体成熟度**：⭐⭐⭐⭐ **88%**（v0.5 → v0.6 增长 5 pp，主要拉动来自构建管线 45% → 65% 与审计 70% → 80%）
+**总体成熟度**：⭐⭐⭐⭐ **80%**（v0.6 88% 基础上因 ULTIMATE 重定位为"`.life` 双标准"带来的分母扩展而回调；已交付维度本身未退步，`.life` 两条新主线以 specs/schema/example 为形式均走完）
 
-- ✅ **已完成**：v0.2–v0.5 的所有内容，加上 v0.6 的两条新管线（memory_atoms / knowledge_graph）+ memory atom / entity-graph node / entity-graph edge / hosted-api-policy 四份新 schema + descriptor→audit/events.jsonl 机械桥接 + hosted-API opt-in 策略门 + `examples/memory-graph-demo` 端到端示例 + `docs/PIPELINE_GUIDE.md` v0.6 刷新。
-- 🟡 **部分完成**：hosted-API 策略门只落框架，实际 hosted SDK 接入留 v0.7；GraphRAG 真语义搜索 / 微调管线 / talking head 未开工；Web 审核台原型下沉到 v0.7+。
-- ❌ **未实现**：运行层（REST/WS/3D）、RBAC/ReBAC/ABAC、C2PA 实际签发、联邦化注册表同步。
+- ✅ **已完成**：v0.2–v0.6 的所有内容，加上 v0.7-vision-shift epic #79 交付的：`docs/LIFE_FILE_STANDARD.md` + `docs/LIFE_RUNTIME_STANDARD.md` + `schemas/life-package.schema.json`（54/54 sanity 用例）+ `examples/minimal-life-package/` + `tools/build_life_package.py`（life-format v0.1.0 参考 builder）+ `audit-event.schema.json::event_type.enum` 追加 `package_emitted` + README 第一屏重新定位 + ROADMAP 双轨（`.life Archive Standard` + `.life Runtime Standard` 独立 semver）。
+- 🟡 **部分完成**：`.life` runtime 协议只有 specs，零 runtime 实现（v0.8+）；`.life` archive encrypted-mode 与 signing 未实现（life-format v0.2 + v0.3）；hosted-API 策略门只落框架，实际 hosted SDK 接入留 v0.7+；Web 审核台原型下沉到 v0.7+。
+- ❌ **未实现**：`.life` 实际 runtime 实例化（v0.8+）、运行层（REST/WS/3D）、RBAC/ReBAC/ABAC、C2PA 实际签发、联邦化注册表同步。
+
+---
+
+## 0. `.life` 双标准（v0.7-vision-shift 重新定位后的主线维度）
+
+epic #79 把 `DLRS_ULTIMATE.md` 的目标态明确为 `.life` 文件格式 + runtime 协议双标准。这两条主线从本次起独立于仓库 v0.x.y 的 semver（详见 ROADMAP.md "两条主线 · 独立 semver"）。
+
+### 0.1 `.life` Archive Standard（文件格式）
+
+**完成度**：**70%**。
+
+| 功能 | 状态 | 说明 |
+|---|---|---|
+| 权威规范 (`docs/LIFE_FILE_STANDARD.md`) | ✅ | 样貌、双形态、强制目录、强制元字段、伦理边界、authoring workflow 全部记载 |
+| Schema (`schemas/life-package.schema.json`) | ✅ | Draft 2020-12；pointer/encrypted bi-conditional；memorial→executor bi-conditional；sha256 大小写不敏感；54/54 sanity 用例 |
+| pointer-mode 参考 builder | ✅ | `tools/build_life_package.py` + `examples/minimal-life-package/build_life.sh`；确定性 zip（固定 member 顺序 + 1980-01-01 mtime）；e2e 测试跨两次构建字节相同 |
+| encrypted-mode (`mode: "encrypted"`) | ❌ | schema 已就位，v0.1 builder 主动拒绝 `--mode encrypted`；AES-256-GCM + KMS 包裹密钥划入 life-format v0.2 |
+| Issuer signing scheme | ❌ | v0.1 `signature_ref` 是不透明字符串；JOSE / ed25519 选型 + signed package 越过划入 life-format v0.2 |
+| Transfer / re-issuance 语义 | ❌ | 代理变更 / executor 转交不在 v0.1；划入 life-format v0.3 |
+
+### 0.2 `.life` Runtime Standard（runtime 协议）
+
+**完成度**：**30%**（specs only）。
+
+| 功能 | 状态 | 说明 |
+|---|---|---|
+| 权威规范 (`docs/LIFE_RUNTIME_STANDARD.md`) | ✅ | 8 步加载序列、mount 语义、runtime 义务（disclosure label / forbidden_uses / 24h withdrawal poll / expires_at 拒绝继续 / 跨 `.life` 不混合记忆）、终止触发器、禁止行为、一致性条款、伦理边界 |
+| 参考 runtime 实现 | ❌ | **本 epic 不交付 runtime**；推迟到 life-runtime v0.1（仓库 v0.8+） |
+| 一致性测试套件 | ❌ | runtime conformance suite 划入 life-runtime v0.1（随参考实现附带） |
+| Hot-reload / withdrawal 机械 | ❌ | spec 已记载，runtime 实现推迟到 life-runtime v0.2（仓库 v0.9+） |
+| 联邦审计同步 | ❌ | runtime conformance 划入 life-runtime v0.3（v1.0+） |
 
 ---
 
@@ -123,7 +156,7 @@
 
 ## 4. 同意与权益（Consent & Rights）
 
-### ✅ 已实现（88%）
+### ✅ 已实现（90%）
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
@@ -172,7 +205,7 @@
 
 ## 6. 审计与事件（Audit & Events）
 
-### ✅ 已实现（80%）
+### ✅ 已实现（82%）
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
@@ -263,7 +296,7 @@
 
 ## 10. AI 标识、水印、C2PA
 
-### ✅ 已实现（45%）
+### ✅ 已实现（50%）
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
@@ -309,7 +342,7 @@
 
 ## 12. 工具与自动化
 
-### ✅ 已实现（96%）
+### ✅ 已实现（97%）
 
 | 工具 | v0.2 | v0.3 | v0.4 | v0.5 | v0.6 | 描述 |
 |---|---|---|---|---|---|---|
@@ -350,17 +383,20 @@
 
 ---
 
-## 13. 与 ULTIMATE 的主要差距（截至 v0.6）
+## 13. 与 ULTIMATE 的主要差距（截至 v0.7-vision-shift）
 
 | 差距 | 现状 | 影响 | 处置 |
 |---|---|---|---|
-| 构建管线进一步拉高（~65%） | v0.6 交付 6 条离线管线 + descriptor + audit bridge + hosted-API gate + CI；GraphRAG 真语义搜索 / TTS / talking head / 3D / C2PA 未开工 | 已能证明“仓库 → 派生资产 + 双向审计”闭环，运行时能力仍缺 | v0.7 运行时 + 托管 SDK 接入；v0.8+ 多模态生成 |
-| hosted-API 调用未接入实际 SDK | v0.6 只落策略门框架，不写实际 SDK 调用方 | 接入者需手动在 gate 后面补 importlib + 运行时调用 | v0.7，逐管线加 |
-| RBAC / ReBAC / ABAC 缺失 | schema 已有 sensitivity / cross-border / hosted-api-policy 字段，但运行时没人执行 | 公网部署不可控 | v0.7 与 REST API 同步 |
+| `.life` runtime 实例化未实现 | v0.7-vision-shift 交付 specs (`docs/LIFE_RUNTIME_STANDARD.md`) 但零 runtime 代码；spec 已记载 8 步加载序列 / mount 语义 / runtime 义务 / 终止触发器 / 伦理边界 | `.life` 能被构建但不能被加载运行；生态实际可用性仍缺 | life-runtime v0.1（仓库 v0.8+） |
+| `.life` encrypted-mode 未实现 | schema 已就位，v0.1 builder 主动拒绝 `--mode encrypted`；AES-256-GCM + KMS 未接入 | off-grid 全量包不可发布 | life-format v0.2（仓库 v0.8+ KMS 接入后） |
+| `.life` issuer signing scheme 未实现 | v0.1 `signature_ref` 是不透明字符串；JOSE / ed25519 选型未定 | runtime 信任模型依赖带外 PKI / 手动验签 | life-format v0.2 |
+| 构建管线 ~65%（不变） | v0.6 交付 6 条离线管线 + descriptor + audit bridge + hosted-API gate + CI；GraphRAG 真语义搜索 / TTS / talking head / 3D / C2PA 未开工 | 已能证明"仓库 → 派生资产 + 双向审计"闭环 | v0.7+ 运行时 + 托管 SDK 接入；v0.8+ 多模态生成 |
+| hosted-API 调用未接入实际 SDK | v0.6 只落策略门框架，不写实际 SDK 调用方 | 接入者需手动在 gate 后面补 importlib + 运行时调用 | v0.7+，逐管线加 |
+| RBAC / ReBAC / ABAC 缺失 | schema 已有 sensitivity / cross-border / hosted-api-policy 字段，但运行时没人执行 | 公网部署不可控 | v0.8+ 与 `.life` runtime / REST API 同步 |
 | Web 审核台缺失 | 仅静态 HTML | 大规模运营审核效率低 | v0.7+，与 runtime 一同推出 |
-| C2PA / 水印实施缺失 | v0.5 descriptor `online_api_used=false` + v0.6 hosted-API gate 机械化证明离线 / 何时 online；实际水印 / C2PA 凭证未签发 | 输出可信度依赖外部检测器 | v1.0 |
-| 国际化 / 法域引擎缺失 | 文档化，未引擎化 | 合规风险靠 review 兜底 | v0.7（与 RBAC 同步） |
-| descriptor 哈希上链 → 已交付 | ✅ v0.6 audit bridge 把 6 条管线的 descriptor 全部追加为 `derived_asset_emitted` 事件上哈希链；`audit_event_ref` 双向反填 | 追溯性增强；远端审核可以从事件 → descriptor 召回 | 其余联邦化上链留 v1.0 |
+| C2PA / 水印实施缺失 | v0.5 descriptor `online_api_used=false` + v0.6 hosted-API gate 机械化证明离线 / 何时 online；v0.7-vision-shift 把 `ai_disclosure` 列为 `.life` 强制元字段；实际水印 / C2PA 凭证未签发 | 输出可信度依赖外部检测器 | v1.0 |
+| 国际化 / 法域引擎缺失 | 文档化，未引擎化 | 合规风险靠 review 兜底 | v0.7+（与 RBAC 同步） |
+| descriptor 哈希上链 → 已交付（不变） | ✅ v0.6 audit bridge；v0.7-vision-shift 补充 `package_emitted` 事件让 `.life` builder 也上链 | 追溯性增强；远端审核可从事件 → descriptor 与 package 召回 | 其余联邦化上链留 v1.0 |
 | 联邦化注册表缺失 | 仅单仓单 jsonl | 难以多机构协同 | v1.0+ |
 
 ---
@@ -368,13 +404,14 @@
 ## 14. 路线图与本文档的关系
 
 - 本文档 = **现状对照表**，反映**已落地**与**ULTIMATE 目标**之间的距离。
-- `ROADMAP.md` = **时间表**，给出每个版本期望交付什么。
-- `DLRS_ULTIMATE.md` = **目标态**，是本文档对照的基准。
+- `ROADMAP.md` = **时间表**，给出每个版本期望交付什么；v0.7-vision-shift 起定义了两条独立于仓库 v0.x.y 的 semver 主线（`life-format` / `life-runtime`）。
+- `DLRS_ULTIMATE.md` = **目标态**，是本文档对照的基准；v0.7-vision-shift 已升级为"`.life` 文件格式 + runtime 协议双标准"。
+- `docs/LIFE_FILE_STANDARD.md` / `docs/LIFE_RUNTIME_STANDARD.md` = **两份独立权威规范**，本文 §0 是它们的 GAP 折线。
 
-读者如果只想看"今天能用什么"，看本文档第 1–6、12 节即可；如果想看"什么时候能用"，看 `ROADMAP.md`；如果想看"最终长什么样"，看 `DLRS_ULTIMATE.md`。
+读者如果只想看"今天能用什么"，看本文档第 0–6、12 节即可；如果想看"什么时候能用"，看 `ROADMAP.md`；如果想看"最终长什么样"，看 `DLRS_ULTIMATE.md` + `docs/LIFE_FILE_STANDARD.md` + `docs/LIFE_RUNTIME_STANDARD.md`。
 
 ---
 
-**文档版本**：4.0（v0.6 release）
-**上次更新**：2026-04-26（v0.6 epic #52，PRs #64–#75）
-**下次更新建议**：v0.6（GraphRAG / online-enhanced / descriptor 哈希上链上线后）
+**文档版本**：5.0（v0.7-vision-shift release，epic #79 收尾）
+**上次更新**：2026-04-26（v0.7-vision-shift epic #79，PRs #88、#89、#91、#92、#93、#94、#95、#97、#98）
+**下次更新建议**：v0.8（life-format v0.2：encrypted-mode + signing；life-runtime v0.1：参考 runtime 实现上线后）

@@ -4,11 +4,42 @@
 
 ## 📊 快速概览
 
-**当前版本**: v0.6.0
-**总体完成度**: ~88%
-**参考标准**: DLRS_ULTIMATE.md
-**最近发布**: v0.6 epic #52（PRs #64–#75）
-**进行中**: `.life Archive + Runtime Standard` 愿景升级 — epic [#79](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/79)、子 issue #80–#87。本次升级把 ULTIMATE 从"Git-shaped 仓库结构标准"重新定位为"`.life` 文件格式 + runtime 协议双标准"；本 epic 只交付 specs + schema + example builder（**不**含 runtime 实现，运行时实现推迟到 v0.8+）。
+**当前版本**: v0.7-vision-shift（epic [#79](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/79) 收尾）
+**总体完成度**: ~80%（v0.6 88% 基础上因 ULTIMATE 重新定位带来的 scope 扩展而回调；详见下方 "重新定位的影响"）
+**参考标准**: DLRS_ULTIMATE.md（已升级为"`.life` 文件格式 + runtime 协议双标准"）
+**最近发布**: v0.7-vision-shift epic #79（PRs #88、#89、#91、#92、#93、#94、#95、#97、#98 — 8 个子 issue 全部交付）
+**仍在跑**: 无（epic #79 全部 8 个子 issue 已关闭；下一程跨入 v0.8 Encryption + Signing for `.life` Archive，详见 ROADMAP.md）。
+
+### ULTIMATE 重新定位的影响（v0.7-vision-shift）
+
+epic #79 把 DLRS 的目标态从"Git-shaped 仓库结构标准"升级为：
+
+> **DLRS 定义 `.life` 文件格式 + runtime 协议**。`.life` 是经本人或合法授权方许可生成的数字生命档案包；兼容 runtime 加载 `.life` 后在聊天系统、虚拟世界、3D 场景或其他数字环境中生成可交互、可撤回、可审计的 **AI digital life instance**（不是"真人复活"）。
+
+本次 epic **只**交付 specs + schema + example builder，**不**含 runtime 实现：
+
+- `docs/LIFE_FILE_STANDARD.md` — `.life` 档案格式权威规范（life-format v0.1.0）
+- `docs/LIFE_RUNTIME_STANDARD.md` — `.life` 兼容 runtime 协议（life-runtime v0.1）
+- `schemas/life-package.schema.json` — 每个 `.life` 内 `life-package.json` 的契约（Draft 2020-12，54/54 sanity 用例通过）
+- `examples/minimal-life-package/` + `tools/build_life_package.py` — life-format v0.1.0 参考 builder（pointer-mode、确定性 zip、自动 schema 校验、跨两次构建字节稳定）
+- `README.md` / `README.en.md` 第一屏重新定位
+- `ROADMAP.md` 新增两条独立 semver 主线（`.life Archive Standard` 与 `.life Runtime Standard`，独立于本仓库的 v0.x.y）
+- `audit-event.schema.json::event_type.enum` 新增 `package_emitted`（向后兼容追加）
+
+**总体完成度回调说明**：v0.6 报告的 88% 是相对"仓库结构 + 离线管线 + 派生资产"为目标态计算的。新 ULTIMATE 把 ".life runtime 实例化" 列为关键交付，本 epic 不实现 runtime（推迟到 v0.8+）。因此把目标线推远的同时已交付维度并不变化，整体百分比按新分母回调到 ~80%。详细分维度见 `docs/GAP_ANALYSIS.md` 第 0 节（v0.7 重新定位维度）和 §1–§14。
+
+### v0.6 → v0.7-vision-shift 主要增量
+
+- **`.life` Archive Standard 落地**（specs + schema + example builder）：
+  - `docs/LIFE_FILE_STANDARD.md`：定义 `.life` zip 内的强制目录（manifest/consent/policy/audit/derived）+ 可选目录（pointers/encrypted）+ 双形态（pointer / encrypted）+ 强制元字段（mode、record_id、issued_by、consent_evidence_ref、verification_level、withdrawal_endpoint、runtime_compatibility、ai_disclosure、forbidden_uses、audit_event_ref、contents、expires_at）+ 伦理边界（不是"真人复活"，必须可标识 / 可撤回 / 可审计）。
+  - `schemas/life-package.schema.json`：54 个 sanity 用例覆盖 happy paths + 反例（pointer/encrypted bi-conditional、memorial→executor bi-conditional、sha256 大小写不敏感、forbidden_uses 必须包含 fraud/political/explicit、`expires_at > created_at`、contents 路径不允许 `..` 或绝对路径）。
+  - `examples/minimal-life-package/` + `tools/build_life_package.py`：6 步实现 §5 authoring workflow（stage / append `package_emitted` audit event / 计算 sha256 inventory / 写 life-package.json / 校验 / 确定性 zip）；e2e 测试两次确定性构建字节相同。
+- **`.life` Runtime Standard 落地**（specs only，runtime 实现推迟 v0.8+）：
+  - `docs/LIFE_RUNTIME_STANDARD.md`：定义 8 步加载序列（验证 schema → 时间窗 → 完整性 → 审计链 → consent 解析 → 撤回端点轮询 → mount → 标识/撤回/审计就位）+ runtime 强制义务（disclosure label、forbidden_uses[] 拒绝、≥ 24h withdrawal 轮询、expires_at 拒绝继续、跨 `.life` 不混合记忆）+ 终止触发器 + 禁止行为 + 一致性条款 + 伦理边界。
+- **README 第一屏重新定位**：DLRS = `.life` 双标准（档案格式 + runtime 协议）；"What is DLRS?" 拆为 archive format / runtime protocol / supporting infrastructure 三段；"What is NOT" 与 "What IS" 显式 `.life` 框定（不是真人复活、必须可撤回 / 可审计 / 始终标识为 AI 实例）。
+- **ROADMAP 双轨**：新增 "Track A — `.life` Archive Standard"（life-format v0.1.0 / v0.2.0 / v0.3.0）和 "Track B — `.life` Runtime Standard"（life-runtime v0.1 / v0.2 / v0.3）两条独立 semver 主线，独立于本仓库 v0.x.y；明确 ".life Archive" 是文件格式契约，".life Runtime" 是协议契约，两者互相独立但联合定义 DLRS 终极交付。
+- **审计事件 enum 追加**：`schemas/audit-event.schema.json::event_type.enum` 新增 `package_emitted`（life-format v0.1.0 builder 在源记录 `audit/events.jsonl` 上链使用），仿 v0.6 `derived_asset_emitted` 模式向后兼容追加。
+- **治理硬规则**（v0.5 起永久生效）：每 sub-issue 一个 PR；PR body `Closes #N` 单独成行；epic #79 8/8 严格遵守，post-merge bug 走单独 issue→PR（#90→#91、#96→#97），不 amend 已合 PR。
 
 ### v0.5 → v0.6 主要增量
 
@@ -115,18 +146,20 @@
 
 ---
 
-## 💡 关键建议（v0.6 视角）
+## 💡 关键建议（v0.7-vision-shift 视角）
 
-1. 保持"仓库优先 + pointer-first"。即使构建管线已落地 6 条 + audit bridge + hosted-API gate，标准文档与 schema 仍是 DLRS 的根基；管线只读 manifest / 写 `derived/`，不反向修改根 schema。
-2. **v0.6 memory + graph + audit + opt-in policy 已交付**：六条管线 + descriptor schema + audit bridge + hosted-API gate 全部 merged；CI 在没有任何 hosted API key 的情况下全绿；`tools/test_pipelines.py` 9/9，`batch_validate` 16/16。
-3. **v0.7 = runtime + RBAC**：在 v0.6 基础上叠 REST/WS API + LLM 推理 + RBAC/ReBAC/ABAC，把 schema 字段（sensitivity / cross-border / legal_hold / hosted-api-policy）真正接入运行时；避免"v0.7 单纯 REST、v0.8 才接入授权"的两次 breaking change。
-4. **hosted-API**：v0.6 已经把策略门做硬（per-record opt-in + provider/pipeline 白名单 + 时间窗 + 静态 import ban 不放松 + 必须 importlib 懒加载在 gate 之内），v0.7 起逐条管线接入实际 SDK 时严格走这条路径，不要绕开。
-5. **AI 标识**：v0.4 把声明做硬，v0.5 把 descriptor `online_api_used=false` 做成机械化离线证明，v0.6 把 audit bridge 把每条 derived 上链 + hosted gate 把"何时允许 online"机械化；v1.0 把水印 / C2PA 实施做硬。中间版本不要回退已收紧的 schema 或静态 import ban。
-6. 所有破坏性 schema 调整必须先发 issue + 走 v0.X.0 minor，不在 patch 版本里改 enum；`audit-event.schema.json::event_type.enum` 在 v0.6 增了 1 条值（`derived_asset_emitted`）即遵守此规则。
-7. **治理硬规则**（v0.5 起永久生效，v0.6 epic #52 11/11 遵守）：每个子 issue 一个 PR；PR body 必须以 `Closes #N` 单独成行显式列出；任何引入托管 API import 的 commit 在 CI 阶段即被 `tools/validate_pipelines.py` 拒绝。
+1. **`.life` 是新的核心交付**。仓库结构 / 管线 / 派生资产是"如何造"，`.life` 档案 + runtime 协议是"对外的交付物"。v0.7+ 任何新管线 / 新字段都先问"会不会进 `.life` 包？runtime 加载时怎么处理？"，而不是只问"放哪个目录"。
+2. **specs 与 implementation 分轨**。`life-format` 与 `life-runtime` 各自独立 semver（见 ROADMAP.md），独立于本仓库的 v0.x.y。修 spec → 走 life-format / life-runtime semver；修 builder / 校验工具 → 走仓库 v0.x.y。两条版本号不能耦合。
+3. **runtime 推迟到 v0.8+ 是有意识的选择**。先把 specs / schema / example builder 钉死，再写 runtime；避免 runtime 实现反向污染 spec（典型反模式："既然 runtime 已经这么做了，就不修 spec 了"）。
+4. **encrypted-mode `.life` 推迟到 life-format v0.2 + KMS 接入**。v0.1 builder 主动拒绝 `--mode encrypted` 不是缺陷，是有意识的 staging 策略；schema 里两个 mode 都已就位，等 KMS 落地直接接入即可。
+5. **签名机制推迟到 life-format v0.2**。v0.1 `signature_ref` 是不透明字符串，v0.2 引入实际签名算法（候选：JOSE / ed25519）。在 v0.1 阶段任何"我自己实现一个签名格式"的尝试都应被劝退；签发链的语义影响 runtime 信任模型，不能急。
+6. **保持"离线优先 + pointer-first"不变**。v0.5/v0.6 的硬规则（descriptor `online_api_used=false`、`tools/validate_pipelines.py` 静态 import ban、hosted-API gate）在 v0.7-vision-shift 全部继承不放松；`.life` pointer mode 默认是隐私优先的形态。
+7. **AI 标识**：v0.6 已机械化"何时允许 online"，v0.7-vision-shift 进一步把 `ai_disclosure` 列为 `.life` 强制元字段（`visible_label_required` 是最低线）；runtime 实现时"输出 token 不带可见标识 → block" 必须做硬。中间版本不要回退已收紧的 schema 或静态 import ban。
+8. **schema enum 追加规则**：`audit-event.schema.json::event_type.enum` 在 v0.7-vision-shift 又追加了 1 条 `package_emitted`（v0.6 已加 `derived_asset_emitted`），仍遵守"破坏性 schema 调整走 minor、不在 patch 版本里改 enum"。
+9. **治理硬规则**（v0.5 起永久生效，v0.6 epic #52 11/11 遵守，v0.7-vision-shift epic #79 8/8 遵守）：每个子 issue 一个 PR；PR body 必须以 `Closes #N` 单独成行显式列出；post-merge bug 走单独 issue→PR（#77→#78、#90→#91、#96→#97），永远不 amend / 不 force-push 已合 PR。
 
 ---
 
-**文档版本**: 4.0（v0.6 release）
+**文档版本**: 5.0（v0.7-vision-shift release，epic #79 收尾）
 **最后更新**: 2026-04-26
-**参考**: DLRS_ULTIMATE.md, docs/GAP_ANALYSIS.md, ROADMAP.md
+**参考**: DLRS_ULTIMATE.md（已升级为 `.life` 双标准），docs/GAP_ANALYSIS.md, docs/LIFE_FILE_STANDARD.md, docs/LIFE_RUNTIME_STANDARD.md, ROADMAP.md
