@@ -212,7 +212,7 @@ Notes:
 ```json
 {
   "tier": {
-    "score": 55,
+    "score": 54,
     "level": "VII",
     "name": "Main Sequence",
     "glyph": "★",
@@ -244,11 +244,10 @@ sum_of_weights                     = 8
 score = round(4.28 × 100 / 8)      = round(53.5) = 54   → tier VII (51–60)
 ```
 
-The example block ships `score: 55` (one above the algebra; integer
-rounding can shift by ±1 between builder versions for borderline cases —
-that's why the schema enforces the binding via inclusive ranges with at
-least 8 points of room). Both `54` and `55` map to **VII** (Main Sequence),
-so the published block is consistent with the dimensions.
+The example block ships `score: 54`, exactly matching the formula's
+output, and `level: "VII"` (range 51–60). Verifiers MAY recompute and
+MUST reject any block where the recomputed score / level disagrees
+with the persisted values.
 
 ## 9. What this spec does NOT cover
 
