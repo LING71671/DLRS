@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 🔒 Security Issue
+    url: https://github.com/Digital-Life-Repository-Standard/DLRS/security
+    about: Report security vulnerabilities privately
+  - name: 📖 Documentation
+    url: https://github.com/Digital-Life-Repository-Standard/DLRS/tree/master/docs
+    about: Read the documentation
