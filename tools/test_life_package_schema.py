@@ -276,11 +276,21 @@ def main() -> int:
     bad_blob_path["encryption"]["assets"][0]["blob_path"] = "blobs/x.bin"
     cases.append(("assets[].blob_path not under encrypted/", bad_blob_path, False))
 
-    # --- memorial conditional -------------------------------------------
+    # --- memorial conditional (bi-directional) --------------------------
     memorial_wrong_role = _good_pointer_pkg()
     memorial_wrong_role["verification_level"] = "memorial_authorized"
     memorial_wrong_role["issued_by"]["role"] = "self"
     cases.append(("memorial verification but role=self", memorial_wrong_role, False))
+
+    executor_wrong_verification = _good_pointer_pkg()
+    executor_wrong_verification["issued_by"]["role"] = "memorial_executor"
+    executor_wrong_verification["verification_level"] = "self_attested"
+    cases.append(("memorial_executor role but verification_level=self_attested", executor_wrong_verification, False))
+
+    executor_wrong_verification_3p = _good_pointer_pkg()
+    executor_wrong_verification_3p["issued_by"]["role"] = "memorial_executor"
+    executor_wrong_verification_3p["verification_level"] = "third_party_verified"
+    cases.append(("memorial_executor role but verification_level=third_party_verified", executor_wrong_verification_3p, False))
 
     # --- additionalProperties guard -------------------------------------
     extra = _good_pointer_pkg()

@@ -253,7 +253,7 @@
       }
     },
     {
-      "description": "memorial verification_level requires memorial_executor role and vice versa.",
+      "description": "memorial verification_level requires memorial_executor role.",
       "if": {
         "properties": { "verification_level": { "const": "memorial_authorized" } },
         "required": ["verification_level"]
@@ -265,6 +265,18 @@
               "role": { "const": "memorial_executor" }
             }
           }
+        }
+      }
+    },
+    {
+      "description": "memorial_executor role requires memorial_authorized verification_level (reverse direction of the constraint above; together they enforce the bi-conditional).",
+      "if": {
+        "properties": { "issued_by": { "properties": { "role": { "const": "memorial_executor" } } } },
+        "required": ["issued_by"]
+      },
+      "then": {
+        "properties": {
+          "verification_level": { "const": "memorial_authorized" }
         }
       }
     }
