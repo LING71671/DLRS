@@ -1,0 +1,100 @@
+{
+  "schema_version": "0.3.0",
+  "record_id": "dlrs_EXAMPLE_minor_protected",
+  "display_slug": "minor-protected",
+  "visibility": "private",
+  "subject": {
+    "type": "self",
+    "display_name": "minor-protected (fictional)",
+    "legal_name": "PRIVATE",
+    "locale": "zh-CN",
+    "residency_region": "CN",
+    "is_minor": true,
+    "status": "living"
+  },
+  "rights": {
+    "uploader_role": "guardian",
+    "rights_basis": [
+      "consent",
+      "guardian_consent"
+    ],
+    "evidence_refs": [
+      "consent/consent_statement.md",
+      "consent/consent_video.pointer.json",
+      "consent/guardian_consent.pointer.json"
+    ],
+    "allow_public_listing": false,
+    "allow_commercial_use": false,
+    "allow_model_finetune": false,
+    "allow_voice_clone": false,
+    "allow_avatar_clone": false,
+    "allow_research_use": false,
+    "cross_border_transfer_basis": "none",
+    "cross_border_transfer_status": "not_needed"
+  },
+  "consent": {
+    "captured_at": "2026-04-26T09:00:00+08:00",
+    "withdrawal_endpoint": "mailto:privacy@dlrs.standard",
+    "separate_biometric_consent": true,
+    "guardian_consent": true,
+    "consent_version": "0.3.0",
+    "allowed_scopes": [
+      "storage",
+      "structured_processing"
+    ]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "a001",
+      "type": "voice_sample",
+      "format": "wav",
+      "storage_uri": "obj://cn-shanghai/audio/minor/voice_master_zh-CN_48k16b_take01.wav",
+      "checksum": "sha256:example_minor_voice_hash",
+      "region": "CN",
+      "sensitivity": "S3_BIOMETRIC",
+      "contains_sensitive_data": true
+    },
+    {
+      "artifact_id": "a002",
+      "type": "public_profile",
+      "format": "json",
+      "storage_uri": "repo://public_profile.json",
+      "checksum": "sha256:example_minor_public_profile_hash",
+      "region": "CN",
+      "sensitivity": "S0_PUBLIC",
+      "contains_sensitive_data": false
+    }
+  ],
+  "deletion_policy": {
+    "allow_delete": true,
+    "allow_export": true,
+    "withdrawal_effect": "freeze_runtime_then_delete",
+    "legal_hold": false
+  },
+  "inheritance_policy": {
+    "policy_ref": "profile/inheritance_policy.json",
+    "default_action_on_death": "freeze",
+    "executor_contact_ref": null
+  },
+  "security": {
+    "primary_region": "CN",
+    "replication_regions": [],
+    "encryption_at_rest": true,
+    "kms_ref": "kms://example/key-placeholder",
+    "watermark_policy": "visible_and_invisible",
+    "c2pa_enabled": false
+  },
+  "review": {
+    "status": "approved_private",
+    "verified_consent_badge": true,
+    "public_data_only_badge": false,
+    "risk_level": "high",
+    "reviewer_notes_ref": null
+  },
+  "audit": {
+    "created_at": "2026-04-26T09:10:00+08:00",
+    "last_modified_at": "2026-04-26T09:10:00+08:00",
+    "change_log_hash": "sha256:example_minor_manifest_log_hash",
+    "events_log_ref": "audit/events.jsonl"
+  }
+}

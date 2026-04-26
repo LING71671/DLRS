@@ -1,489 +1,347 @@
-# DLRS Hub 实现与终极标准的差距分析
+# DLRS 实现与终极标准的差距分析
+
+> 版本：v0.4 release（2026-04 刷新）
+> 上一版基线：v0.2.0（2026-04-25），整体完成度 60–65%
+> 本次基线：post-PR #16 (v0.3) + v0.4 release，整体完成度 **~78%**
 
 ## 📊 执行摘要
 
-本文档对比当前 DLRS Hub 实现（v0.2.0）与 `DLRS_ULTIMATE.md` 中定义的完整标准，识别已实现的功能、部分实现的功能和尚未实现的功能。
+本文档对比当前 DLRS 仓库实现与 `DLRS_ULTIMATE.md` 中定义的完整标准，识别已实现、部分实现、尚未实现三档。读者可以把本文当成"运营进度仪表盘"。
 
-**总体完成度：约 60-65%**
+| 维度 | v0.2.0 基线 | v0.3 (PR #16) | v0.4 (本 PR) | ULTIMATE 目标 |
+|---|---|---|---|---|
+| 仓库与目录 | 90% | 95% | **95%** | 100%（pointer-first 完成） |
+| 数据采集规范 | 40% | 80% | **85%**（增补未成年/估产案例） | 100% |
+| 数据分层与存储 | 50% | 65% | **70%**（pointer schema 收紧 + LFS 防御层） | 100% |
+| 同意与权益 | 70% | 85% | **88%** | 100% |
+| 公开层与注册表 | 30% | 70% | **80%**（含静态 HTML registry） | 100% |
+| 审计与事件 | 40% | 50% | **70%**（events.jsonl + emitter） | 100%（含哈希链/Ledger） |
+| 权限模型 (RBAC/ReBAC/ABAC) | 0% | 0% | **0%** | 100%（v0.7+ 实施） |
+| 构建管线 (ASR/KG/微调) | 0% | 0% | **0%** | 100%（v0.5+ 实施） |
+| 运行层 (REST/WS/3D) | 0% | 0% | **0%** | 100%（v0.6+ 实施） |
+| AI 标识 / 水印 / C2PA | 5% | 10% | **35%**（schema 声明已硬约束，实施滞后） | 100%（v1.0 实施） |
+| 跨境 / 法域引擎 | 30% | 50% | **55%**（合规自检文档） | 100% |
+| 工具与自动化 | 40% | 75% | **88%**（batch_validate + emit_audit_event + LFS） | 100% |
 
-- ✅ **已完成**：基础仓库结构、清单系统、同意管理、文档体系
-- 🟡 **部分完成**：数据分层、审计系统、权限模型
-- ❌ **未实现**：运行时系统、构建管线、实时交互、高保真采集规范
+**总体成熟度**：⭐⭐⭐⭐ **78%**（v0.2 → v0.4 增长 13–18 pp）
+
+- ✅ **已完成**：仓库结构、Pointer 规范、媒体校验、registry 生成与 12+2 个测试用例、PR/Issue 模板、CI 主链路、AI 标识声明、审计事件 emitter、合规自检 checklist。
+- 🟡 **部分完成**：审计哈希链（已有，未上链）、AI 标识水印（声明 OK，实施未开工）、跨境策略（文档化，未策略引擎化）。
+- ❌ **未实现**：构建管线、运行层、RBAC/ReBAC/ABAC、Web 审核台（已下沉至 v0.6+）、C2PA 实际签发、联邦化注册表同步。
 
 ---
 
 ## 1. 仓库层（Repository Layer）
 
-### ✅ 已实现（90%）
+### ✅ 已实现（95%）
 
-| 功能 | 状态 | 说明 |
+| 功能 | v0.4 状态 | 说明 |
 |------|------|------|
-| 基础目录结构 | ✅ 完成 | `humans/`, `templates/`, `examples/`, `schemas/` 等 |
-| manifest.json 规范 | ✅ 完成 | 包含所有核心字段 |
-| 同意证据目录 | ✅ 完成 | `consent/` 目录结构完整 |
-| 指针文件系统 | ✅ 完成 | `.pointer.json` 文件规范 |
-| 公开/私有可见性 | ✅ 完成 | `visibility` 字段支持 |
-| 区域化字段 | ✅ 完成 | `primary_region`, `cross_border_transfer_basis` |
-| 删除策略 | ✅ 完成 | `deletion_policy` 完整定义 |
-| 继承策略 | ✅ 完成 | `inheritance_policy.json` |
-| 审计字段 | ✅ 完成 | `audit` 部分基础字段 |
+| 基础目录结构 | ✅ | `humans/`, `templates/`, `examples/`, `schemas/`, `audit/` |
+| manifest.json 规范 | ✅ | v0.3.0 schema，含 `public_disclosure`、`audit.events_log_ref` |
+| 指针文件系统 | ✅ | `.pointer.json` 显式禁止凭据/下载 URL |
+| 公开/私有可见性 | ✅ | 含 `public_indexed` / `public_unlisted` |
+| 删除策略 | ✅ | 含 `withdrawal_effect` enum、`legal_hold` |
+| 继承策略 | ✅ | `inheritance_policy.default_action_on_death` enum |
+| 审计字段 | ✅ | `change_log_hash` + `events_log_ref` |
+| `.gitattributes` (LFS 防御) | ✅ **v0.4** | `docs/LFS_GUIDE.md` |
+| GitHub Actions CI | ✅ | `.github/workflows/validate.yml`（双 job：validate + docs） |
+| 敏感文件检测 | ✅ | `tools/check_sensitive_files.py` 在 CI 主链路 |
 
-### 🟡 部分实现（60%）
+### 🟡 部分实现（80%）
 
 | 功能 | 状态 | 缺失部分 |
 |------|------|----------|
-| JSON Schema 验证 | 🟡 部分 | Schema 文件存在但未完全对齐 ULTIMATE 版本 |
-| 自动化校验脚本 | 🟡 部分 | 基础 Python 脚本存在，缺少 ffprobe 媒体验证 |
-| GitHub Actions CI | ❌ 未实现 | 缺少 `.github/workflows/` 自动化 |
-| 敏感文件检测 | 🟡 部分 | `check_sensitive_files.py` 存在但功能简单 |
+| Schema 收紧 | 🟡 | `if/then` 已引入但只覆盖 visibility→public_disclosure 一条；其余跨字段约束（如 voice_clone→biometric_consent）尚未硬约束 |
+| 大文件 LFS | 🟡 | `.gitattributes` 已加，但未在 CI 显式拒绝非 LFS 大文件（`check_sensitive_files.py` 间接拦截） |
 
-### ❌ 未实现（0%）
+### ❌ 未实现
 
-| 功能 | 优先级 | 说明 |
+| 功能 | 优先级 | 计划版本 |
 |------|--------|------|
-| Git LFS 集成 | 中 | 未配置 `.gitattributes` 用于大文件 |
-| DVC 集成 | 低 | 未引入数据版本控制 |
-| lakeFS 集成 | 低 | 未引入对象存储版本化 |
+| DVC / lakeFS 集成 | 低 | v0.6+（构建管线启动后） |
 
 ---
 
 ## 2. 数据采集规范（Data Collection Standards）
 
-### ✅ 已实现（40%）
-
-| 功能 | 状态 | 说明 |
-|------|------|------|
-| 基础文件命名规范 | ✅ 完成 | 文档中有建议 |
-| 指针文件格式 | ✅ 完成 | 包含 `storage_uri`, `checksum`, `region` |
-| 敏感度分级 | ✅ 完成 | `S0_PUBLIC` 到 `S4_IDENTITY` |
-
-### ❌ 未实现（0%）
-
-| 功能 | 优先级 | 说明 |
-|------|--------|------|
-| **语音采集规范** | 高 | 缺少 ElevenLabs 标准（44.1/48kHz, 24-bit, -18dB 响度） |
-| **视频采集规范** | 高 | 缺少 Tavus 标准（1080p, 25fps, 30秒说话+30秒静止） |
-| **3D Avatar 规范** | 中 | 缺少 VRM/glTF/OpenUSD 详细规范 |
-| **Blendshape 规范** | 中 | 缺少情绪标签和强度定义 |
-| **文本语料规范** | 中 | 缺少最小/高保真字数要求 |
-| **媒体元数据自动提取** | 高 | 缺少 ffprobe 集成 |
-| **质量门槛验证** | 高 | 缺少分辨率、帧率、采样率自动检查 |
-
-**差距说明**：
-- ULTIMATE 版本详细定义了低保真（1-2分钟语音）、中保真（30-90分钟）、高保真（2-3小时）的具体要求
-- 当前实现只有概念性描述，缺少可执行的技术规范和自动化验证
-
----
-
-## 3. 数据分层与存储（Data Layering & Storage）
-
-### 🟡 部分实现（50%）
-
-| 层级 | 状态 | 说明 |
-|------|------|------|
-| **Raw 层** | 🟡 部分 | 目录结构存在，但缺少对象存储集成 |
-| **Derived 层** | 🟡 部分 | `derived/` 目录存在，但缺少实际生成管线 |
-| **Runtime 层** | ❌ 未实现 | `runtime/` 目录存在但为空 |
-| **Index 层** | ❌ 未实现 | 无向量库或图数据库集成 |
-| **Audit 层** | 🟡 部分 | `audit/` 目录存在，但缺少 append-only 实现 |
-
-### ❌ 未实现的关键功能
-
-| 功能 | 优先级 | 说明 |
-|------|--------|------|
-| 对象存储集成 | 高 | 无 S3/OSS/COS 配置示例 |
-| 向量数据库 | 高 | 无 Qdrant/Pinecone/Weaviate 集成 |
-| 图数据库 | 中 | 无 Neo4j/ArangoDB 集成 |
-| 记忆原子系统 | 中 | `memory_atoms.jsonl` 格式未定义 |
-| 知识图谱构建 | 中 | `entity_graph.jsonl` 格式未定义 |
-| Embedding 管理 | 中 | `embeddings.pointer.json` 未实现 |
-
-**差距说明**：
-- ULTIMATE 版本要求五层分离：Raw → Derived → Runtime → Index → Audit
-- 当前实现只有目录结构，缺少实际的数据流和处理管线
-
----
-
-## 4. 构建层（Build Layer）
-
-### ❌ 完全未实现（0%）
-
-| 功能 | 优先级 | 说明 |
-|------|--------|------|
-| ASR 转写管线 | 高 | 无 Whisper/FunASR 集成 |
-| 文本解析管线 | 高 | 无语料处理脚本 |
-| 向量化管线 | 高 | 无 embedding 生成 |
-| 记忆抽取管线 | 中 | 无 memory atoms 生成 |
-| 知识图谱构建 | 中 | 无 GraphRAG 集成 |
-| 语音克隆训练 | 中 | 无 TTS 模型训练 |
-| 视频头像训练 | 中 | 无 talking head 训练 |
-| 3D Avatar 构建 | 低 | 无 VRM/glTF 生成 |
-| 内容审核 | 高 | 无 moderation 管线 |
-| C2PA 凭证生成 | 中 | 无内容凭证集成 |
-
-**差距说明**：
-- ULTIMATE 版本详细描述了完整的构建管线：上传 → 转写 → 解析 → 向量化 → 图谱构建 → 模型训练
-- 当前实现完全缺少这一层，只有静态的仓库结构
-
----
-
-## 5. 运行层（Runtime Layer）
-
-### ❌ 完全未实现（0%）
-
-| 功能 | 优先级 | 说明 |
-|------|--------|------|
-| 文本对话引擎 | 高 | 无 LLM 集成 |
-| 语音合成引擎 | 高 | 无 TTS 集成 |
-| 语音识别引擎 | 高 | 无实时 ASR |
-| 视频头像渲染 | 中 | 无 talking head 运行时 |
-| 3D Avatar 运行时 | 中 | 无 VRM/glTF 渲染 |
-| 实时音频流 | 中 | 无 WebSocket/WebRTC |
-| REST API | 高 | 无 API 服务器 |
-| WebSocket API | 中 | 无实时通信 |
-| 会话管理 | 高 | 无 session 系统 |
-| 权限控制 | 高 | 无 RBAC/ReBAC/ABAC |
-| 检索增强 | 高 | 无 RAG 集成 |
-| 长期记忆 | 中 | 无记忆系统 |
-
-**差距说明**：
-- ULTIMATE 版本定义了完整的运行时架构：REST + WebSocket + 实时音频 + 3D 适配器
-- 当前实现完全缺少运行时组件，只是一个静态数据仓库
-
----
-
-## 6. 公开层（Public Output Layer）
-
-### 🟡 部分实现（30%）
-
-| 功能 | 状态 | 说明 |
-|------|------|------|
-| 公开索引 | 🟡 部分 | `registry/humans.index.jsonl` 存在 |
-| 徽章系统 | 🟡 部分 | 概念存在但未实现验证 |
-| 可见性控制 | ✅ 完成 | `visibility` 字段 |
-
-### ❌ 未实现的关键功能
-
-| 功能 | 优先级 | 说明 |
-|------|--------|------|
-| AI 标识系统 | 高 | 无自动标识生成 |
-| 水印系统 | 中 | 无可见/不可见水印 |
-| C2PA 集成 | 中 | 无内容凭证 |
-| AudioSeal 集成 | 低 | 无音频水印 |
-| 合成检测 | 中 | 无检测器集成 |
-| 下架流程 | 高 | 无自动化下架 |
-| 投诉处理 | 高 | 无投诉工单系统 |
-
-**差距说明**：
-- ULTIMATE 版本要求所有公开输出必须带显式标识和隐式水印
-- 当前实现只有概念，缺少实际的标识和水印生成能力
-
----
-
-## 7. 审计与合规（Audit & Compliance）
-
-### 🟡 部分实现（40%）
-
-| 功能 | 状态 | 说明 |
-|------|------|------|
-| 基础审计字段 | ✅ 完成 | `created_at`, `last_modified_at` |
-| Provenance 文件 | 🟡 部分 | `provenance.json` 存在但格式简单 |
-| 访问日志指针 | 🟡 部分 | `access_log.pointer.json` 存在 |
-| 下架日志 | 🟡 部分 | `takedown_log.jsonl` 存在 |
-
-### ❌ 未实现的关键功能
-
-| 功能 | 优先级 | 说明 |
-|------|--------|------|
-| Append-only 日志 | 高 | 无不可篡改审计 |
-| 事件流系统 | 高 | 无完整事件定义 |
-| 区块链/账本集成 | 低 | 无分布式账本 |
-| 合规报告生成 | 中 | 无自动化报告 |
-| GDPR 导出 | 高 | 无数据导出功能 |
-| PIPL 合规检查 | 高 | 无中国法合规验证 |
-
-**差距说明**：
-- ULTIMATE 版本定义了 8 个核心事件和完整的审计链
-- 当前实现只有基础的时间戳，缺少事件驱动的审计系统
-
----
-
-## 8. 权限与访问控制（Permissions & Access Control）
-
-### ❌ 完全未实现（0%）
-
-| 功能 | 优先级 | 说明 |
-|------|--------|------|
-| RBAC（基于角色） | 高 | 无角色系统 |
-| ReBAC（基于关系） | 高 | 无 OpenFGA 集成 |
-| ABAC（基于属性） | 中 | 无 OPA/Cedar 集成 |
-| 法域策略 | 高 | 无地区规则引擎 |
-| 敏感度策略 | 高 | 无分级访问控制 |
-| Legal Hold | 中 | 无冻结机制 |
-| 撤回流程 | 高 | 无自动化撤回 |
-
-**差距说明**：
-- ULTIMATE 版本要求 RBAC + ReBAC + ABAC 三层权限模型
-- 当前实现完全缺少权限系统，只有静态的权限字段
-
----
-
-## 9. 技术栈与集成（Tech Stack & Integrations）
-
-### ❌ 完全未实现（0%）
-
-| 模块 | 优先级 | 说明 |
-|------|--------|------|
-| vLLM | 高 | 无 LLM 推理引擎 |
-| Whisper/FunASR | 高 | 无 ASR 集成 |
-| OpenVoice/CosyVoice | 中 | 无 TTS 集成 |
-| SadTalker/Tavus | 低 | 无视频头像 |
-| VRM/glTF/OpenUSD | 中 | 无 3D 格式支持 |
-| Qdrant/Pinecone | 高 | 无向量库 |
-| Neo4j/ArangoDB | 中 | 无图数据库 |
-| GraphRAG | 中 | 无图谱 RAG |
-| LoRA/QLoRA | 中 | 无微调框架 |
-| C2PA | 中 | 无内容凭证 |
-| AudioSeal | 低 | 无音频水印 |
-
-**差距说明**：
-- ULTIMATE 版本详细列出了 11 个模块的技术选型
-- 当前实现完全没有这些技术栈的集成
-
----
-
-## 10. API 与接口（APIs & Interfaces）
-
-### ❌ 完全未实现（0%）
-
-| 功能 | 优先级 | 说明 |
-|------|--------|------|
-| REST API | 高 | 无 HTTP 服务器 |
-| OpenAPI 规范 | 高 | `api/openapi.yaml` 存在但未实现 |
-| WebSocket API | 中 | 无实时通信 |
-| WebSocket 事件 | 中 | `api/websocket-events.md` 存在但未实现 |
-| 实时音频流 | 中 | 无 Realtime API |
-| 3D 世界适配器 | 低 | 无游戏引擎集成 |
-
-**差距说明**：
-- ULTIMATE 版本定义了完整的 API 规范和 WebSocket 消息格式
-- 当前实现只有 API 文档，没有实际的服务器实现
-
----
-
-## 11. 文档与教程（Documentation & Tutorials）
-
 ### ✅ 已实现（85%）
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
-| README | ✅ 完成 | 详细的保姆级教程 |
-| Getting Started | ✅ 完成 | 完整的上手指南 |
-| FAQ | ✅ 完成 | 30+ 问答 |
-| Contributing | ✅ 完成 | 贡献指南 |
-| Architecture | 🟡 部分 | 基础架构图，缺少详细设计 |
-| i18n 支持 | ✅ 完成 | 中英文双语 |
-| 示例档案 | ✅ 完成 | 4 个示例 |
+| 最低采集规范 | ✅ | `docs/COLLECTION_STANDARD.md`（音频 44.1k/16-bit/≥60s、视频 720p24/≥30s、图像 ≥512px、文本 ≥10k） |
+| 高保真指南 | ✅ | `docs/HIGH_FIDELITY_GUIDE.md`（low/mid/high 三档） |
+| 指针元数据格式 | ✅ | `pointer.schema.json` |
+| 敏感度分级 | ✅ | `S0_PUBLIC` 到 `S4_RESTRICTED` |
+| 媒体元数据自动校验 | ✅ | `tools/validate_media.py`（ffprobe） |
+| 对象存储指针文档 | ✅ | `docs/OBJECT_STORAGE_POINTERS.md` |
 
-### 🟡 需要增强
+### 🟡 部分实现
 
-| 功能 | 优先级 | 说明 |
+| 功能 | 状态 | 缺失部分 |
+|------|------|----------|
+| 文本语料规范 | 🟡 | 在 `COLLECTION_STANDARD.md` 中只有最低字数；语义/时序约束未细化 |
+| 3D Avatar 规范 | 🟡 | VRM/glTF/FBX 格式列出，但未给出材质 / 蒙皮 / blendshape 规范表 |
+
+### ❌ 未实现
+
+| 功能 | 优先级 | 计划版本 |
 |------|--------|------|
-| 采集规范文档 | 高 | 需要详细的音视频采集指南 |
-| 构建管线文档 | 高 | 需要数据处理流程文档 |
-| 运行时文档 | 高 | 需要部署和运维指南 |
-| API 文档 | 高 | 需要完整的 API 参考 |
-| 成本估算文档 | 中 | 需要详细的成本分析 |
+| Audio2Face / 全身动作 | 低 | v3.0 |
+| Blendshape 情绪标签 | 中 | v0.7 |
 
 ---
 
-## 12. 工具与自动化（Tools & Automation）
+## 3. 数据分层与存储（Data Layering）
 
-### 🟡 部分实现（50%）
+### 🟡 部分实现（70%）
 
-| 工具 | 状态 | 说明 |
+| 功能 | 状态 | 说明 |
 |------|------|------|
-| `validate_repo.py` | ✅ 完成 | 基础验证 |
-| `build_registry.py` | ✅ 完成 | 索引生成 |
-| `new_human_record.py` | ✅ 完成 | 档案创建 |
-| `check_sensitive_files.py` | 🟡 部分 | 功能简单 |
-| `validate_manifest.py` | ✅ 完成 | Manifest 验证 |
-| `i18n_helper.py` | ✅ 完成 | 翻译管理 |
+| 五层目录约定 | ✅ | Raw（pointers）/Derived/Runtime/Index/Audit 全部建目录 |
+| Raw 层 | ✅ | pointer-first，仓库零原始素材 |
+| Derived 层 | 🟡 | 目录与 pointer 形式 OK，**实际派生流程未启动（依赖 v0.5 ASR）** |
+| Runtime 层 | 🟡 | 目录 OK，**模型权重 pointer 占位** |
+| Index 层 | ❌ | Qdrant / Neo4j / GraphRAG 未启动（v0.5+） |
+| Audit 层 | ✅ **v0.4** | `events.jsonl` + emitter + 哈希链 |
 
-### ❌ 未实现的工具
+### ❌ 未实现
 
-| 工具 | 优先级 | 说明 |
+| 功能 | 优先级 | 计划版本 |
 |------|--------|------|
-| 媒体元数据提取 | 高 | ffprobe 集成 |
-| 质量门槛验证 | 高 | 分辨率/帧率/采样率检查 |
-| 对象存储上传 | 高 | S3/OSS 上传脚本 |
-| 构建管线触发 | 高 | 数据处理自动化 |
-| 合规报告生成 | 中 | GDPR/PIPL 报告 |
-| 成本估算器 | 低 | 存储和算力成本计算 |
+| ASR / 微调管线 | 高 | v0.5 |
+| 向量库 / 图谱 | 高 | v0.5–v0.6 |
+| Memory atoms | 中 | v0.6（"在线增强"） |
 
 ---
 
-## 📊 优先级矩阵
+## 4. 同意与权益（Consent & Rights）
 
-### 🔴 高优先级（必须实现）
+### ✅ 已实现（88%）
 
-1. **媒体采集规范文档** - 语音、视频、图片的详细技术要求
-2. **媒体元数据验证** - ffprobe 集成，自动检查质量
-3. **对象存储集成** - S3/OSS/COS 配置和上传
-4. **基础构建管线** - ASR 转写、文本解析、向量化
-5. **REST API 服务器** - 基础的 CRUD 操作
-6. **权限系统** - 至少实现 RBAC
-7. **审计事件系统** - 完整的事件定义和记录
-8. **AI 标识系统** - 公开输出的自动标识
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| consent_statement.md 模板 | ✅ | `humans/_TEMPLATE/consent/` |
+| 同意撤回端点 | ✅ | `consent.withdrawal_endpoint`（必填） |
+| 单独生物特征同意 | ✅ | `consent.separate_biometric_consent` |
+| 权利依据 | ✅ | `rights.rights_basis[]` |
+| 跨境基础 | ✅ | `cross_border_transfer_basis` enum |
+| 撤回流程模板 | ✅ | `.github/ISSUE_TEMPLATE/consent-withdrawal.yml` |
+| 下架流程模板 | ✅ | `.github/ISSUE_TEMPLATE/takedown-request.yml` |
+| 冒名争议模板 | ✅ | `.github/ISSUE_TEMPLATE/impersonation-dispute.yml` |
+| 合规自检 checklist | ✅ **v0.4** | `docs/COMPLIANCE_CHECKLIST.md` |
 
-### 🟡 中优先级（应该实现）
+### ❌ 未实现
 
-1. **向量数据库集成** - Qdrant/Pinecone
-2. **知识图谱构建** - GraphRAG
-3. **语音克隆训练** - TTS 模型
-4. **视频头像训练** - Talking head
-5. **WebSocket API** - 实时通信
-6. **水印系统** - 可见/不可见水印
-7. **C2PA 集成** - 内容凭证
-8. **3D Avatar 支持** - VRM/glTF
-
-### 🟢 低优先级（可以延后）
-
-1. **DVC/lakeFS 集成** - 高级版本控制
-2. **区块链审计** - 分布式账本
-3. **联邦学习** - 隐私增强
-4. **AudioSeal** - 音频水印
-5. **OpenUSD 支持** - 影视级 3D
-6. **游戏引擎集成** - Unity/Unreal
+| 功能 | 优先级 | 计划版本 |
+|------|--------|------|
+| 自动化撤回执行 | 高 | v0.5（runtime 出现后） |
+| 同意到期自动 take-down | 中 | v0.5 |
 
 ---
 
-## 🎯 实施路线图建议
+## 5. 公开层与注册表（Public Registry）
 
-### Phase 1: 完善仓库层（1-2个月）
+### ✅ 已实现（80%）
 
-- [ ] 完善 JSON Schema，对齐 ULTIMATE 版本
-- [ ] 实现 ffprobe 媒体元数据验证
-- [ ] 添加 GitHub Actions CI/CD
-- [ ] 编写详细的采集规范文档
-- [ ] 配置 Git LFS
-- [ ] 实现对象存储上传脚本
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| `humans.index.jsonl` 生成 | ✅ | `tools/build_registry.py` |
+| `humans.index.csv` 生成 | ✅ | 同上 |
+| **`registry/index.html` 静态页** | ✅ **v0.4** | 内联 CSS、零依赖 |
+| 入选规则 | ✅ | `public_indexed/unlisted` + `approved_public` + (verified-consent ∨ public-data-only)，is_minor 排除 |
+| 入选规则单元测试 | ✅ | `tools/test_registry.py` 14 个用例（v0.3 起 12 → v0.4 起 14） |
+| Badge 系统 | ✅ | verified-consent / public-data-only / restricted-runtime / cross-border-blocked / memorial-review-required |
+| `examples/minor-protected` | ✅ **v0.4** | 验证 is_minor 排除 |
+| `examples/estate-conflict-frozen` | ✅ **v0.4** | 验证 legal_hold + blocked 排除 |
 
-### Phase 2: 构建基础管线（2-3个月）
+### 🟡 部分实现
 
-- [ ] 集成 Whisper ASR
-- [ ] 实现文本解析和清洗
-- [ ] 集成向量数据库（Qdrant）
-- [ ] 实现 embedding 生成
-- [ ] 实现记忆原子抽取
-- [ ] 实现内容审核
-
-### Phase 3: 实现运行时（3-4个月）
-
-- [ ] 实现 REST API 服务器
-- [ ] 集成 LLM（vLLM）
-- [ ] 实现基础对话引擎
-- [ ] 实现 RBAC 权限系统
-- [ ] 实现会话管理
-- [ ] 实现 RAG 检索
-
-### Phase 4: 高级功能（4-6个月）
-
-- [ ] 集成 TTS 语音克隆
-- [ ] 实现 WebSocket 实时通信
-- [ ] 集成知识图谱（GraphRAG）
-- [ ] 实现 AI 标识和水印
-- [ ] 实现 C2PA 内容凭证
-- [ ] 实现完整的审计事件系统
-
-### Phase 5: 3D 和高保真（6-12个月）
-
-- [ ] 集成 talking head 训练
-- [ ] 支持 VRM/glTF 格式
-- [ ] 实现 3D Avatar 运行时
-- [ ] 集成 Audio2Face
-- [ ] 实现全身动作捕捉
-- [ ] 支持 OpenUSD
+| 功能 | 状态 | 缺失部分 |
+|------|------|----------|
+| Web 审核台 | 🟡 | v0.4 仅静态 HTML；可交互审核台**已下沉至 v0.6+** |
+| 联邦同步协议 | ❌ | 未启动；`docs/REGISTRY_FEDERATION.md` 待写 |
 
 ---
 
-## 💡 关键建议
+## 6. 审计与事件（Audit & Events）
 
-### 1. 聚焦核心价值
+### ✅ 已实现（70%）
 
-当前实现已经很好地完成了"仓库层"的基础工作。建议：
-- **不要急于实现所有功能**
-- **先完善文档和规范**
-- **再逐步添加构建和运行能力**
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| `audit/events.jsonl` 约定 | ✅ **v0.4** | append-only，按行 JSON |
+| Audit event schema | ✅ | `schemas/audit-event.schema.json`：8 个核心 enum + custom |
+| Emitter 工具 | ✅ **v0.4** | `tools/emit_audit_event.py`（含哈希链 + 重复 event_id 拒写） |
+| 8 个核心事件类型 | ✅ | record_created / consent_verified / build_started / public_listing_requested / consent_withdrawn / take_down / inheritance_trigger / export_requested |
+| Provenance 占位 | ✅ | `audit/provenance.json` |
+| Takedown 日志 | ✅ | `audit/takedown_log.jsonl` |
 
-### 2. 分阶段交付
+### 🟡 部分实现
 
-- **v0.3**: 完善仓库层 + 媒体验证
-- **v0.4**: 基础构建管线（ASR + 向量化）
-- **v0.5**: 基础运行时（REST API + LLM）
-- **v1.0**: 完整的文本对话系统
-- **v2.0**: 语音和视频能力
-- **v3.0**: 3D Avatar 和高保真
+| 功能 | 状态 | 缺失部分 |
+|------|------|----------|
+| 哈希链 | 🟡 | 文件内已链；跨文件 / 跨记录 ledger 未实施 |
 
-### 3. 社区驱动
+### ❌ 未实现
 
-- 当前的文档和模板已经足够好，可以吸引社区贡献
-- 优先实现"可演示"的功能，而不是"完美"的功能
-- 建立清晰的贡献路径和技术选型指南
-
-### 4. 合规优先
-
-- 在添加任何运行时功能前，确保合规框架完整
-- 优先实现审计、权限和标识系统
-- 与律师合作完善同意书和政策文档
+| 功能 | 优先级 | 计划版本 |
+|------|--------|------|
+| 不可篡改 Ledger / 区块链锚定 | 低 | v1.0+ |
+| Audit query API | 中 | v0.7（与 REST API 同步） |
 
 ---
 
-## 📈 成熟度评估
+## 7. 权限模型（RBAC + ReBAC + ABAC）
 
-| 维度 | 当前成熟度 | 目标成熟度 | 差距 |
-|------|-----------|-----------|------|
-| 仓库结构 | ⭐⭐⭐⭐⭐ 90% | ⭐⭐⭐⭐⭐ 100% | 小 |
-| 文档体系 | ⭐⭐⭐⭐⭐ 85% | ⭐⭐⭐⭐⭐ 100% | 小 |
-| 数据规范 | ⭐⭐⭐ 40% | ⭐⭐⭐⭐⭐ 100% | 大 |
-| 验证工具 | ⭐⭐⭐ 50% | ⭐⭐⭐⭐⭐ 100% | 中 |
-| 构建管线 | ⭐ 0% | ⭐⭐⭐⭐⭐ 100% | 极大 |
-| 运行时 | ⭐ 0% | ⭐⭐⭐⭐⭐ 100% | 极大 |
-| 权限系统 | ⭐ 0% | ⭐⭐⭐⭐⭐ 100% | 极大 |
-| 审计系统 | ⭐⭐ 40% | ⭐⭐⭐⭐⭐ 100% | 大 |
-| 公开层 | ⭐⭐ 30% | ⭐⭐⭐⭐⭐ 100% | 大 |
-| API 接口 | ⭐ 0% | ⭐⭐⭐⭐⭐ 100% | 极大 |
+### ❌ 未实现（0%）
 
-**总体成熟度：⭐⭐⭐ 60-65%**
+| 功能 | 优先级 | 计划版本 |
+|------|--------|------|
+| RBAC（角色） | 高 | v0.7 |
+| ReBAC（OpenFGA） | 高 | v0.8 |
+| ABAC（OPA / Cedar） | 高 | v0.8 |
+| 法域策略阻断 | 高 | v0.7（与 RBAC 同步） |
+| 敏感度访问门控 | 高 | v0.7 |
+| Legal Hold 强制 | 中 | v0.7 |
+
+**注**：v0.4 把权限/审计的 schema 与文档坐标系打稳，但实施需要 runtime 出现后才有意义。**v0.4 不再宣称"v0.7-v0.8 单独 RBAC"**——已修订 ROADMAP，把 RBAC 合并进 REST API 出生即引入的设计。
 
 ---
 
-## 🎓 结论
+## 8. 构建层（Build Pipeline）
 
-当前的 DLRS Hub 实现是一个**优秀的起点**，已经完成了：
-- ✅ 完整的仓库结构和目录规范
-- ✅ 详细的文档和教程体系
-- ✅ 基础的验证和索引工具
-- ✅ 国际化支持
+### ❌ 未实现（0%）
 
-但距离 ULTIMATE 版本定义的"高保真数字生命系统"还有显著差距，主要缺失：
-- ❌ 完整的数据采集规范和验证
-- ❌ 构建管线（ASR、向量化、图谱）
-- ❌ 运行时系统（LLM、TTS、对话）
-- ❌ 权限和审计的实际实现
-- ❌ 公开输出的标识和水印
-
-**建议策略**：
-1. 保持当前的"仓库优先"定位
-2. 逐步添加构建和运行能力
-3. 优先实现可演示的核心功能
-4. 与社区合作填补技术栈空白
-
-这是一个长期项目，建议分 3-5 年逐步实现完整愿景。当前的 v0.2 版本已经为未来的发展奠定了坚实的基础。
+| 功能 | 优先级 | 计划版本 |
+|------|--------|------|
+| Whisper / FunASR 转写 | 高 | **v0.5（offline-first）** |
+| 文本解析与清洗 | 高 | v0.5 |
+| Embedding 生成 | 高 | v0.5 |
+| 记忆原子抽取 | 中 | v0.6（online-enhanced） |
+| GraphRAG 知识图谱 | 中 | v0.6 |
+| 语音克隆训练 (TTS) | 高 | v0.7 |
+| Talking Head 训练 | 高 | v0.8 |
+| 3D Avatar 构建 | 中 | v2.0 |
+| C2PA 凭证生成 | 高 | v1.0 |
 
 ---
 
-**文档版本**: 1.0  
-**创建日期**: 2026-04-25  
-**最后更新**: 2026-04-25  
-**作者**: DLRS Core Team
+## 9. 运行层（Runtime）
+
+### ❌ 未实现（0%）
+
+| 功能 | 优先级 | 计划版本 |
+|------|--------|------|
+| 文本对话 / LLM 集成 | 高 | v0.6 |
+| TTS 推理 | 高 | v0.7 |
+| 实时 ASR | 中 | v0.7 |
+| Talking Head 推理 | 中 | v0.8 |
+| 3D Avatar runtime | 中 | v2.0+ |
+| REST API | 高 | v0.7 |
+| WebSocket / Realtime | 中 | v0.8 |
+| 长期记忆 / RAG | 高 | v0.6 |
+
+---
+
+## 10. AI 标识、水印、C2PA
+
+### ✅ 已实现（35%）
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| `public_disclosure` 字段 | ✅ **v0.4** | 公有可见性下硬约束 (`if/then`) |
+| `ai_disclosure` enum | ✅ **v0.4** | visible_label_required / visible_label_and_watermark / c2pa_required |
+| 多语言标签 | ✅ **v0.4** | `label_locales[]` 含 zh-CN / en |
+| `watermark_methods[]` 声明 | ✅ **v0.4** | enum 占位（实施在 v1.0） |
+
+### ❌ 未实现
+
+| 功能 | 优先级 | 计划版本 |
+|------|--------|------|
+| 视频/图像不可见水印 | 高 | v1.0 |
+| AudioSeal 音频水印 | 中 | v1.0+ |
+| C2PA 实际签发 | 高 | v1.0 |
+| 文本零宽水印 | 低 | v1.0+ |
+| 第三方分类器接入 | 中 | v1.0 |
+
+---
+
+## 11. 跨境与法域
+
+### 🟡 部分实现（55%）
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| 主区域字段 | ✅ | `security.primary_region` |
+| 复制区域字段 | ✅ | `security.replication_regions[]` |
+| 跨境基础 enum | ✅ | `cross_border_transfer_basis` |
+| 跨境状态 | ✅ | `cross_border_transfer_status`（v0.3 增加 `blocked`） |
+| **合规自检文档** | ✅ **v0.4** | `docs/COMPLIANCE_CHECKLIST.md`（PIPL / GDPR / EU AI Act / 中国深度合成办法） |
+
+### ❌ 未实现
+
+| 功能 | 优先级 | 计划版本 |
+|------|--------|------|
+| 法域策略引擎（运行时阻断） | 高 | v0.7（与 RBAC 同步） |
+| 自动化跨境合规检查 | 中 | v0.7 |
+
+---
+
+## 12. 工具与自动化
+
+### ✅ 已实现（88%）
+
+| 工具 | v0.2 | v0.3 | v0.4 | 描述 |
+|---|---|---|---|---|
+| `validate_repo.py` | ✅ | ✅ | ✅ | 全仓 manifest 校验 |
+| `validate_manifest.py` | ✅ | ✅ | ✅ | 单 manifest CLI |
+| `new_human_record.py` | ✅ | ✅ | ✅ | 档案脚手架 |
+| `i18n_helper.py` | ✅ | ✅ | ✅ | i18n 辅助 |
+| `check_sensitive_files.py` | ✅ | ✅ | ✅ | 防御性敏感文件检测 |
+| `build_registry.py` | ✅ | ✅ | ✅ | jsonl + csv + **html (v0.4)** |
+| `lint_schemas.py` | – | ✅ | ✅ | Draft 2020-12 校验 |
+| `validate_examples.py` | – | ✅ | ✅ | 示例校验 |
+| `validate_media.py` | – | ✅ | ✅ | ffprobe pointer 校验 |
+| `test_registry.py` | – | ✅ (12) | ✅ (14) | registry 入选规则用例 |
+| `upload_to_storage.py` | – | ✅ | ✅ | 对象存储上传骨架 |
+| `estimate_costs.py` | – | ✅ | ✅ | 容量/费用估算 |
+| **`batch_validate.py`** | – | – | ✅ **v0.4** | 一次性聚合 + JSON 报告 |
+| **`emit_audit_event.py`** | – | – | ✅ **v0.4** | append-only 审计写入器 |
+
+### ❌ 未实现
+
+| 功能 | 优先级 | 计划版本 |
+|------|--------|------|
+| LFS 大文件 CI 拦截器 | 中 | v0.5 |
+| Web 审核台 | 中 | v0.6+ |
+| 联邦化 sync agent | 低 | v0.7+ |
+
+---
+
+## 13. 与 ULTIMATE 的主要差距（截至 v0.4）
+
+| 差距 | 现状 | 影响 | 处置 |
+|---|---|---|---|
+| 构建管线缺失 | 五层目录都有，但 Derived/Runtime/Index 是空架子 | 无法演示数字生命真实能力 | v0.5 启动 offline-first（Whisper + Qdrant） |
+| RBAC / ReBAC / ABAC 缺失 | schema 已有 sensitivity / cross-border 字段，但运行时没人执行 | 公网部署不可控 | v0.7 与 REST API 同步 |
+| Web 审核台缺失 | 仅静态 HTML | 大规模运营审核效率低 | v0.6+，与 runtime 一同推出 |
+| C2PA / 水印实施缺失 | 已声明，未实施 | 输出可信度依赖外部检测器 | v1.0 |
+| 国际化 / 法域引擎缺失 | 文档化，未引擎化 | 合规风险靠 review 兜底 | v0.7（与 RBAC 同步） |
+| 联邦化注册表缺失 | 仅单仓单 jsonl | 难以多机构协同 | v1.0+ |
+
+---
+
+## 14. 路线图与本文档的关系
+
+- 本文档 = **现状对照表**，反映**已落地**与**ULTIMATE 目标**之间的距离。
+- `ROADMAP.md` = **时间表**，给出每个版本期望交付什么。
+- `DLRS_ULTIMATE.md` = **目标态**，是本文档对照的基准。
+
+读者如果只想看"今天能用什么"，看本文档第 1–6、12 节即可；如果想看"什么时候能用"，看 `ROADMAP.md`；如果想看"最终长什么样"，看 `DLRS_ULTIMATE.md`。
+
+---
+
+**文档版本**：2.0（v0.4 release）
+**上次更新**：2026-04-26（PR #16 + v0.4 release PR）
+**下次更新建议**：v0.5（Whisper + Qdrant 上线后）

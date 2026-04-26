@@ -1,0 +1,97 @@
+{
+  "schema_version": "0.3.0",
+  "record_id": "dlrs_EXAMPLE_estate_conflict_frozen",
+  "display_slug": "estate-conflict-frozen",
+  "visibility": "private",
+  "subject": {
+    "type": "estate_authorized",
+    "display_name": "estate-conflict (fictional)",
+    "legal_name": "FROZEN PENDING DISPUTE",
+    "locale": "zh-CN",
+    "residency_region": "CN",
+    "is_minor": false,
+    "status": "deceased"
+  },
+  "rights": {
+    "uploader_role": "estate_executor",
+    "rights_basis": [
+      "estate_authorization"
+    ],
+    "evidence_refs": [
+      "consent/consent_statement.md",
+      "consent/signer_signature.json"
+    ],
+    "allow_public_listing": false,
+    "allow_commercial_use": false,
+    "allow_model_finetune": false,
+    "allow_voice_clone": false,
+    "allow_avatar_clone": false,
+    "allow_research_use": false,
+    "cross_border_transfer_basis": "none",
+    "cross_border_transfer_status": "blocked"
+  },
+  "consent": {
+    "captured_at": "2025-12-15T14:00:00+08:00",
+    "withdrawal_endpoint": "mailto:legal@dlrs.standard",
+    "separate_biometric_consent": true,
+    "guardian_consent": false,
+    "consent_version": "0.3.0",
+    "allowed_scopes": [
+      "storage"
+    ]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "a001",
+      "type": "archive_bundle",
+      "format": "tar",
+      "storage_uri": "obj://cn-shanghai/estate/dlrs_estate_conflict_archive.tar",
+      "checksum": "sha256:example_estate_archive_hash",
+      "region": "CN",
+      "sensitivity": "S2_SENSITIVE",
+      "contains_sensitive_data": true
+    },
+    {
+      "artifact_id": "a002",
+      "type": "public_profile",
+      "format": "json",
+      "storage_uri": "repo://public_profile.json",
+      "checksum": "sha256:example_estate_public_profile_hash",
+      "region": "CN",
+      "sensitivity": "S0_PUBLIC",
+      "contains_sensitive_data": false
+    }
+  ],
+  "deletion_policy": {
+    "allow_delete": false,
+    "allow_export": false,
+    "withdrawal_effect": "freeze_runtime_keep_archive",
+    "legal_hold": true
+  },
+  "inheritance_policy": {
+    "policy_ref": "profile/inheritance_policy.json",
+    "default_action_on_death": "memorial_private",
+    "executor_contact_ref": "mailto:executor@dlrs.standard"
+  },
+  "security": {
+    "primary_region": "CN",
+    "replication_regions": [],
+    "encryption_at_rest": true,
+    "kms_ref": "kms://example/key-placeholder",
+    "watermark_policy": "visible_and_invisible",
+    "c2pa_enabled": false
+  },
+  "review": {
+    "status": "blocked",
+    "verified_consent_badge": false,
+    "public_data_only_badge": false,
+    "risk_level": "critical",
+    "reviewer_notes_ref": null
+  },
+  "audit": {
+    "created_at": "2025-12-15T14:30:00+08:00",
+    "last_modified_at": "2026-04-26T09:30:00+08:00",
+    "change_log_hash": "sha256:example_estate_manifest_log_hash",
+    "events_log_ref": "audit/events.jsonl"
+  }
+}

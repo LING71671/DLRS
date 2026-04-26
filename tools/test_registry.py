@@ -246,6 +246,43 @@ def t_consent_expiry_documented():
     assert public_ok(m) is True
 
 
+@case("v0.4: minor subject is excluded even if every other public flag is set")
+def t_minor_excluded_even_when_public():
+    """examples/minor-protected encodes this; assert exclusion on a fully-blessed
+    public manifest as soon as ``subject.is_minor`` flips to True."""
+    m = _baseline_manifest()
+    assert public_ok(m) is True  # baseline sanity
+    m = _mutate(m, **{"subject.is_minor": True})
+    assert public_ok(m) is False
+    # Even with restricted-runtime badge, minors stay out.
+    m = _mutate(m, **{"rights.allow_public_listing": False})
+    assert public_ok(m) is False
+
+
+@case("v0.4: estate-conflict legal_hold/blocked record stays out of registry")
+def t_estate_conflict_blocked_excluded():
+    """examples/estate-conflict-frozen encodes this. legal_hold + cross-border-blocked
+    + review.status=blocked + subject.status=deceased: registry MUST exclude."""
+    m = _mutate(
+        _baseline_manifest(),
+        **{
+            "subject.status": "deceased",
+            "rights.cross_border_transfer_status": "blocked",
+            "rights.allow_public_listing": False,
+            "deletion_policy.legal_hold": True,
+            "review.status": "blocked",
+            "review.risk_level": "critical",
+        },
+    )
+    assert public_ok(m) is False
+    badge_set = set(badges(m))
+    # Even though the record is excluded, badge composition stays meaningful for
+    # downstream auditors who consume manifest directly.
+    assert "memorial-review-required" in badge_set
+    assert "cross-border-blocked" in badge_set
+    assert "restricted-runtime" in badge_set
+
+
 # ---------------------------------------------------------------------------
 # Test runner
 # ---------------------------------------------------------------------------

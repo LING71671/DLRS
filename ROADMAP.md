@@ -84,49 +84,62 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 ---
 
-#### v0.4.0 - CI/CD 与自动化（2026年8月）
+#### v0.4.0 - 自动化 + 治理工具 + 合规自检（2026年4月，已发布）
 
-**主题**: 建立完整的自动化验证流程
+**主题**: 让 v0.3 仓库 + 校验 + 注册表的"主链路"在自动化与治理两方面都完整
 
-**核心功能**:
-- [ ] **GitHub Actions CI/CD**
-  - PR 自动验证
-  - Schema 校验
-  - 媒体元数据检查
-  - 敏感文件检测
-  - 合规字段验证
-- [ ] **Git LFS 配置**
-  - `.gitattributes` 配置
-  - 大文件处理指南
-  - LFS 迁移工具
-- [ ] **增强的验证工具**
-  - 批量验证脚本
-  - 验证报告生成
-  - 修复建议
-- [ ] **Web 审核台原型**
-  - 简单的 Web UI
-  - 档案浏览
-  - 验证状态查看
+**核心功能**（与对齐评审 §4.1 一致）:
+- [x] **GitHub Actions CI/CD** 增量
+  - 主 validate job（v0.3 已恢复）继续运行
+  - 新增 batch_validate 步骤 + 上传 `reports/` artefact
+  - 新增独立 docs job（markdownlint + lychee linkcheck，初期非阻断）
+  - 上传 `registry/index.html` 静态页 artefact
+- [x] **Git LFS 防御层**
+  - `.gitattributes` 把音视频/3D/模型权重路由到 LFS
+  - `docs/LFS_GUIDE.md` 解释 LFS 与 pointer 的边界与迁移流程
+- [x] **批量验证脚本**
+  - `tools/batch_validate.py` 一次跑全部 validator
+  - 产出 `reports/validate_<ts>.json`，含每个子工具退出码、stdout/stderr、耗时
+- [x] **审计事件 emitter**（前移自 v0.8）
+  - `tools/emit_audit_event.py` append-only 写入 `audit/events.jsonl`
+  - 含 `prev_hash`/`hash` 哈希链，重复 `event_id` 拒写
+  - schema 收紧到 8 个核心 event_type + custom，actor_role 也收紧到闭合 enum
+- [x] **AI 标识声明字段**（前移自 v1.0；声明 ≠ 实施）
+  - `manifest.public_disclosure` 必填字段（仅对 `public_*` 可见性硬约束）
+  - `ai_disclosure` enum / `label_text_required` / `label_locales[]` / `watermark_methods[]` / `c2pa_claim_generator` / `impersonation_disclaimer`
+  - 实际水印 / C2PA 实施仍在 v1.0
+- [x] **合规自检 checklist**
+  - `docs/COMPLIANCE_CHECKLIST.md` 把 PIPL / GDPR / EU AI Act / 中国深度合成办法逐条映射到 manifest 字段与 validator
+- [x] **示例多样化**
+  - `examples/minor-protected/`（未成年人受保护反例）
+  - `examples/estate-conflict-frozen/`（遗产争议冻结反例）
+  - `tools/test_registry.py` 增加 2 条对应用例（共 14）
+- [x] **静态 HTML registry**（替代之前规划的 Web 审核台原型）
+  - `tools/build_registry.py` 顺带产出 `registry/index.html`（零依赖、内联 CSS）
+  - 可托管到 gh-pages；可交互的审核台已下沉到 v0.6+
 
 **交付物**:
-- `.github/workflows/validate.yml`
-- `.github/workflows/build-registry.yml`
-- `.gitattributes`
-- `tools/batch_validate.py`
-- `web/审核台原型`
+- `.github/workflows/validate.yml`（v0.3 主链路 + v0.4 docs job + 报告 artefact）
+- `.gitattributes` + `docs/LFS_GUIDE.md`
+- `tools/batch_validate.py` / `tools/emit_audit_event.py`
+- `docs/COMPLIANCE_CHECKLIST.md`
+- `examples/minor-protected/` / `examples/estate-conflict-frozen/`
+- `registry/index.html` 由 build_registry 产出
+- `schemas/manifest.schema.json` + `schemas/audit-event.schema.json` 收紧
 
 **成功指标**:
-- 100% 的 PR 自动验证
-- 验证时间 < 5 分钟
-- Web UI 可用性测试通过
+- 100% 的 PR 自动验证（保持 v0.3 水准）
+- `tools/batch_validate.py` 退出码 0，覆盖全部 validator
+- 任何 `public_*` 可见性的 manifest 缺失 `public_disclosure` 即被 schema 拒收
+- `tools/emit_audit_event.py` 重复 event_id 立刻报错，破坏哈希链立刻报错
 
 ---
 
 ### Phase 2: 构建管线（2026 Q4 - 2027 Q1）
 
-#### v0.5.0 - 基础数据处理（2026年11月）
+#### v0.5.0 - 基础数据处理（offline-first，2026年11月）
 
-**主题**: 实现数据摄入和基础处理
+**主题**: 离线优先的数据摄入和基础处理。所有依赖（Whisper / Qdrant / 文本清洗）都必须可在单机重现，不引入托管 API；GraphRAG 与可选托管 API 留给 v0.6。
 
 **核心功能**:
 - [ ] **ASR 转写管线**
@@ -163,9 +176,9 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 ---
 
-#### v0.6.0 - 记忆与图谱（2027年2月）
+#### v0.6.0 - 记忆、图谱与 online-enhanced（2027年2月）
 
-**主题**: 构建知识表示层
+**主题**: 在 v0.5 的离线基础上叠加可选的 GraphRAG / 托管 API / memory atoms。可交互的 Web 审核台原型也在本期落地（v0.4 已先期发布静态 HTML 版本）。
 
 **核心功能**:
 - [ ] **记忆原子系统**
@@ -199,9 +212,9 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 ### Phase 3: 运行时系统（2027 Q2-Q3）
 
-#### v0.7.0 - REST API 与基础对话（2027年5月）
+#### v0.7.0 - REST API + RBAC 一并出生（2027年5月）
 
-**主题**: 实现基础运行时能力
+**主题**: 基础运行时能力，**与 RBAC + 法域策略阻断一并引入**（避免 v0.7 单纯 REST API、v0.8 才接入授权造成两次破坏性变更）。
 
 **核心功能**:
 - [ ] **REST API 服务器**
@@ -239,9 +252,9 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 ---
 
-#### v0.8.0 - 权限与审计（2027年8月）
+#### v0.8.0 - ReBAC / ABAC + 审计聚合（2027年8月）
 
-**主题**: 实现完整的权限和审计系统
+**主题**: 在 v0.7 RBAC 基础上扩展到 ReBAC（OpenFGA）+ ABAC（OPA / Cedar），并把 v0.4 的 `audit/events.jsonl` 从单档案聚合到跨档案、跨记录的审计查询面。
 
 **核心功能**:
 - [ ] **RBAC 权限系统**

@@ -400,10 +400,90 @@
         },
         "change_log_hash": {
           "type": "string"
+        },
+        "events_log_ref": {
+          "type": ["string", "null"],
+          "description": "Relative path to the append-only audit events file (typically audit/events.jsonl). v0.4+ records SHOULD set this; the file format follows schemas/audit-event.schema.json."
         }
       },
       "additionalProperties": true
+    },
+    "public_disclosure": {
+      "type": "object",
+      "description": "AI-content disclosure declaration required by EU AI Act \u00a750 and Chinese deep-synthesis rules. v0.4 makes this field machine-checkable for any record whose visibility is public_indexed or public_unlisted. The standard does not yet mandate that the watermark itself be implemented; it does mandate the declaration.",
+      "required": [
+        "ai_disclosure",
+        "label_text_required"
+      ],
+      "properties": {
+        "ai_disclosure": {
+          "type": "string",
+          "description": "Strongest disclosure obligation that public outputs of this record MUST carry. visible_label_required = displayed text is enough; visible_label_and_watermark = displayed text plus implicit media watermark; c2pa_required = additionally requires C2PA / Content Credentials embedding.",
+          "enum": [
+            "visible_label_required",
+            "visible_label_and_watermark",
+            "c2pa_required"
+          ]
+        },
+        "label_text_required": {
+          "type": "string",
+          "description": "Minimum visible label text that public outputs (text, audio prefix, video overlay) MUST display. Localised variants MAY be added.",
+          "minLength": 2,
+          "examples": ["AI generated", "AI \u751f\u6210\u5185\u5bb9"]
+        },
+        "label_locales": {
+          "type": "array",
+          "description": "Additional locale-specific label texts to display when the audience locale matches.",
+          "items": {
+            "type": "object",
+            "required": ["locale", "label"],
+            "properties": {
+              "locale": {"type": "string"},
+              "label": {"type": "string", "minLength": 2}
+            },
+            "additionalProperties": false
+          }
+        },
+        "watermark_methods": {
+          "type": "array",
+          "description": "Declared (not necessarily implemented) implicit-watermark methods that the publishing pipeline SHOULD apply. v0.4 records the declaration; v1.0+ tooling will emit the actual marks.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "none",
+              "audioseal",
+              "meta_seal",
+              "image_invisible_watermark",
+              "video_invisible_watermark",
+              "text_zero_width_marker",
+              "vendor_classifier_only"
+            ]
+          }
+        },
+        "c2pa_claim_generator": {
+          "type": ["string", "null"],
+          "description": "Identifier of the C2PA claim generator that will sign public outputs (e.g. 'dlrs-reference-publisher/0.4'). MAY be null if c2pa_required is not selected."
+        },
+        "impersonation_disclaimer": {
+          "type": "string",
+          "description": "Standing disclaimer to attach to outputs warning that the AI persona does not represent the real-time, complete, or final intent of the data subject.",
+          "minLength": 8
+        }
+      },
+      "additionalProperties": false
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "visibility": {"enum": ["public_indexed", "public_unlisted"]}
+        }
+      },
+      "then": {
+        "required": ["public_disclosure"]
+      }
+    }
+  ],
   "additionalProperties": true
 }

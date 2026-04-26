@@ -2,6 +2,60 @@
 
 All notable changes to the DLRS project will be documented in this file.
 
+## v0.4 Draft (2026-04-26)
+
+**Status**: RFC. Tightens the v0.3 schemas, makes AI disclosure machine-checked
+for any public record, formalises the audit event log, and ships a static HTML
+public registry. No breaking changes to v0.3 manifests beyond the new
+conditional requirement on `public_disclosure` for `visibility = public_*`.
+
+### Added
+
+- `tools/batch_validate.py` — orchestrator that runs every validator
+  (`check_sensitive_files`, `lint_schemas`, `validate_repo`, `validate_examples`,
+  `validate_media`, `test_registry`, `build_registry`) and writes a single
+  machine-readable report to `reports/validate_<utc-ts>.json`.
+- `tools/emit_audit_event.py` — append-only writer for `audit/events.jsonl`,
+  including a SHA-256 hash chain (`prev_hash` / `hash`) and refusal to rewrite
+  existing `event_id`s.
+- `docs/COMPLIANCE_CHECKLIST.md` — PIPL / GDPR / EU AI Act / 中国深度合成办法
+  self-check, mapping each clause to a manifest field and a validator.
+- `docs/LFS_GUIDE.md` — when to use Git LFS vs object-storage pointers, and a
+  recipe for migrating an accidentally committed binary.
+- Static HTML public registry: `tools/build_registry.py` now also writes
+  `registry/index.html` (zero JS, inline CSS) alongside the existing JSONL/CSV.
+- Examples: `examples/minor-protected/` and `examples/estate-conflict-frozen/`
+  encode the two negative cases that registry generation must exclude.
+- `tools/test_registry.py` adds two corresponding cases (now 14 total).
+
+### Changed
+
+- `schemas/manifest.schema.json`: added `public_disclosure` (with
+  `ai_disclosure`, `label_text_required`, `label_locales[]`,
+  `watermark_methods[]`, `c2pa_claim_generator`, `impersonation_disclaimer`).
+  An `if/then` clause makes `public_disclosure` mandatory whenever
+  `visibility ∈ {public_indexed, public_unlisted}`. Added optional
+  `audit.events_log_ref`.
+- `schemas/audit-event.schema.json`: tightened `event_type` to the eight
+  canonical lifecycle events plus `custom`, restricted `actor_role` to a
+  closed enum, added `evidence_ref`, `prev_hash`, `metadata`, and a
+  hash-format pattern for `hash`. `additionalProperties` is now `false`.
+- `.gitattributes`: added a comprehensive LFS routing list (audio, video,
+  raw images, 3D / avatar formats, model weights, archives) plus
+  `text eol=lf` normalisation for source files.
+- `.github/workflows/validate.yml`: now also runs `batch_validate.py`,
+  uploads `reports/` and `registry/index.html` as artefacts, and adds a
+  separate non-blocking docs job (markdownlint + lychee linkcheck).
+- `tools/build_registry.py`: emits HTML in addition to JSONL + CSV.
+- `docs/GAP_ANALYSIS.md` and `docs/IMPLEMENTATION_STATUS.md` rewritten to
+  reflect the post-v0.3 + v0.4 reality (overall completion ~78%).
+
+### Closes
+
+#17, #18, #19, #20, #21, #22, #23, #24, #25, #26.
+
+---
+
 ## v0.3 Draft (2026-04-26)
 
 **Status**: RFC (Request for Comments) stage — minimum viable repository goals.

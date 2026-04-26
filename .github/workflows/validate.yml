@@ -43,14 +43,66 @@ jobs:
       - name: Run registry generation tests
         run: python tools/test_registry.py
 
-      - name: Build public registry
+      - name: Build public registry (jsonl + csv + html)
         run: python tools/build_registry.py
 
-      - name: Upload registry artifacts
+      - name: Aggregate batch validation report
+        run: python tools/batch_validate.py --report-dir reports
+
+      - name: Upload registry artefacts
         uses: actions/upload-artifact@v4
         with:
           name: dlrs-registry
           path: |
             registry/humans.index.jsonl
             registry/humans.index.csv
+            registry/index.html
           if-no-files-found: warn
+
+      - name: Upload batch validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dlrs-validate-report
+          path: reports/
+          if-no-files-found: warn
+
+  docs:
+    name: Lint docs (markdownlint + linkcheck)
+    runs-on: ubuntu-latest
+    needs: validate
+    # Docs lint failure must not break upstream forks; downgrade to non-blocking
+    # initially so we can ratchet up the strictness gradually.
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # markdownlint and linkcheck are advisory in v0.4 — legacy docs contain
+      # many unrelated lint findings (long Chinese lines, bare URLs, etc.) that
+      # we don't want to gate this PR on. continue-on-error keeps the run green
+      # while still surfacing issues in the workflow log.
+      - name: markdownlint (advisory)
+        continue-on-error: true
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            CHANGELOG.md
+            docs/COMPLIANCE_CHECKLIST.md
+            docs/LFS_GUIDE.md
+            docs/GAP_ANALYSIS.md
+            docs/IMPLEMENTATION_STATUS.md
+            !docs/_build/**
+
+      - name: lychee link checker (advisory)
+        continue-on-error: true
+        uses: lycheeverse/lychee-action@v1
+        with:
+          args: --no-progress --max-concurrency 8 --timeout 20 --max-redirects 5 --exclude-mail "docs/COMPLIANCE_CHECKLIST.md" "docs/LFS_GUIDE.md" "docs/GAP_ANALYSIS.md"
+          fail: false

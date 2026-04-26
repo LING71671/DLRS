@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dlrs.standard/schemas/audit-event.schema.json",
   "title": "DLRS Audit Event",
-  "description": "Append-only audit event recording an action against a DLRS record. See operations/audit-log-format.md.",
+  "description": "Append-only audit event recording an action against a DLRS record. v0.4 introduces tools/emit_audit_event.py which writes events to <record>/audit/events.jsonl. See docs/COMPLIANCE_CHECKLIST.md for which legal regime each event_type maps to.",
   "type": "object",
   "required": [
     "event_id",
@@ -14,25 +14,78 @@
   ],
   "properties": {
     "event_id": {
-      "type": "string"
+      "type": "string",
+      "description": "Globally unique identifier for this event. v0.4 emitter uses <ulid> or <uuid4>; once written it MUST NOT change.",
+      "minLength": 8,
+      "examples": ["01HW8ZK7TQ6T28A0JKCK4P6Z9D"]
     },
     "event_type": {
-      "type": "string"
+      "type": "string",
+      "description": "One of the eight canonical lifecycle events from DLRS_ULTIMATE.md, plus 'custom' for organisation-specific extensions.",
+      "enum": [
+        "record_created",
+        "consent_verified",
+        "build_started",
+        "public_listing_requested",
+        "consent_withdrawn",
+        "take_down",
+        "inheritance_trigger",
+        "export_requested",
+        "custom"
+      ]
     },
     "record_id": {
-      "type": "string"
+      "type": "string",
+      "description": "Target DLRS record id. Cross-record events MUST be split into per-record entries.",
+      "pattern": "^dlrs_[a-zA-Z0-9_-]{4,}$"
     },
     "actor_role": {
-      "type": "string"
+      "type": "string",
+      "description": "Role of the actor that emitted the event. 'system' is reserved for automated tooling; 'subject' is the data subject themselves.",
+      "enum": [
+        "subject",
+        "authorized_agent",
+        "estate_executor",
+        "platform_reviewer",
+        "platform_legal",
+        "complaint_handler",
+        "system",
+        "external_auditor"
+      ]
+    },
+    "actor_id": {
+      "type": ["string", "null"],
+      "description": "Opaque actor identifier (e.g. user-uuid, reviewer-handle). Optional; required when actor_role is non-system."
     },
     "timestamp": {
-      "type": "string"
+      "type": "string",
+      "description": "ISO-8601 UTC timestamp at which the event was recorded. MUST be monotonically non-decreasing within a single events.jsonl file.",
+      "format": "date-time"
     },
     "reason": {
-      "type": "string"
+      "type": "string",
+      "description": "Short human-readable reason. Sensitive identifiers MUST NOT be embedded here; reference evidence_ref instead.",
+      "minLength": 1
+    },
+    "evidence_ref": {
+      "type": ["string", "null"],
+      "description": "Optional pointer to supporting evidence (relative path inside the record or an opaque ticket id). For takedowns and consent_verified, this SHOULD be set."
+    },
+    "prev_hash": {
+      "type": ["string", "null"],
+      "description": "SHA-256 of the previous event line (hex), to form a hash chain. The first event in a file SHOULD use null. Verifies append-only intent without external infrastructure.",
+      "pattern": "^(sha256:[A-Fa-f0-9]{64})?$"
     },
     "hash": {
-      "type": "string"
+      "type": "string",
+      "description": "SHA-256 hex of the canonical JSON serialisation of this event with the 'hash' field omitted, prefixed with 'sha256:'.",
+      "pattern": "^sha256:[A-Fa-f0-9]{64}$"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Free-form structured metadata. Schema-validated content SHOULD live in named top-level fields; this is for additive context.",
+      "additionalProperties": true
     }
-  }
+  },
+  "additionalProperties": false
 }

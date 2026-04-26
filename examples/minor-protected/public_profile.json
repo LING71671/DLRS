@@ -1,0 +1,10 @@
+{
+  "record_id": "dlrs_EXAMPLE_minor_protected",
+  "display_name": "minor-protected (fictional)",
+  "summary": "Fictional record demonstrating the v0.4 minor-protected pattern. By policy this record MUST NOT be indexed publicly; the registry generator filters it out via the is_minor=true flag.",
+  "avatar_preview_uri": null,
+  "ai_disclosure": "Synthetic AI output. Not the real-time, complete, or final intent of the subject. Minor data; access strictly gated by guardian consent.",
+  "allowed_public_interactions": [
+    "view_profile"
+  ]
+}
