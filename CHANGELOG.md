@@ -2,9 +2,9 @@
 
 All notable changes to the DLRS project will be documented in this file.
 
-## v0.7-vision-shift Draft (in progress)
+## v0.7-vision-shift (2026-04-26)
 
-**Status**: Draft / WIP. Repositions DLRS's ULTIMATE from "Digital Life
+**Status**: Released. Repositions DLRS's ULTIMATE from "Digital Life
 Repository Standard 数字生命仓库标准" (Git-shaped repo structure standard)
 to "**`.life` 可运行数字生命档案文件标准**" — a dual standard:
 
@@ -21,22 +21,106 @@ Tracked in epic
 [#79](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/79)
 under milestone
 [`.life Archive + Runtime Standard (v0.7-vision-shift)`](https://github.com/Digital-Life-Repository-Standard/DLRS/milestone/5).
-Sub-issues #80–#87, sub-PRs forthcoming.
+All 8 sub-issues #80–#87 closed; PRs #88, #89, #91, #92, #93, #94,
+#95, #97, #98 merged.
 
 This epic ships **specs + schema + example builder**. It does **not**
 ship a working runtime — that is deferred to v0.8+.
 
 ### Added
 
-- _(populated as sub-PRs land)_
+- `docs/LIFE_FILE_STANDARD.md` — authoritative `.life` archive
+  file-format specification (life-format v0.1.0). Defines `.life` as a
+  zip with mandatory directories (`manifest/`, `consent/`, `policy/`,
+  `audit/`, `derived/`) plus optional (`pointers/`, `encrypted/`); two
+  modes (`pointer` privacy-preserving and `encrypted` off-grid full pack);
+  mandatory metadata fields (`mode`, `record_id`, `issued_by`,
+  `consent_evidence_ref`, `verification_level`, `withdrawal_endpoint`,
+  `runtime_compatibility`, `ai_disclosure`, `forbidden_uses`,
+  `audit_event_ref`, `contents`, `expires_at`); ethical boundaries
+  (`.life` is not resurrection, instance must always be identifiable
+  as AI, must be revocable and auditable). PR #89 + post-merge fix
+  PR #91 (eight-entries miscount). [#81 / #90]
+- `docs/LIFE_RUNTIME_STANDARD.md` — authoritative runtime protocol
+  spec (life-runtime v0.1). Defines the 8-step load sequence (verify
+  schema → verify time window → verify integrity → verify audit chain
+  → resolve consent → poll withdrawal endpoint → mount → expose
+  identity / withdrawal / audit hooks); runtime obligations (visible
+  AI disclosure, `forbidden_uses[]` refusal, ≥ 24h withdrawal poll,
+  `expires_at` refusal-to-continue, no cross-`.life` memory mixing);
+  termination triggers; prohibited behaviours; conformance clauses;
+  ethical boundaries. PR #93. [#84]
+- `schemas/life-package.schema.json` — contract for `life-package.json`
+  inside every `.life`. Draft 2020-12; pointer/encrypted bi-conditional;
+  memorial → executor bi-conditional; sha256 hex case-insensitive;
+  `forbidden_uses[]` must include `fraud`, `political_impersonation`,
+  `sexually_explicit_unconsented`; `expires_at > created_at`;
+  `contents[]` paths reject `..` and absolute paths. 54/54 sanity test
+  cases pass (`tools/test_life_package_schema.py`). PR #92 + post-merge
+  fix PR #97 (sha256 hex case-insensitivity). [#82 / #96]
+- `examples/minimal-life-package/` + `tools/build_life_package.py` —
+  reference example record subset (manifest + consent + policy +
+  audit seed + derived/memory_atoms + voice pointer) and
+  pointer-mode-only builder implementing the §5 authoring workflow
+  (stage → append `package_emitted` audit event → sha256 inventory
+  → write `life-package.json` → schema-validate → deterministic zip).
+  `--mode encrypted` is rejected with a guard message until KMS
+  plumbing lands. End-to-end test driver
+  (`tools/test_minimal_life_package.py`) verifies schema validation,
+  `contents[]` matches zip members, audit chain integrity, and that
+  two consecutive deterministic builds produce byte-identical
+  `life-package.json`. Wired into `tools/batch_validate.py` as step
+  `minimal_life_package` (now 18/18). PR #98. [#83]
+- `audit-event.schema.json::event_type.enum` adds `package_emitted`
+  (used by the `.life` builder when appending to the source record's
+  `audit/events.jsonl`). Backward-compatible additive change; mirrors
+  v0.6's `derived_asset_emitted` pattern. PR #98. [#83]
+- README first-screen + README.en.md repositioning to make DLRS = `.life`
+  dual standard the headline claim. "What is DLRS?" split into archive
+  format / runtime protocol / supporting infrastructure; explicit
+  "What is NOT" / "What IS" framing for `.life` instances (not real
+  human resurrection; must be revocable, auditable, always identifiable
+  as an AI instance). PR #94. [#85]
+- `ROADMAP.md` introduces two independent semver tracks decoupled from
+  the repo's v0.x.y: "Track A — `.life` Archive Standard"
+  (life-format v0.1.0 / v0.2.0 / v0.3.0) and "Track B — `.life` Runtime
+  Standard" (life-runtime v0.1 / v0.2 / v0.3). Repo v0.x.y continues
+  to track tooling + examples + governance. PR #95. [#86]
+- `docs/IMPLEMENTATION_STATUS.md` + `docs/GAP_ANALYSIS.md` refreshed to
+  reflect the new `.life` dual-standard ULTIMATE: maturity table adds
+  `.life Archive Standard` (70%) and `.life Runtime Standard` (30%,
+  specs only); GAP_ANALYSIS §0 dedicated to the two new tracks; §13
+  rewritten to call out the `.life` runtime / encrypted-mode / signing
+  gaps. Overall completion adjusted from 88% to ~80% to reflect the
+  expanded scope. PR (this PR). [#87]
+- `CHANGELOG.md` v0.7-vision-shift entry promoted from Draft to release.
 
 ### Changed
 
-- _(populated as sub-PRs land)_
+- DLRS ULTIMATE positioning shifts from "Git-shaped repo standard" to
+  "`.life` archive file format + runtime protocol dual standard".
+  Existing v0.6 record structure remains the canonical authoring
+  surface; `.life` is the portable distribution unit packaged from a
+  consented subset of that record.
+- `audit-event.schema.json::event_type.enum` extended additively
+  (`package_emitted`); existing event types' semantics unchanged.
+- README / ROADMAP framing language across the repo updated to make
+  the `.life` dual-standard the headline claim.
 
 ### Closes
 
-- _(populated as sub-PRs land)_
+- #80 — housekeeping (PR #88)
+- #81 — `docs/LIFE_FILE_STANDARD.md` (PR #89)
+- #82 — `schemas/life-package.schema.json` + 51 sanity tests (PR #92)
+- #83 — `examples/minimal-life-package/` + `tools/build_life_package.py`
+  (PR #98)
+- #84 — `docs/LIFE_RUNTIME_STANDARD.md` (PR #93)
+- #85 — README first-screen `.life` repositioning (PR #94)
+- #86 — `ROADMAP.md` `.life` Archive + Runtime Standard tracks (PR #95)
+- #87 — `IMPLEMENTATION_STATUS` + `GAP_ANALYSIS` reflect new ULTIMATE
+  (this PR)
+- #90 — post-#89 LIFE_FILE_STANDARD eight-entries miscount fix (PR #91)
+- #96 — post-#92 sha256 hex pattern case-insensitivity fix (PR #97)
 
 ### Hard rules (continued from v0.5/v0.6)
 
