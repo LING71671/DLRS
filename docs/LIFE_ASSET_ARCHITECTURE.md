@@ -424,8 +424,14 @@ others ×1. Score normalised 0–100. Tier mapping table in appendix A.
 - The spec **freezes** the machine fields (`score`, `level`,
   `dimensions`). The `name` and `glyph` belong to a versioned naming
   appendix that can evolve without bumping the spec major.
-- Back-compat: a v0.7 `verification_level` field is still accepted as
-  an alias for `tier.dimensions.identity_verification`.
+- Back-compat: a v0.7 `verification_level` field is still accepted and
+  mapped to `tier.dimensions.identity_verification` (e.g.
+  `self_attested` → `self_attested`; `third_party_verified` →
+  `id_verified`). `memorial_authorized` is not a clean identity-tier
+  alias — in the v0.7 schema it is bi-conditionally coupled to
+  `issued_by.role == memorial_executor`, so it is preserved as an
+  `issued_by.role` constraint rather than collapsed into the new
+  enum. The exact mapping table is normative in the Tier spec ([#104]).
 - The tier replaces the original Topic-3 D3 fallback decision.
   Low-tier packages auto-fall-back to built-in providers; high-tier
   packages refuse to load when their declared engines are missing.
