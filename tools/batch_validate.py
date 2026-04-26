@@ -36,6 +36,12 @@ DEFAULT_STEPS = [
     ("test_derived_asset_schema", [sys.executable, str(TOOLS / "test_derived_asset_schema.py")]),
     ("test_memory_atom_schema", [sys.executable, str(TOOLS / "test_memory_atom_schema.py")]),
     ("test_entity_graph_schema", [sys.executable, str(TOOLS / "test_entity_graph_schema.py")]),
+    # The 'pipelines' step calls tools/test_pipelines.py, which itself
+    # dispatches every per-pipeline test plus the v0.6 cross-cutting
+    # tests transitively. The cross-cutting tests are also listed
+    # individually below so a failure surfaces against a meaningful
+    # batch_validate step name (not just "pipelines"); the duplicate
+    # cost is ~2s per run.
     ("pipelines", [sys.executable, str(TOOLS / "test_pipelines.py")]),
     ("descriptor_audit_bridge", [sys.executable, str(TOOLS / "test_descriptor_audit_bridge.py")]),
     ("hosted_api_policy", [sys.executable, str(TOOLS / "test_hosted_api_policy.py")]),

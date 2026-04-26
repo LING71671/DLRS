@@ -12,6 +12,16 @@ each merged sub-PR.
 
 ### Added
 
+- `tools/test_pipelines.py` extended into the umbrella driver for the
+  full DLRS pipeline test suite. Per-pipeline tests (asr / text /
+  vectorization / moderation / memory_atoms / knowledge_graph) and the
+  v0.6 cross-cutting tests (descriptor → audit bridge, hosted-API
+  opt-in policy gate, memory-graph end-to-end demo) are now dispatched
+  from a single entry point. The CI pipelines matrix invokes
+  `python tools/test_pipelines.py` once on each of Python 3.11 and
+  3.12; `tools/batch_validate.py` invokes it as the `pipelines` step
+  while still listing the cross-cutting tests individually so a
+  failure surfaces against a meaningful step name. (#61, this PR)
 - `examples/memory-graph-demo/` — fully runnable v0.6 walkthrough that
   exercises `text` → `memory_atoms` → `knowledge_graph` end-to-end on a
   fictional 3-paragraph diary excerpt, prints the resulting

@@ -89,17 +89,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r tools/requirements.txt
 
-      - name: Run pipeline test suite
+      - name: Run pipeline test suite (per-pipeline + v0.6 cross-cutting)
         run: python tools/test_pipelines.py
-
-      - name: Run descriptor->audit bridge test (#58)
-        run: python tools/test_descriptor_audit_bridge.py
-
-      - name: Run hosted-API opt-in policy gate test (#59)
-        run: python tools/test_hosted_api_policy.py
-
-      - name: Run memory-graph-demo end-to-end test (#60)
-        run: python tools/test_memory_graph_demo.py
 
   docs:
     name: Lint docs (markdownlint + linkcheck)
