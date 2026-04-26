@@ -46,7 +46,7 @@ SPEC = PipelineSpec(
     inputs=["text.clean.txt"],
     outputs=["vector_index.json"],
     dependencies=["sentence-transformers>=2.7", "qdrant-client>=1.9"],
-    output_pointer_template="derived/vector/{stem}.index.json",
+    output_pointer_template="derived/vectorization/{stem}.index.json",
     register=_register,
     run=_run,
 )

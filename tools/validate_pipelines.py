@@ -39,10 +39,11 @@ def _validate_spec(spec: PipelineSpec) -> list[str]:
         errors.append(f"{spec.name}: inputs is empty")
     if not spec.outputs:
         errors.append(f"{spec.name}: outputs is empty")
-    if not spec.output_pointer_template.startswith("derived/"):
+    expected_prefix = f"derived/{spec.name}/"
+    if not spec.output_pointer_template.startswith(expected_prefix):
         errors.append(
-            f"{spec.name}: output_pointer_template must live under derived/, got "
-            f"{spec.output_pointer_template!r}"
+            f"{spec.name}: output_pointer_template must start with {expected_prefix!r}, "
+            f"got {spec.output_pointer_template!r}"
         )
     if spec.online_apis_used:
         errors.append(
