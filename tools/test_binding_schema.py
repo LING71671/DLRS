@@ -237,6 +237,20 @@ def main() -> int:
     g = _good_binding(); g["surface"]["ui_hints"]["unknown"] = 1
     cases.append(("surface.ui_hints unknown field", g, False))
 
+    # Path-traversal rejection on ui_hints _ref fields (cross-schema convention).
+    for field in ("avatar_image_ref", "background_audio_ref"):
+        g = _good_binding(); g["surface"]["ui_hints"][field] = "/etc/passwd"
+        cases.append((f"surface.ui_hints.{field} absolute path", g, False))
+
+        g = _good_binding(); g["surface"]["ui_hints"][field] = "../etc/passwd"
+        cases.append((f"surface.ui_hints.{field} parent-dir traversal", g, False))
+
+        g = _good_binding(); g["surface"]["ui_hints"][field] = "media/../etc/passwd"
+        cases.append((f"surface.ui_hints.{field} embedded `..` segment", g, False))
+
+        g = _good_binding(); g["surface"]["ui_hints"][field] = "media/avatar.png"
+        cases.append((f"surface.ui_hints.{field} normal relative path", g, True))
+
     g = _good_binding(); g["surface"]["unknown"] = 1
     cases.append(("surface unknown field", g, False))
 
