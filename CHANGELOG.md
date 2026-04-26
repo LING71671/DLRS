@@ -12,6 +12,16 @@ each merged sub-PR.
 
 ### Added
 
+- `examples/memory-graph-demo/` — fully runnable v0.6 walkthrough that
+  exercises `text` → `memory_atoms` → `knowledge_graph` end-to-end on a
+  fictional 3-paragraph diary excerpt, prints the resulting
+  hash-chained `audit/events.jsonl`, and demonstrates how each
+  descriptor's `audit_event_ref` resolves to its line. Deterministic
+  backends only (paragraph atomiser, regex extractor); zero hosted-API
+  calls. `tools/test_memory_graph_demo.py` validates 8 expected
+  artefacts, every descriptor, the 3-event hash chain, and back-fill
+  consistency. Wired into `tools/batch_validate.py` (now 16 steps) and
+  the pipelines CI matrix. (#60, this PR)
 - `schemas/hosted-api-policy.schema.json` + `pipelines/_hosted_api.py` —
   per-record opt-in policy gate for hosted (online) AI APIs. Default DLRS
   remains offline-first; the only way to authorise a hosted-API code
