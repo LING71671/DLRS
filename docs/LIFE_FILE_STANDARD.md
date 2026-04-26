@@ -112,7 +112,7 @@ mylife.life (zip archive)
 
 - Raw biometric data in pointer mode (audio / video / images that
   bypass `pointers/`).
-- Any file path outside the seven directories above.
+- Any file path outside the eight top-level entries above.
 - Any path containing `..` or absolute paths.
 - Any symlinks (zip archive MUST be flat / regular files only).
 
