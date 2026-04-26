@@ -2,7 +2,13 @@
 
 <div align="center">
 
-**DLRS is an open standard draft for privacy-first, consent-based digital life archives**
+**DLRS defines the `.life` runnable digital-life archive standard** — a **dual standard**:
+
+1. **`.life` archive file format** — a portable, signed, time-bounded digital-life archive package, generated under the consent of the subject (or an authorised representative).
+2. **`.life` runtime protocol** — how compatible runtimes load `.life` to produce an *AI digital life instance* in chat / virtual world / 3D / other digital environments.
+
+Privacy-first, consent-based, structured, revocable, auditable, schema-validated, template-submitted.  
+**`.life` is NOT a "resurrection" technology** — a runtime mounting a `.life` produces an always-identifiable *AI digital life instance*, which MUST remain revocable and auditable.
 
 > **📢 RFC Stage**  
 > This is an early-stage open standard draft. Feedback, translations, schema improvements, and ethical review are welcome.
@@ -20,10 +26,39 @@
 
 ## 🎯 What is DLRS?
 
-**DLRS (Digital Life Repository Standard)** is an **open standard draft** for privacy-first, consent-based digital life archives.
+**DLRS (Digital Life Repository Standard)** is an **open standard draft** comprising two paired standards:
 
-It defines:
-- 📋 Archive directory structure and JSON schemas
+### 📦 The `.life` archive file format
+
+A `.life` file is a **portable, signed, time-bounded digital-life archive package**, generated under the consent of the subject (or an authorised representative). It can include:
+
+- Identity description, consent evidence, verification level
+- Memory structures (memory atoms, knowledge graph)
+- Personality preferences, `forbidden_uses[]` list
+- Multimodal asset pointers (pointer mode) or encrypted blobs (encrypted mode)
+- Model references, `withdrawal_endpoint`
+- A hash-chained subset of the source record's audit log
+
+Spec: [`docs/LIFE_FILE_STANDARD.md`](docs/LIFE_FILE_STANDARD.md) ·
+Schema: [`schemas/life-package.schema.json`](schemas/life-package.schema.json).
+
+### 🚀 The `.life` runtime protocol
+
+Compatible runtimes load a `.life` and, per the protocol, produce **an interactive, revocable, auditable AI digital life instance** in chat applications, virtual worlds, 3D scenes, or other digital environments. A runtime MUST:
+
+- Tag every output as *AI digital life instance* (never claim equivalence to the human)
+- Enforce `forbidden_uses[]`
+- Re-poll `withdrawal_endpoint` at session start AND at least every 24h
+- Refuse to mount after `expires_at`
+- Never combine memories from two `.life` files into one instance
+
+Spec: [`docs/LIFE_RUNTIME_STANDARD.md`](docs/LIFE_RUNTIME_STANDARD.md).
+
+### 🧩 Supporting infrastructure
+
+DLRS also defines the underlying structures that the `.life` standard rests on:
+
+- 📋 DLRS repository / archive directory structure and JSON schemas (stable as of v0.6)
 - ✅ Consent and withdrawal models
 - 🔒 Privacy boundaries and sensitivity levels
 - 🏛️ Governance rules and review processes
@@ -36,22 +71,26 @@ It defines:
 
 **Important Clarifications**:
 
-- ❌ **NOT** a technology to "resurrect" or "clone" humans
+- ❌ **NOT** a technology to "resurrect" or "clone" humans — a `.life` mounted by a runtime produces an *AI digital life instance*, which is never equivalent to the underlying human
+- ❌ **NOT** a consent-free / withdrawal-free post-mortem reanimation tool — every `.life` MUST declare a working `withdrawal_endpoint`, and every runtime MUST honour withdrawal in real time
 - ❌ **NOT** a guarantee that AI avatars equal real persons
 - ❌ **NOT** a guarantee of legal compliance
-- ❌ **NOT** a permanent storage solution
-- ❌ **NOT** a mature production system
+- ❌ **NOT** a permanent storage solution — every `.life` MUST declare `expires_at`; runtimes MUST refuse to mount after it
+- ❌ **NOT** a mature production system — this repo currently ships specs + schema + an example builder; **no reference runtime implementation is shipped** (deferred to v0.8+)
 - ❌ **NOT** a substitute for legal advice
 
 ---
 
 ## ✅ What DLRS IS
 
+- ✅ **`.life` dual standard**: file format + runtime protocol, each on its own semver track
 - ✅ **Open standard draft**: For discussion and improvement
-- ✅ **Privacy-first**: Sensitive data not stored directly in Git
-- ✅ **Consent-based**: All archives must have clear consent evidence
-- ✅ **Revocable**: Users can withdraw consent at any time
-- ✅ **Auditable**: All actions are logged
+- ✅ **Privacy-first**: Sensitive data not stored directly in Git; pointer-mode `.life` files do not embed raw assets by default
+- ✅ **Consent-based**: All archives must have clear consent evidence; every `.life` MUST declare `issued_by` + `consent_evidence_ref` + `verification_level`
+- ✅ **Revocable**: Users can withdraw consent at any time; `.life` mandates `withdrawal_endpoint`, runtimes MUST poll it
+- ✅ **Auditable**: All actions are logged on a hash chain; `.life` embeds an audit subset
+- ✅ **Always identifiable**: a runtime mounting a `.life` MUST always identify the result as an *AI digital life instance* (`ai_disclosure` minimum is `visible_label_required`)
+- ✅ **Time-bounded**: every `.life` MUST declare `expires_at`; runtimes MUST refuse to mount after it
 - ✅ **Experimental**: Non-binding reference implementation
 - ✅ **Community-driven**: Contributions and feedback welcome
 
