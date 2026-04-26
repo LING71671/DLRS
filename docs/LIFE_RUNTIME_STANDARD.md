@@ -635,11 +635,12 @@ MUST emit:
 |---|---|---|
 | `capability_bound` | Once per capability after Stage 3 Assemble succeeds. | `capability`, `provider_name`, `provider_version`, `sandbox_class`. |
 | `assembly_aborted` | Stage failure (B.1.1). | `stage`, `reason`. |
-| `withdrawal_check` | Each withdrawal-watcher poll (Stage 5 Guard). | `endpoint`, `result`. |
+| `withdrawal_poll` (existing v0.7 event, see §5) | Each withdrawal-watcher poll (Stage 5 Guard). v0.8 makes the fields `endpoint` and `result` required. | `endpoint`, `result`. |
 | `lifecycle_transition_observed` | Stage 5 Guard observes a `lifecycle_state` transition (`active` → `superseded` / `frozen` / `withdrawn`). | `from_state`, `to_state`, `package_id`. |
 
-Existing v0.7 events (`session_started`, `turn_emitted`, etc.) are
-unchanged.
+Existing v0.7 events (`session_started`, `session_turn`,
+`session_withdrawn`, `session_terminated`, `forbidden_use_refused`,
+`disclosure_warning_emitted` — see §5) are unchanged.
 
 ## B.8 What this update does NOT add
 
