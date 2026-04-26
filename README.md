@@ -1,4 +1,4 @@
-# Digital Life Repository Standard (DLRS) v0.5 Draft
+# Digital Life Repository Standard (DLRS) v0.5.1
 
 <div align="center">
 
@@ -10,7 +10,7 @@
 > 这是早期开放标准草案。欢迎反馈、翻译、Schema 改进和伦理审查。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.5%20Draft-orange.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.5.1-orange.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/releases/tag/v0.5.1)
 [![i18n](https://img.shields.io/badge/i18n-2%20languages-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/tree/master/docs/i18n)
 [![RFC](https://img.shields.io/badge/RFC-Open%20for%20Comment-green.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/docs/community/RFC-DLRS-v0.2.md)
 
@@ -185,9 +185,9 @@ python tools/validate_repo.py
 
 ## 📊 当前状态
 
-**版本**: v0.5 Draft  
+**版本**: v0.5.1（v0.6 Draft 进行中）  
 **状态**: RFC（征求意见）阶段  
-**完成度**: 约 83% (v0.5 release)
+**完成度**: 约 83% (v0.5.1 release)
 
 ### ✅ 已完成
 - 基础目录结构

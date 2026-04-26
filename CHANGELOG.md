@@ -2,7 +2,55 @@
 
 All notable changes to the DLRS project will be documented in this file.
 
-## v0.5 Draft (2026-04-26)
+## v0.6 Draft (in progress)
+
+**Status**: RFC / WIP. Builds on the v0.5 offline-first build pipelines with
+memory atoms, a knowledge-graph extraction pipeline, a descriptor → audit
+event bridge, and an opt-in hosted-API policy gate. Sub-issues land
+incrementally as one PR each (epic [#52](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/52)). Contents below populated by
+each merged sub-PR.
+
+### Added
+
+- _populated by sub-PRs_
+
+### Changed
+
+- _populated by sub-PRs_
+
+### Closes
+
+- _populated by sub-PRs_
+
+---
+
+## v0.5.1 (2026-04-26)
+
+**Status**: Patch release on top of v0.5.0. Documentation-only — no schema,
+code, behaviour, governance, or CI changes. Source of truth for these notes
+is the [v0.5.1 GitHub Release](https://github.com/Digital-Life-Repository-Standard/DLRS/releases/tag/v0.5.1).
+
+### Changed
+
+- `redactions.json` field name corrected across CHANGELOG / `docs/PIPELINE_GUIDE.md`
+  / `ROADMAP.md`: the actual field emitted by `pipelines/text/cleaning.py:90-96`
+  is `kind` (e.g. `email`, `phone_cn`), not `rule_name`. Same correction
+  applied to the moderation pipeline (`pipelines/moderation/policies.py:83-89`
+  emits `rule`, not `rule_name`). Downstream consumers that keyed off the
+  documented name would have failed to read the actual sidecar.
+- Removed claims of "IBAN, IPv4/IPv6, generic passport" redaction from
+  long-lived CN docs (`docs/IMPLEMENTATION_STATUS.md`, `ROADMAP.md`). The
+  text pipeline implements exactly seven patterns: `url_with_credentials`,
+  `email`, `id_cn`, `phone_cn`, `ipv4`, `credit_card_like`, `phone_generic`.
+  No IBAN, no IPv6, no passport patterns ship in v0.5.
+
+### Closes
+
+- #50 (via PR #51).
+
+---
+
+## v0.5.0 (2026-04-26)
 
 **Status**: RFC. Introduces the v0.5 offline-first build pipelines (ASR / text /
 vectorization / moderation), a derived-asset provenance schema, and the
