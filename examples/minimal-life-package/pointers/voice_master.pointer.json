@@ -1,0 +1,16 @@
+{
+  "storage_uri": "s3://example-bucket/voice/master.wav",
+  "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "region": "EU",
+  "format": "wav",
+  "size_bytes": 0,
+  "sensitivity": "S3_BIOMETRIC",
+  "access_policy": "private_runtime_only",
+  "artifact_type": "audio",
+  "media_metadata": {
+    "duration_seconds": 60,
+    "sample_rate_hz": 48000,
+    "bit_depth": 16,
+    "format": "wav"
+  }
+}

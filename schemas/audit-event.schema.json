@@ -21,7 +21,7 @@
     },
     "event_type": {
       "type": "string",
-      "description": "One of the canonical lifecycle events from DLRS_ULTIMATE.md, plus 'derived_asset_emitted' (v0.6 descriptor->audit bridge — see issue #58) and 'custom' for organisation-specific extensions.",
+      "description": "One of the canonical lifecycle events from DLRS_ULTIMATE.md, plus 'derived_asset_emitted' (v0.6 descriptor->audit bridge — see issue #58), 'package_emitted' (v0.7-vision-shift .life builder — see docs/LIFE_FILE_STANDARD.md §5), and 'custom' for organisation-specific extensions.",
       "enum": [
         "record_created",
         "consent_verified",
@@ -32,6 +32,7 @@
         "inheritance_trigger",
         "export_requested",
         "derived_asset_emitted",
+        "package_emitted",
         "custom"
       ]
     },

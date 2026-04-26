@@ -48,6 +48,7 @@ DEFAULT_STEPS = [
     ("hosted_api_policy", [sys.executable, str(TOOLS / "test_hosted_api_policy.py")]),
     ("asr_demo", [sys.executable, str(TOOLS / "test_asr_demo.py")]),
     ("memory_graph_demo", [sys.executable, str(TOOLS / "test_memory_graph_demo.py")]),
+    ("minimal_life_package", [sys.executable, str(TOOLS / "test_minimal_life_package.py")]),
 ]
 
 
