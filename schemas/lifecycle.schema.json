@@ -133,8 +133,8 @@
         },
         "supersedes": {
           "type": "array",
-          "description": "Predecessor asset_ids this version replaces. Decision D2=C: at most one predecessor.",
-          "items": { "type": "string", "minLength": 1 },
+          "description": "Predecessor asset_ids this version replaces. Decision D2=C: at most one predecessor. Items use the same asset_id pattern enforced by `mutation_event.asset_id`, `mutation_event.successor_asset_id`, `cascade_index.derived_assets`, and `genesis.schema.json::asset_id` for cross-schema consistency.",
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{2,127}$" },
           "maxItems": 1,
           "uniqueItems": true
         },

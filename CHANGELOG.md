@@ -56,9 +56,12 @@ Sub-issues #100–#105.
   `action == "state_changed"` requires `from_state` + `to_state`;
   `supersedes.maxItems: 1` enforces fork-yes / merge-no statically.
   [#102]
-- `tools/test_lifecycle_schema.py` — 39 sanity-test cases (4
-  happy-path + 35 negative) covering all four shapes, wired into
-  `tools/batch_validate.py`. [#102]
+- `tools/test_lifecycle_schema.py` — 42 sanity-test cases (4
+  happy-path + 38 negative) covering all four shapes, wired into
+  `tools/batch_validate.py`. The 42 reflects the post-merge fixes
+  applied in #110 (memorial `else` clause + `..` path-traversal
+  rejection on `mutation_log_ref`) plus the asset_id pattern fix
+  in this follow-up. [#102]
 
 [#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
 [#102]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/102
