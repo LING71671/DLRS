@@ -39,8 +39,25 @@ Sub-issues #100–#105.
   `compute.hosted_api_providers[]`. [#101]
 - `tools/test_genesis_schema.py` — 36 sanity-test cases (4 happy-path
   + 32 negative) wired into `tools/batch_validate.py`. [#101]
+- `docs/LIFE_BINDING_SPEC.md` — per-topic normative spec for Topic 3
+  (Runtime Binding). Defines `binding/runtime_binding.json` and
+  encodes the four locked Topic-3 decisions: hybrid capability
+  vocabulary (D1=C, ~20 core enum + `x-` extension); issuer-self
+  -decided engine strictness (D2=C, `strict: true | false`); hybrid
+  hard-constraints keys with runtime fail-close on unknown keys
+  (D4=C); AND-gate hosted-API decision (D5=A, issuer half only —
+  user half is `policy/hosted_api.json` from v0.6). [#103]
+- `schemas/binding.schema.json` — JSON Schema for the binding file
+  format (`dlrs-life-binding/0.1`). `patternProperties` enforce both
+  the capability-name hybrid vocabulary and the hard-constraints
+  hybrid keyspace; `additionalProperties: false` makes unknown
+  non-`x-` keys reject statically (decision D4=C fail-close at schema
+  layer). [#103]
+- `tools/test_binding_schema.py` — 52 sanity-test cases (4 happy-path
+  + 48 negative) wired into `tools/batch_validate.py`. [#103]
 
 [#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
+[#103]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/103
 
 
 ## v0.7-vision-shift (2026-04-26)

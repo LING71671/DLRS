@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/binding.schema.json",
+  "title": "DLRS .life Runtime Binding",
+  "description": "Runtime binding for a `.life` package (v0.8 asset architecture epic, sub-issue #103). Maps each declared capability to the asset that fulfils it, the engines that may host it, and the params runtimes feed in. Also carries hard constraints (machine-checkable issuer prohibitions), surface (what user-facing modes the package supports), orchestration (LLM and context shape), and hosted-API preference (one half of the AND-gate that gives the actual decision; the other half is the user's `policy/hosted_api.json`). Lives at `binding/runtime_binding.json` inside the `.life` zip. See docs/LIFE_BINDING_SPEC.md for the normative text.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "binding_version",
+    "minimum_runtime_version",
+    "capabilities",
+    "hard_constraints",
+    "surface"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of this schema. Bumped on any breaking change. Loaders MUST refuse binding documents with an unknown schema_version.",
+      "const": "dlrs-life-binding/0.1"
+    },
+    "binding_version": {
+      "type": "string",
+      "description": "Issuer-controlled binding revision. SemVer; bumped when the issuer changes any field in this document. Lets loaders cache provider resolution by `(package_sha256, binding_version)`.",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$"
+    },
+    "minimum_runtime_version": {
+      "type": "string",
+      "description": "Lowest `dlrs-runtime` SemVer that the issuer asserts is sufficient to honour every field in this binding. Loaders running an older runtime MUST refuse to load.",
+      "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "Map from capability name to its binding. Capability names are drawn from the hybrid vocabulary (decision D1=C): ~20 fixed core enum members plus `x-`-prefixed extensions. Unknown names without the `x-` prefix MUST be rejected (the schema enforces this via `patternProperties`).",
+      "patternProperties": {
+        "^(voice_synthesis|voice_recognition|memory_recall|persona|knowledge_qa|image_recall|video_recall|chat|agent_tool_use|planning|emotion_synthesis|prosody_control|memorial_voice|text_persona|image_avatar|video_avatar|interactive_chat|moderation|disclosure_renderer|context_summary)$": { "$ref": "#/$defs/capability_binding" },
+        "^x-[a-z][a-z0-9_-]*$": { "$ref": "#/$defs/capability_binding" }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "orchestration": {
+      "$ref": "#/$defs/orchestration"
+    },
+    "hard_constraints": {
+      "$ref": "#/$defs/hard_constraints"
+    },
+    "surface": {
+      "$ref": "#/$defs/surface"
+    },
+    "hosted_api_preference": {
+      "$ref": "#/$defs/hosted_api_preference"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "capability_binding": {
+      "type": "object",
+      "description": "Binds a single capability to the asset that fulfils it plus the engines that may host that asset. Decision D2=C: each engine entry decides its own version-match strictness via `strict: true | false`.",
+      "required": ["asset_id", "engine_compatibility"],
+      "properties": {
+        "asset_id": {
+          "type": "string",
+          "description": "MUST refer to an asset declared in `manifest/manifest.json` and (post-v0.8) MUST have a sibling `genesis/<asset_id>.genesis.json`. Loaders MUST refuse a binding pointing at an unknown asset_id.",
+          "pattern": "^[a-z][a-z0-9_-]{2,127}$"
+        },
+        "engine_compatibility": {
+          "type": "array",
+          "description": "Ordered list of engines the issuer asserts can host this asset. Loaders MUST iterate in declared order; the first installed engine matching the entry's version range and strictness wins. Empty arrays are forbidden — every capability MUST list at least one engine.",
+          "items": { "$ref": "#/$defs/engine_entry" },
+          "minItems": 1
+        },
+        "params": {
+          "type": "object",
+          "description": "Free-form per-capability parameters fed to the chosen engine (e.g. voice synthesis temperature, memory recall top-k). Schemas for individual capabilities live in their respective specs; this binding only declares the values.",
+          "additionalProperties": true
+        },
+        "fallback_capability": {
+          "type": "string",
+          "description": "Optional pointer to a less-strict capability the loader MAY use if no engine satisfies any `engine_compatibility` entry. The fallback target MUST itself be declared in `capabilities`. Decision D2 (loose-mode opt-in): only fires when at least one entry has `strict: false`."
+        },
+        "tier_floor": {
+          "type": "string",
+          "description": "Optional minimum tier (Schema D Cosmic Evolution roman numeral, e.g. `VII`) below which the loader SHOULD warn before binding. Tier definitions land via #104.",
+          "pattern": "^(I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII)$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "engine_entry": {
+      "type": "object",
+      "description": "A single engine candidate. Decision D2=C: `strict` is issuer-self-decided. `strict: true` (default) means the loader MUST honour the SemVer range exactly. `strict: false` opts into looser matching: the loader MAY accept any engine that exposes the same capability interface, even at a different SemVer range.",
+      "required": ["name", "version_range"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Engine identifier. Free-form but stable (the same engine MUST always use the same name). Examples: `xtts-v2`, `tortoise-tts`, `whisper`, `qdrant-local`, `ollama-llama3`.",
+          "minLength": 1
+        },
+        "version_range": {
+          "type": "string",
+          "description": "SemVer range expression. Examples: `^2.0.0`, `>=1.5 <2`, `=1.2.3`. Loaders MUST parse with a SemVer-compliant matcher.",
+          "minLength": 1
+        },
+        "strict": {
+          "type": "boolean",
+          "description": "When true (default), the loader MUST honour `version_range` exactly. When false, the loader MAY accept compatible interfaces outside the range; the issuer accepts the looser match.",
+          "default": true
+        },
+        "engine_kind": {
+          "type": "string",
+          "description": "Optional classification used by sandboxing decisions (#105 / Topic 4 D1). `built_in` = ships with the runtime; `user_installed` = installed by the user (OS package, lifectl); `bundled_in_life` = vendored inside the `.life` zip. Loaders MUST refuse `bundled_in_life` engines in v0.8 (decision Topic 4 D2=B); whitelisted issuer support is deferred to v1.0+.",
+          "enum": ["built_in", "user_installed", "bundled_in_life"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "orchestration": {
+      "type": "object",
+      "description": "How the runtime orchestrates the underlying LLM and context window. Optional but RECOMMENDED for any package with `chat` or `interactive_chat` capability.",
+      "properties": {
+        "default_llm": {
+          "type": "object",
+          "description": "Issuer's preferred LLM for orchestration. Loaders MAY substitute another LLM that satisfies `minimum_llm_capabilities` if the named one is unavailable.",
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "version_range": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        "minimum_llm_capabilities": {
+          "type": "array",
+          "description": "Capabilities any substitute LLM MUST expose. Loaders MUST refuse to bind an LLM lacking any of these.",
+          "items": {
+            "type": "string",
+            "enum": ["chat", "function_calling", "structured_output", "tool_use", "vision_input", "audio_input", "long_context"]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "context_strategy": {
+          "type": "string",
+          "description": "How conversation history is shaped. `rolling_window` keeps the most recent N tokens. `summarised` collapses older history into a recursive summary. `hybrid` keeps a rolling window plus a top-K memory recall.",
+          "enum": ["rolling_window", "summarised", "hybrid"]
+        },
+        "max_context_tokens": {
+          "type": "integer",
+          "description": "Issuer's hard ceiling on total context tokens per turn. Loaders MUST NOT exceed it even if the underlying LLM permits more.",
+          "minimum": 256
+        }
+      },
+      "additionalProperties": false
+    },
+    "hard_constraints": {
+      "type": "object",
+      "description": "Machine-checkable prohibitions. Decision D4=C: hybrid keyspace — known core keys (~30) plus `x-`-prefixed custom keys. Loaders MUST fail-close on any unrecognised constraint key (never silently ignore an issuer's prohibition); the schema rejects unknown non-`x-` keys statically. The structure-level rule is encoded via `patternProperties` + `additionalProperties: false`.",
+      "patternProperties": {
+        "^(no_image_generation|no_video_generation|no_voice_clone_for_third_party|no_political_advocacy|no_religious_advocacy|no_unattributed_quotes|no_medical_advice|no_legal_advice|no_financial_advice|no_explicit_sexual|no_self_harm_methods|no_minors_likeness|no_deceased_likeness_outside_memorial|max_memory_horizon_days|max_concurrent_sessions|max_session_duration_minutes|max_messages_per_session|max_tokens_per_response|geo_restrictions|disallow_offline|disallow_cloud|disallow_screen_recording|disallow_export|disallow_copy|require_disclosure_prefix|require_watermark|require_user_age_attestation|require_human_in_the_loop|require_audit_emit|require_consent_recheck_every_minutes|forbidden_third_party_use)$": {},
+        "^x-[a-z][a-z0-9_-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "surface": {
+      "type": "object",
+      "description": "User-facing modes the issuer asserts the package supports. Three fields per decision Topic 4 D4=C: `supported[]` lists every mode the runtime MAY pick, `preferred` recommends the default, `minimum_required` is the floor below which the loader MUST refuse to bind.",
+      "required": ["supported", "preferred", "minimum_required"],
+      "properties": {
+        "supported": {
+          "type": "array",
+          "description": "Every surface mode the issuer asserts is renderable. The runtime MUST pick from this set.",
+          "items": { "$ref": "#/$defs/surface_mode" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "preferred": {
+          "$ref": "#/$defs/surface_mode",
+          "description": "Issuer's preferred mode. The loader SHOULD honour it when its capabilities allow; otherwise the loader MAY downgrade to any other mode in `supported` that is at or above `minimum_required`."
+        },
+        "minimum_required": {
+          "$ref": "#/$defs/surface_mode",
+          "description": "Floor mode. Loaders unable to render this mode MUST refuse to bind."
+        },
+        "ui_hints": {
+          "type": "object",
+          "description": "Optional rendering hints. Free-form, but loaders MUST surface `disclosure_label` verbatim if present (legal disclosure copy).",
+          "properties": {
+            "disclosure_label": { "type": "string", "minLength": 1, "maxLength": 1024 },
+            "color_scheme": { "type": "string", "enum": ["light", "dark", "auto"] },
+            "avatar_image_ref": { "type": "string", "minLength": 1 },
+            "background_audio_ref": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "surface_mode": {
+      "type": "string",
+      "enum": ["text_only", "chat", "voice_chat", "avatar_2d", "avatar_3d", "vr"],
+      "description": "Ordered low → high in capability requirements: text_only < chat < voice_chat < avatar_2d < avatar_3d < vr. The schema does not enforce ordering between `preferred` / `minimum_required` (the runtime applies it at bind time)."
+    },
+    "hosted_api_preference": {
+      "type": "object",
+      "description": "Issuer half of the AND-gate (decision D5=A). Actual hosted-API decision = `binding.hosted_api_preference.allowed` AND `policy/hosted_api.json` (loader-side opt-in). Both halves MUST allow for the hosted call to fire.",
+      "required": ["allowed"],
+      "properties": {
+        "allowed": {
+          "type": "boolean",
+          "description": "Issuer-side switch. False forbids ANY hosted-API call regardless of the loader's policy. True permits hosted calls, subject to the user's policy."
+        },
+        "preferred_for": {
+          "type": "array",
+          "description": "Capability names for which the issuer recommends going to a hosted API when permitted (e.g. high-quality voice synthesis). Loaders MAY respect or ignore.",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "must_be_local_for": {
+          "type": "array",
+          "description": "Capability names for which the issuer FORBIDS hosted calls even if the loader's policy allows them. Loaders MUST honour this list.",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "providers_whitelist_ref": {
+          "type": "string",
+          "description": "Optional path inside `.life` (typically `policy/hosted_api.json`) referencing the issuer's whitelist of acceptable hosted providers. Loaders MUST refuse providers outside the whitelist when present.",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
