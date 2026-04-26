@@ -218,7 +218,7 @@ Leak-safety: atoms carry the cleaned text *as-is*, so anything redacted by the v
 
 Reads memory atoms (or any line-delimited JSON with `text` + `atom_id`) and emits a small co-mention knowledge graph: capitalised name candidates as nodes, atoms-in-common-as-co-mention as edges.
 
-One backend (`regex`) by default. The candidate regex matches a capitalised word optionally followed by additional capitalised words (`Alice`, `Bob`, `European Commission`) using a literal space — never `\s+` — so labels never contain `\n` (the v0.6.1 fix from PR #71). Candidates are normalised (case-folded for de-dup) and filtered against a small stopword list shipped with the pipeline.
+One backend (`regex`) by default. The candidate regex matches a capitalised word optionally followed by additional capitalised words (`Alice`, `Bob`, `European Commission`) using a literal space — never `\s+` — so labels never contain `\n` (the fix from PR #71). Candidates are normalised (case-folded for de-dup) and filtered against a small stopword list shipped with the pipeline.
 
 Node schema: `schemas/entity-graph-node.schema.json` (`node_id`, `record_id`, `label`, `entity_type`, `mention_count`, `source_atom_ids[]`, optional `metadata`). Edge schema: `schemas/entity-graph-edge.schema.json` (`edge_id`, `record_id`, `source_node_id`, `target_node_id`, `relation`, `weight`, `source_atom_ids[]`). Both are `additionalProperties: false`; see #55 for full field lists.
 
