@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/dlrs/schemas/manifest.schema.json",
+  "$id": "https://dlrs.standard/schemas/manifest.schema.json",
   "title": "DLRS Human Record Manifest",
+  "description": "Top-level manifest for a single DLRS human record. Every archive directory under humans/ MUST contain exactly one manifest.json conforming to this schema.",
   "type": "object",
   "required": [
     "schema_version",
@@ -20,17 +21,23 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "pattern": "^0\\.2\\.\\d+$"
+      "description": "DLRS schema version this manifest conforms to (semver). v0.3 accepts 0.2.x and 0.3.x while migration is in progress.",
+      "pattern": "^0\\.[23]\\.\\d+$",
+      "examples": ["0.2.0", "0.3.0"]
     },
     "record_id": {
       "type": "string",
-      "pattern": "^dlrs_[a-zA-Z0-9_-]{8,}$"
+      "description": "Stable record identifier. Format: dlrs_<slug>. MUST be globally unique across the registry.",
+      "pattern": "^dlrs_[a-zA-Z0-9_-]{4,}$",
+      "examples": ["dlrs_94f1c9b8", "dlrs_94f1c9b8_lin-example"]
     },
     "display_slug": {
-      "type": "string"
+      "type": "string",
+      "description": "Optional human-friendly slug used for the directory name."
     },
     "visibility": {
       "type": "string",
+      "description": "Top-level visibility for the record. Drives whether the registry generator considers the record at all.",
       "enum": [
         "private",
         "team",

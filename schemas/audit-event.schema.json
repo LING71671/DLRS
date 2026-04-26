@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/dlrs/schemas/audit-event.schema.json",
+  "$id": "https://dlrs.standard/schemas/audit-event.schema.json",
   "title": "DLRS Audit Event",
+  "description": "Append-only audit event recording an action against a DLRS record. See operations/audit-log-format.md.",
   "type": "object",
   "required": [
     "event_id",

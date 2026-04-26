@@ -193,7 +193,7 @@ Add version information at the top of translated documents:
 
 For translation questions or to volunteer as a translator:
 - Open an issue with `[i18n]` prefix
-- Email: i18n@example.org
+- Email: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 - Join our translation team on Discord
 
 ---

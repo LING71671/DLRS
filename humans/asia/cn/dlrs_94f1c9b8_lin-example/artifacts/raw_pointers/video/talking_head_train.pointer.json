@@ -4,6 +4,23 @@
   "region": "CN",
   "format": "mp4",
   "size_bytes": 234567890,
+  "artifact_type": "video",
   "sensitivity": "S3_BIOMETRIC",
-  "access_policy": "private_runtime_only"
+  "access_policy": "private_runtime_only",
+  "encryption": {
+    "at_rest": "AES-256",
+    "in_transit": "TLS1.2+"
+  },
+  "retention_days": 3650,
+  "withdrawal_supported": true,
+  "consent_ref": "consent/consent_statement.md",
+  "review_status": "approved",
+  "media_metadata": {
+    "duration_seconds": 90,
+    "width": 1920,
+    "height": 1080,
+    "fps": 25,
+    "codec": "h264",
+    "container": "mp4"
+  }
 }

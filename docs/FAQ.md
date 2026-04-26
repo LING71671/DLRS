@@ -305,9 +305,9 @@ git push origin --force --all
 
 ### 在哪里可以获得帮助？
 
-- **GitHub Issues**：https://github.com/your-org/dlrs-hub/issues
-- **邮箱**：contact@example.org
-- **安全问题**：security@example.org
+- **GitHub Issues**：https://github.com/Digital-Life-Repository-Standard/DLRS/issues
+- **邮箱**：https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
+- **安全问题**：https://github.com/Digital-Life-Repository-Standard/DLRS/security/advisories/new
 - **文档**：[docs/](.)
 
 ### 我可以在我的项目中使用 DLRS Hub 吗？
@@ -362,8 +362,8 @@ git push origin --force --all
 如果你的问题在这里没有得到解答：
 
 1. 查看[完整文档](.)
-2. 搜索 [GitHub Issues](https://github.com/your-org/dlrs-hub/issues)
+2. 搜索 [GitHub Issues](https://github.com/Digital-Life-Repository-Standard/DLRS/issues)
 3. 使用 `question` 标签开一个新 issue
-4. 发邮件给我们：contact@example.org
+4. 发邮件给我们：https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 
 我们在这里帮助你！💙

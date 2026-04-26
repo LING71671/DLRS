@@ -5,5 +5,5 @@
   "format": "mp4",
   "size_bytes": 12345678,
   "sensitivity": "S3_BIOMETRIC",
-  "access_policy": "reviewers_only"
+  "access_policy": "team_internal"
 }

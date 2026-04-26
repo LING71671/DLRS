@@ -5,5 +5,5 @@
   "format": "json",
   "size_bytes": 2048,
   "sensitivity": "S4_RESTRICTED",
-  "access_policy": "legal_review_only"
+  "access_policy": "audit_only"
 }

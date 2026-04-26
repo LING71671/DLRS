@@ -4,6 +4,21 @@
   "region": "CN",
   "format": "png",
   "size_bytes": 234567,
+  "artifact_type": "image",
   "sensitivity": "S3_BIOMETRIC",
-  "access_policy": "private_runtime_only"
+  "access_policy": "private_runtime_only",
+  "encryption": {
+    "at_rest": "AES-256",
+    "in_transit": "TLS1.2+"
+  },
+  "retention_days": 3650,
+  "withdrawal_supported": true,
+  "consent_ref": "consent/consent_statement.md",
+  "review_status": "approved",
+  "media_metadata": {
+    "width": 2048,
+    "height": 2048,
+    "color_space": "sRGB",
+    "format": "png"
+  }
 }

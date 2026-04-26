@@ -5,5 +5,5 @@
   "format": "REPLACE_ME",
   "size_bytes": 0,
   "sensitivity": "S2_SENSITIVE",
-  "access_policy": "private"
+  "access_policy": "private_runtime_only"
 }

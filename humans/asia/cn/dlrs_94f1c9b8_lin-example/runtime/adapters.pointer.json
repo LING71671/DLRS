@@ -4,5 +4,5 @@
   "region": "CN",
   "format": "adapter_bundle",
   "sensitivity": "S2_SENSITIVE",
-  "access_policy": "no_public_download"
+  "access_policy": "private_runtime_only"
 }

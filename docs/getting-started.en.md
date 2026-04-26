@@ -31,12 +31,12 @@ If you're starting fresh:
 
 ```bash
 # Initialize a new Git repository
-git init dlrs-hub
-cd dlrs-hub
+git init DLRS
+cd DLRS
 
 # Or clone an existing repository
-git clone https://github.com/your-org/dlrs-hub.git
-cd dlrs-hub
+git clone https://github.com/Digital-Life-Repository-Standard/DLRS.git
+cd DLRS
 ```
 
 ### Install Dependencies
@@ -185,7 +185,7 @@ Before committing, validate your record:
 
 ```bash
 # Return to repository root
-cd /path/to/dlrs-hub
+cd /path/to/DLRS
 
 # Run validation
 python tools/validate_repo.py
@@ -288,7 +288,7 @@ If you encounter issues:
 
 - Check the [FAQ](FAQ.md)
 - Open an issue on GitHub
-- Contact: contact@example.org
+- Contact: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 
 ---
 

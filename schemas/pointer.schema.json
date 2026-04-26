@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/dlrs/schemas/pointer.schema.json",
+  "$id": "https://dlrs.standard/schemas/pointer.schema.json",
   "title": "DLRS Artifact Pointer",
+  "description": "Pointer file describing an externally-stored artifact (audio, video, image, text, 3D, document). DLRS is pointer-first: raw sensitive content MUST NOT be committed to Git.",
   "type": "object",
   "required": [
     "storage_uri",
@@ -13,25 +14,155 @@
   ],
   "properties": {
     "storage_uri": {
-      "type": "string"
+      "type": "string",
+      "description": "Absolute URI to the stored asset. MUST use one of the schemes defined in docs/OBJECT_STORAGE_POINTERS.md.",
+      "pattern": "^(s3|oss|cos|minio|obj|repo)://.+",
+      "examples": [
+        "s3://dlrs-private-vault/humans/asia/cn/dlrs_94f1c9b8/voice_master.wav",
+        "obj://cn-shanghai/audio/voice_master_zh-CN_48k24b_take01.wav",
+        "repo://public_profile.json"
+      ]
     },
     "checksum": {
-      "type": "string"
+      "type": "string",
+      "description": "Integrity hash of the stored asset, formatted as '<algo>:<hex>'. SHA-256 is the default.",
+      "pattern": "^(sha256|sha512|sha3-256|sha3-512|blake3):[A-Za-z0-9_.-]+$",
+      "examples": ["sha256:a1b2c3d4e5f6"]
     },
     "region": {
-      "type": "string"
+      "type": "string",
+      "description": "Storage region/locality. Used for residency and cross-border enforcement.",
+      "examples": ["CN", "cn-shanghai", "us-west-2", "global"]
     },
     "format": {
-      "type": "string"
+      "type": "string",
+      "description": "Container/format identifier (file extension without dot).",
+      "examples": ["wav", "flac", "mp4", "mov", "png", "jpg", "vrm", "glb", "json", "txt"]
     },
     "size_bytes": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "description": "Asset size in bytes."
     },
     "sensitivity": {
-      "type": "string"
+      "type": "string",
+      "description": "DLRS sensitivity classification.",
+      "enum": [
+        "S0_PUBLIC",
+        "S1_INTERNAL",
+        "S2_SENSITIVE",
+        "S2_CONFIDENTIAL",
+        "S3_BIOMETRIC",
+        "S4_RESTRICTED",
+        "S4_IDENTITY"
+      ]
     },
     "access_policy": {
-      "type": "string"
+      "type": "string",
+      "description": "Access control class for the stored asset.",
+      "enum": [
+        "private_runtime_only",
+        "team_internal",
+        "audit_only",
+        "public_preview"
+      ]
+    },
+    "artifact_type": {
+      "type": "string",
+      "description": "High-level artifact category. Drives which media_metadata fields are expected.",
+      "enum": [
+        "audio",
+        "video",
+        "image",
+        "text",
+        "avatar_3d",
+        "document",
+        "embedding"
+      ]
+    },
+    "encryption": {
+      "type": "object",
+      "description": "Encryption descriptor. Credentials MUST NEVER appear here.",
+      "properties": {
+        "at_rest": {"type": "string", "examples": ["AES-256", "SSE-KMS"]},
+        "in_transit": {"type": "string", "examples": ["TLS1.2+", "TLS1.3"]},
+        "kms_ref": {"type": ["string", "null"], "description": "Opaque KMS key reference, MUST NOT contain raw key material."}
+      },
+      "additionalProperties": true
+    },
+    "retention_days": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Retention window in days for the underlying asset."
+    },
+    "withdrawal_supported": {
+      "type": "boolean",
+      "description": "True if the storage backend supports record-level deletion within retention."
+    },
+    "withdrawal_endpoint": {
+      "type": "string",
+      "description": "URL or mailto: where withdrawal requests targeting this asset are processed."
+    },
+    "consent_ref": {
+      "type": "string",
+      "description": "Repo-relative path to the consent evidence governing this asset."
+    },
+    "review_status": {
+      "type": "string",
+      "enum": ["draft", "submitted", "approved", "blocked", "withdrawn"],
+      "description": "Review/lifecycle state of this asset."
+    },
+    "media_metadata": {
+      "type": "object",
+      "description": "Per-artifact-type metadata; see docs/OBJECT_STORAGE_POINTERS.md §3.",
+      "additionalProperties": true,
+      "properties": {
+        "duration_seconds": {"type": "number", "minimum": 0},
+        "sample_rate_hz": {"type": "integer", "minimum": 0},
+        "bit_depth": {"type": "integer", "minimum": 0},
+        "channels": {"type": "integer", "minimum": 0},
+        "loudness_lufs": {"type": "number"},
+        "true_peak_dbfs": {"type": "number"},
+        "codec": {"type": "string"},
+        "container": {"type": "string"},
+        "width": {"type": "integer", "minimum": 0},
+        "height": {"type": "integer", "minimum": 0},
+        "fps": {"type": "number", "minimum": 0},
+        "color_space": {"type": "string"},
+        "format": {"type": "string"},
+        "polygon_count": {"type": "integer", "minimum": 0},
+        "rigged": {"type": "boolean"},
+        "blendshape_set": {"type": "string"},
+        "language": {"type": "string"},
+        "character_count": {"type": "integer", "minimum": 0},
+        "deidentified": {"type": "boolean"},
+        "image_count": {"type": "integer", "minimum": 0},
+        "long_edge_px": {"type": "integer", "minimum": 0},
+        "color_chart_present": {"type": "boolean"},
+        "scenarios": {"type": "array", "items": {"type": "string"}},
+        "cameras": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Provenance / C2PA descriptors.",
+      "properties": {
+        "source": {"type": "string"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "c2pa_manifest_uri": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
     }
+  },
+  "additionalProperties": true,
+  "not": {
+    "anyOf": [
+      {"required": ["download_url"]},
+      {"required": ["presigned_url"]},
+      {"required": ["password"]},
+      {"required": ["access_key_id"]},
+      {"required": ["access_key_secret"]},
+      {"required": ["secret_access_key"]}
+    ]
   }
 }

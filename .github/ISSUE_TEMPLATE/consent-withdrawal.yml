@@ -1,0 +1,108 @@
+name: "Consent withdrawal"
+description: "Withdraw previously-granted consent for a DLRS record."
+title: "[Withdrawal] <record_id>"
+labels: ["consent-withdrawal", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Privacy warning — please read before submitting
+
+        Withdrawal requests are processed using the record's
+        ``consent.withdrawal_endpoint``. This GitHub form exists as a public
+        fallback when the endpoint is unreachable.
+
+        **Do NOT attach** identity documents, photographs of your face, voice
+        recordings, or other sensitive material here. A maintainer will
+        contact you via the channel you provide below to arrange private
+        identity verification.
+
+        For sensitive cases, please use the
+        [private security advisory channel](https://github.com/Digital-Life-Repository-Standard/DLRS/security/advisories/new).
+  - type: input
+    id: record_id
+    attributes:
+      label: Record ID
+      placeholder: dlrs_xxxxxxxx
+    validations:
+      required: true
+  - type: input
+    id: original_consent_date
+    attributes:
+      label: Original consent date (ISO-8601)
+      description: "If known. Otherwise leave blank."
+      placeholder: "2026-04-25T10:00:00Z"
+    validations:
+      required: false
+  - type: dropdown
+    id: scopes
+    attributes:
+      label: Scopes you wish to withdraw
+      multiple: true
+      options:
+        - storage
+        - structured_processing
+        - text_persona
+        - voice_clone
+        - avatar_clone
+        - video_avatar
+        - research_use
+        - commercial_use
+        - public_listing
+        - model_finetune
+        - "ALL — full withdrawal"
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Reason
+      description: "Optional. You are not obligated to provide a reason."
+    validations:
+      required: false
+  - type: dropdown
+    id: identity_method
+    attributes:
+      label: Preferred identity-verification method
+      description: "We will only verify identity through the channel you choose."
+      options:
+        - email reply from the address used at original signing
+        - signed video statement (private channel)
+        - government ID (private channel only — never public)
+        - other (describe in 'Notes')
+    validations:
+      required: true
+  - type: dropdown
+    id: timeline
+    attributes:
+      label: Preferred withdrawal timeline
+      options:
+        - "as soon as possible"
+        - "within 30 days"
+        - "within 90 days"
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Private contact channel
+      description: "We will contact you here for verification. Do not put sensitive details in this public field."
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+    validations:
+      required: false
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: "I have NOT attached identity documents, photos, or biometric material to this issue."
+          required: true
+        - label: "I understand maintainers will request verification material via a private channel."
+          required: true
+        - label: "I understand withdrawal handling follows [policies/data-retention.md](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/policies/data-retention.md)."
+          required: true

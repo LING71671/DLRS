@@ -5,5 +5,5 @@
   "format": "jsonl",
   "size_bytes": 1024,
   "sensitivity": "S2_SENSITIVE",
-  "access_policy": "auditors_only"
+  "access_policy": "audit_only"
 }

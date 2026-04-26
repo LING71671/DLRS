@@ -6,8 +6,8 @@
 
 请通过以下方式报告安全问题：
 
-- Security email: security@example.org
-- Takedown email: takedown@example.org
+- Security email: https://github.com/Digital-Life-Repository-Standard/DLRS/security/advisories/new
+- Takedown email: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/new?template=takedown-request.yml
 
 ## 高危问题
 

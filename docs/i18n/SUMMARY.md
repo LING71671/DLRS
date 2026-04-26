@@ -204,7 +204,7 @@ Requirements:
 - Complete 3+ high-quality translations
 - Demonstrate consistency
 - Available for PR reviews
-- Contact: i18n@example.org
+- Contact: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 
 ## 📈 Future Enhancements
 
@@ -236,7 +236,7 @@ Requirements:
 
 ## 📞 Contact
 
-- Email: i18n@example.org
+- Email: https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 - GitHub: Use `[i18n]` label
 - Discord: https://discord.gg/dlrs-i18n
 

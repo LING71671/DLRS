@@ -23,12 +23,12 @@
 
 ```bash
 # 初始化新的 Git 仓库
-git init dlrs-hub
-cd dlrs-hub
+git init DLRS
+cd DLRS
 
 # 或者克隆现有仓库
-git clone https://github.com/your-org/dlrs-hub.git
-cd dlrs-hub
+git clone https://github.com/Digital-Life-Repository-Standard/DLRS.git
+cd DLRS
 ```
 
 ### 安装依赖
@@ -177,7 +177,7 @@ cd humans/asia/cn/dlrs_12345678_zhang-san/
 
 ```bash
 # 返回仓库根目录
-cd /path/to/dlrs-hub
+cd /path/to/DLRS
 
 # 运行验证
 python tools/validate_repo.py
@@ -280,7 +280,7 @@ pip install -r tools/requirements.txt
 
 - 查看 [FAQ](FAQ.md)
 - 在 GitHub 上开 issue
-- 联系：contact@example.org
+- 联系：https://github.com/Digital-Life-Repository-Standard/DLRS/discussions
 
 ---
 
