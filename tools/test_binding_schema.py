@@ -18,10 +18,7 @@ from __future__ import annotations
 
 import json
 import sys
-from copy import deepcopy
 from pathlib import Path
-
-import jsonschema
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = ROOT / "schemas" / "binding.schema.json"
@@ -89,8 +86,14 @@ def _good_binding() -> dict:
 
 
 def main() -> int:
+    try:
+        from jsonschema import Draft202012Validator
+    except ImportError:
+        print("ERROR: jsonschema not installed; run: pip install -r tools/requirements.txt")
+        return 2
+
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-    validator = jsonschema.Draft202012Validator(schema)
+    validator = Draft202012Validator(schema)
 
     cases: list[tuple[str, dict, bool]] = []
 
