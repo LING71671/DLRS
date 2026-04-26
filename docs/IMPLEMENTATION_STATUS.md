@@ -8,6 +8,7 @@
 **总体完成度**: ~88%
 **参考标准**: DLRS_ULTIMATE.md
 **最近发布**: v0.6 epic #52（PRs #64–#75）
+**进行中**: `.life Archive + Runtime Standard` 愿景升级 — epic [#79](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/79)、子 issue #80–#87。本次升级把 ULTIMATE 从"Git-shaped 仓库结构标准"重新定位为"`.life` 文件格式 + runtime 协议双标准"；本 epic 只交付 specs + schema + example builder（**不**含 runtime 实现，运行时实现推迟到 v0.8+）。
 
 ### v0.5 → v0.6 主要增量
 

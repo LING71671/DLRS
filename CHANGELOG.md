@@ -2,6 +2,60 @@
 
 All notable changes to the DLRS project will be documented in this file.
 
+## v0.7-vision-shift Draft (in progress)
+
+**Status**: Draft / WIP. Repositions DLRS's ULTIMATE from "Digital Life
+Repository Standard 数字生命仓库标准" (Git-shaped repo structure standard)
+to "**`.life` 可运行数字生命档案文件标准**" — a dual standard:
+
+1. **`.life` archive file format** — the distribution unit, a packaged
+   + signed subset of a DLRS v0.6 record.
+2. **`.life` runtime protocol** — how compatible runtimes load + execute
+   a `.life` to produce an *AI digital life instance*.
+
+The DLRS Git repo continues to be the canonical authoring place for
+v0.6 records. The `.life` file is the portable distribution unit,
+runnable in any compatible runtime (chat / virtual world / 3D / …).
+
+Tracked in epic
+[#79](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/79)
+under milestone
+[`.life Archive + Runtime Standard (v0.7-vision-shift)`](https://github.com/Digital-Life-Repository-Standard/DLRS/milestone/5).
+Sub-issues #80–#87, sub-PRs forthcoming.
+
+This epic ships **specs + schema + example builder**. It does **not**
+ship a working runtime — that is deferred to v0.8+.
+
+### Added
+
+- _(populated as sub-PRs land)_
+
+### Changed
+
+- _(populated as sub-PRs land)_
+
+### Closes
+
+- _(populated as sub-PRs land)_
+
+### Hard rules (continued from v0.5/v0.6)
+
+- One sub-issue = one PR. PR body MUST contain `Closes #N` on its own line.
+- No force-push to master, no commit amends, no skipped hooks, no `git add .`.
+- GitHub CI green is sufficient to merge. Devin Review is async non-blocking.
+- `tools/batch_validate.py` MUST stay green at every merge.
+
+### Ethical positioning (carried into every spec)
+
+`.life` is **not** a resurrection technology, not a claim that the AI
+instance equals the person, and not a consent-free post-mortem
+reanimation tool. `.life` **is** a consented, revocable, auditable
+digital representation — a signed, time-bounded license to operate an
+AI instance under specified constraints, always identifiable as an
+**AI digital life instance** rather than the underlying human.
+
+---
+
 ## v0.6.0 (2026-04-26)
 
 **Status**: Released. Builds on the v0.5 offline-first build pipelines with
