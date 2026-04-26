@@ -1,0 +1,11 @@
+{
+  "record_id": "dlrs_EXAMPLE_asr_demo",
+  "display_name": "asr-demo",
+  "summary": "Fictional fixture record used to walk a reader through the v0.5 offline pipelines (ASR -> text cleaning -> embedding -> moderation) end-to-end without hosted APIs.",
+  "avatar_preview_uri": null,
+  "ai_disclosure": "Synthetic demo record. No real person is represented. Any AI-mediated artefact derived from this record is for protocol illustration only.",
+  "allowed_public_interactions": [
+    "view_profile"
+  ],
+  "languages": ["en-US"]
+}

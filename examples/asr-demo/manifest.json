@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.3.0",
+  "record_id": "dlrs_EXAMPLE_asr_demo",
+  "display_slug": "asr-demo",
+  "visibility": "private",
+  "subject": {
+    "type": "self",
+    "display_name": "asr-demo (fictional)",
+    "legal_name": "PRIVATE",
+    "locale": "en-US",
+    "residency_region": "EU",
+    "is_minor": false,
+    "status": "living"
+  },
+  "rights": {
+    "uploader_role": "self",
+    "rights_basis": [
+      "consent"
+    ],
+    "evidence_refs": [
+      "consent/consent_statement.md"
+    ],
+    "allow_public_listing": false,
+    "allow_commercial_use": false,
+    "allow_model_finetune": false,
+    "allow_voice_clone": false,
+    "allow_avatar_clone": false,
+    "allow_research_use": true,
+    "cross_border_transfer_basis": "none",
+    "cross_border_transfer_status": "not_needed"
+  },
+  "consent": {
+    "captured_at": "2026-04-26T08:00:00+00:00",
+    "withdrawal_endpoint": "mailto:privacy@example.org",
+    "separate_biometric_consent": true,
+    "guardian_consent": false,
+    "consent_version": "0.3.0",
+    "allowed_scopes": [
+      "storage",
+      "structured_processing"
+    ]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "a001",
+      "type": "voice_sample",
+      "format": "wav",
+      "storage_uri": "repo://artifacts/raw/audio/voice_demo.wav",
+      "checksum": "sha256:6e00afcc0bfb3f0faf04f3e8ff8c1582fcdefd7a438c57db561f24d5fb205d89",
+      "region": "EU",
+      "sensitivity": "S3_BIOMETRIC",
+      "contains_sensitive_data": true
+    }
+  ],
+  "deletion_policy": {
+    "allow_delete": true,
+    "allow_export": true,
+    "withdrawal_effect": "freeze_runtime_then_delete",
+    "legal_hold": false
+  },
+  "inheritance_policy": {
+    "policy_ref": "profile/inheritance_policy.json",
+    "default_action_on_death": "freeze",
+    "executor_contact_ref": null
+  },
+  "security": {
+    "primary_region": "EU",
+    "replication_regions": [],
+    "encryption_at_rest": true,
+    "kms_ref": "kms://example/key-placeholder",
+    "watermark_policy": "invisible_only",
+    "c2pa_enabled": false
+  },
+  "review": {
+    "status": "submitted",
+    "verified_consent_badge": false,
+    "public_data_only_badge": false,
+    "risk_level": "low",
+    "reviewer_notes_ref": null
+  },
+  "audit": {
+    "created_at": "2026-04-26T08:00:00+00:00",
+    "last_modified_at": "2026-04-26T08:00:00+00:00",
+    "change_log_hash": "sha256:asr_demo_manifest_log_placeholder"
+  }
+}

@@ -1,0 +1,8 @@
+# run_demo.sh writes everything under derived/. Keep the example record
+# tree minimal in git; regenerate locally to walk the pipeline end-to-end.
+derived/
+
+# DLRS is pointer-first: raw audio MUST NOT be committed. run_demo.sh
+# regenerates the deterministic placeholder WAV on every run; the
+# checksum in manifest.json is fixed against that generator output.
+artifacts/raw/audio/voice_demo.wav
