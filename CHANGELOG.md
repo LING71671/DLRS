@@ -12,15 +12,31 @@ each merged sub-PR.
 
 ### Added
 
-- _populated by sub-PRs_
+- `pipelines/_audit_bridge.py` — descriptor → `audit/events.jsonl` bridge.
+  Every pipeline (asr / text / vectorization / moderation / memory_atoms /
+  knowledge_graph) now appends one `derived_asset_emitted` event per
+  emitted descriptor and back-fills the descriptor's `audit_event_ref`
+  with a stable `audit/events.jsonl#L<n>` reference. The bridge reuses
+  the v0.4 emitter's hash-chain and schema validation, so audit
+  integrity carries over unchanged. (#58, this PR)
+- `--no-audit` flag on every pipeline CLI for fixture / dry-run
+  invocations that must not produce an audit log entry. (#58, this PR)
+- `tools/test_descriptor_audit_bridge.py` covering: event append, schema
+  compliance, hash chain across two pipelines, descriptor back-fill,
+  `--no-audit` skip, and silent-no-op when the record has no
+  `manifest.json`. Wired into `tools/batch_validate.py` (14 steps) and
+  the pipelines CI matrix. (#58, this PR)
 
 ### Changed
 
-- _populated by sub-PRs_
+- `schemas/audit-event.schema.json::event_type.enum` extended with
+  `derived_asset_emitted`. The eight v0.4 lifecycle events are unchanged;
+  the new value is additive and `additionalProperties: false` on the
+  enum still excludes any other custom strings. (#58, this PR)
 
 ### Closes
 
-- _populated by sub-PRs_
+- #58 (via this PR).
 
 ---
 

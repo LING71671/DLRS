@@ -21,7 +21,7 @@
     },
     "event_type": {
       "type": "string",
-      "description": "One of the eight canonical lifecycle events from DLRS_ULTIMATE.md, plus 'custom' for organisation-specific extensions.",
+      "description": "One of the canonical lifecycle events from DLRS_ULTIMATE.md, plus 'derived_asset_emitted' (v0.6 descriptor->audit bridge — see issue #58) and 'custom' for organisation-specific extensions.",
       "enum": [
         "record_created",
         "consent_verified",
@@ -31,6 +31,7 @@
         "take_down",
         "inheritance_trigger",
         "export_requested",
+        "derived_asset_emitted",
         "custom"
       ]
     },

@@ -35,6 +35,7 @@ from pipelines._descriptor import (
     validate_descriptor,
     write_json,
 )
+from pipelines._audit_bridge import maybe_bridge
 
 PIPELINE_VERSION = "0.5.0"
 
@@ -97,6 +98,11 @@ def _register(parser: argparse.ArgumentParser) -> None:
         "--output-dir",
         default=None,
         help="Override output directory. Default: <record>/derived/vectorization/.",
+    )
+    parser.add_argument(
+        "--no-audit",
+        action="store_true",
+        help="Skip the descriptor->audit/events.jsonl bridge (#58).",
     )
 
 
@@ -311,6 +317,16 @@ def _run(args: argparse.Namespace) -> int:
     descriptor = builder.finalise(out_path_in_record, index_path)
     validate_descriptor(descriptor, SCHEMA_PATH)
     write_json(descriptor_path, descriptor)
+
+    audit_ref = maybe_bridge(
+        record_root=record_root,
+        pipeline_name="vectorization",
+        descriptor=descriptor,
+        descriptor_path=descriptor_path,
+        skip=getattr(args, "no_audit", False),
+    )
+    if audit_ref:
+        print(f"[vectorization] audit_event_ref={audit_ref}", file=sys.stderr)
 
     print(f"[vectorization] wrote {index_path} ({len(index_entries)} chunks, dim={result.dim})", file=sys.stderr)
     print(f"[vectorization] wrote {descriptor_path}", file=sys.stderr)
