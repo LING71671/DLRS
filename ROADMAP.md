@@ -18,22 +18,24 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 ---
 
-## 🎯 当前状态（v0.5 release）
+## 🎯 当前状态（v0.6 release）
 
 **发布日期**: 2026-04-26  
-**完成度**: ~83%
+**完成度**: ~88%
 
-### ✅ 已完成（v0.2 → v0.5 增量）
+### ✅ 已完成（v0.2 → v0.6 增量）
 - v0.2: 仓库目录结构、manifest schema、指针文件系统、同意/继承/删除策略
 - v0.3: 媒体采集规范、ffprobe 校验、对象存储 pointer 规范、Schema 收紧、registry 测试、CI 主链路
 - v0.4: 自动化（`batch_validate.py`）、治理（`emit_audit_event.py` 哈希链）、AI 标识 schema、合规 checklist、静态 HTML registry、LFS 防御层
 - v0.5: **offline-first 构建管线** —— 四条管线（asr / text / vectorization / moderation）+ 派生资产 schema + 端到端示例 + PIPELINE_GUIDE。机械化执行的离线优先不变量。
+- v0.6: **记忆原子 + 知识图谱 + descriptor→audit 桥接 + hosted-API opt-in 策略门** —— 两条新离线管线（memory_atoms / knowledge_graph）+ 4 份新 schema + audit bridge 机械上链 + opt-in policy gate 作为 hosted SDK 的紧定位接口。静态 import ban 不放松。
 
 ### 📊 关键指标
 - 文档完成度: 92%
 - 仓库结构完成度: 95%
-- 工具完成度: 90%（validator + emitter + 4 条 pipeline 全部就绪）
-- 构建管线完成度: 80%（v0.5 离线版本完整；GraphRAG / 托管 API 选项保留给 v0.6）
+- 工具完成度: 96%（validator + emitter + 6 条 pipeline + audit bridge + hosted-API gate 全部就绪）
+- 构建管线完成度: 65%（6 条离线管线 + descriptor + audit bridge + hosted-API gate；GraphRAG 真语义检索 / TTS / 微调 留给 v0.7+）
+- 审计与事件完成度: 80%（v0.4 哈希链 + v0.6 descriptor 上链）
 - 运行时完成度: 0%（v0.7 起）
 
 ---
@@ -183,45 +185,63 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 ---
 
-#### v0.6.0 - 记忆、图谱与 online-enhanced（2027年2月）
+#### v0.6.0 - 记忆原子、知识图谱与 descriptor→audit 桥接（2026年4月，已发布）
 
-**主题**: 在 v0.5 的离线基础上叠加可选的 GraphRAG / 托管 API / memory atoms。可交互的 Web 审核台原型也在本期落地（v0.4 已先期发布静态 HTML 版本）。
+**主题**: 在 v0.5 的离线基础上叠加两条新管线（memory_atoms / knowledge_graph）、把所有 descriptor 机械上链到 v0.4 哈希链审计、以及为 hosted-API 安装一个紧定位的 opt-in 策略门（作为 v0.7+ 接入实际 SDK 时的唯一路径）。静态 import ban / 离线优先默认 均不放松。Web 审核台交互原型 下沉到 v0.7+（与 runtime 同期）。
 
-**核心功能**:
-- [ ] **记忆原子系统**
-  - Memory atoms 生成
-  - 时间序列管理
-  - 来源追踪
-  - 删除标记
-- [ ] **知识图谱构建**
-  - 集成 GraphRAG
-  - 实体识别
-  - 关系抽取
-  - 图谱可视化
-- [ ] **派生数据管理**
-  - Derived 层完整实现
-  - 版本控制
-  - 血缘追踪
-  - 增量更新
+**核心功能**（全部已落地）:
+- [x] **记忆原子系统**（#54 #56）
+  - `schemas/memory-atom.schema.json`（13 字段、11 必填、`additionalProperties: false`）
+  - `pipelines/memory_atoms/`：`paragraph`（默认、零依赖）+ `spacy`（懒加载、可选）双后端
+  - 输出 `<stem>.atoms.jsonl`，绝对字符偏移往返反查 cleaned text
+  - sensitivity 可记录级覆盖；leak-guard 单测报 v0.5 PII 模式不重出现
+- [x] **知识图谱构建**（#55 #57 #70 #71）
+  - `schemas/entity-graph-node.schema.json` + `schemas/entity-graph-edge.schema.json`
+  - `pipelines/knowledge_graph/`：regex 后端、字面空格候选（避免 `\n` 进 label，PR #71 回归保证）
+  - 输出 `<stem>.{nodes,edges}.jsonl` + 单一 graph descriptor。本期是**共现边图谱**，不是语义嵌入式检索
+- [x] **descriptor → audit/events.jsonl 桥接**（#58）
+  - `pipelines/_audit_bridge.py`：6 条管线在写完 descriptor 后追加一条 `derived_asset_emitted` 事件，并把 `audit/events.jsonl#L<n>` 反填到 descriptor.audit_event_ref
+  - 复用 v0.4 emitter 哈希链，不引入新链语义；`schemas/audit-event.schema.json::event_type.enum` 增 1 个值，其余 8 条 v0.4 lifecycle 事件不变
+  - 每条管线 CLI 新增 `--no-audit` 用于 fixture / dry-run；无 manifest 静默 no-op
+- [x] **hosted-API opt-in 策略门**（#59）
+  - `schemas/hosted-api-policy.schema.json`：per-record `policy/hosted_api.json`，字段含 `opt_in: true` + `allowed_providers[]`（10 条闭合 enum）+ `allowed_pipelines[]` + `consent_evidence_ref` + `[issued_at, expires_at)` 时间窗
+  - `pipelines/_hosted_api.py::assert_allowed`：任一条件不满足即抛 `HostedApiNotAllowed`；默认拒绝
+  - **本期仅落框架**，不接入实际 SDK；静态 import ban 不放松，hosted SDK 必须 `importlib` 懒加载在 gate 之内
+- [x] **端到端示例**（#60）
+  - `examples/memory-graph-demo/`：`bash run_demo.sh` 一键产出 8 个派生工件 + 3 行哈希链审计；零 hosted-API 调用、零网络
+- [x] **CI / 测试驱动统一**（#61）
+  - `tools/test_pipelines.py` 现派发 6 per-pipeline + 3 横切 = 9/9；CI 矩阵 `pipelines` 一步替代之前 4 步
+  - `tools/batch_validate.py` 16/16（保留个别横切条目以保留报错粒度）
+- [x] **文档刷新**（#62）
+  - `docs/PIPELINE_GUIDE.md` 加§2.5 / §2.6 / §3 audit bridge / §4 hosted-API gate；GAP / STATUS / ROADMAP / CHANGELOG / README 全面刷新到 v0.6
 
-**交付物**:
-- `pipelines/memory/`
-- `pipelines/knowledge_graph/`
-- `derived/` 完整实现
-- 图谱查询 API
+**治理硬规则（v0.5 起永久生效）**: v0.6 epic #52 严格遵守「每个子 issue 一个 PR、PR body 必须以 `Closes #N` 单独成行」，11 个子 PR（#64–#75）全部合规。
 
-**成功指标**:
-- 记忆原子准确率 > 85%
-- 图谱查询响应 < 500ms
-- 支持 10,000+ 实体
+**交付物**（全部 merged）:
+- `pipelines/memory_atoms/` + `pipelines/knowledge_graph/`
+- `pipelines/_audit_bridge.py` + `pipelines/_hosted_api.py`
+- `schemas/memory-atom.schema.json` + `schemas/entity-graph-node.schema.json` + `schemas/entity-graph-edge.schema.json` + `schemas/hosted-api-policy.schema.json`
+- `schemas/audit-event.schema.json::event_type.enum` 加 `derived_asset_emitted`（8 条 v0.4 不变）
+- `examples/memory-graph-demo/` + `tools/test_memory_graph_demo.py`
+- `tools/test_memory_atoms_pipeline.py` / `test_knowledge_graph_pipeline.py` / `test_descriptor_audit_bridge.py` / `test_hosted_api_policy.py`
+- `tools/test_pipelines.py` 统一派发（per-pipeline + cross-cutting）
+- `.github/workflows/validate.yml` `pipelines` 矩阵 一步 调用
+- `tools/batch_validate.py` 16/16
+- `docs/PIPELINE_GUIDE.md` v0.6
+
+**成功指标**（全部达成）:
+- 离线优先默认不变：CI 在没有任何 hosted API key 的情况下全绿
+- 哈希链复用：`derived_asset_emitted` 事件与 v0.4 lifecycle 事件同住一条链，都能在唯一 emitter 下校验
+- 机械化 hosted gate：指令都需要 per-record 策略 + lazy import；schema + assert_allowed 两道检查；14 个负例测试覆盖默认拒绝 / 时间窗 / 畸形 JSON
+- 可扩展：未来 hosted SDK 接入者只需 importlib 加调用，不需调整静态守卫
 
 ---
 
 ### Phase 3: 运行时系统（2027 Q2-Q3）
 
-#### v0.7.0 - REST API + RBAC 一并出生（2027年5月）
+#### v0.7.0 - REST API + RBAC + hosted SDK 接入（2027年）
 
-**主题**: 基础运行时能力，**与 RBAC + 法域策略阻断一并引入**（避免 v0.7 单纯 REST API、v0.8 才接入授权造成两次破坏性变更）。
+**主题**: 基础运行时能力 + **v0.6 hosted-API gate 后第一次实际 SDK 接入**，**与 RBAC + 法域策略阻断一并引入**（避免 v0.7 单纯 REST API、v0.8 才接入授权造成两次破坏性变更）。GraphRAG 真语义检索、TTS / 语音克隆训练、FunASR / 多说话人分离 同期落地。所有 hosted SDK 调用必须走 v0.6 已落地的 `pipelines/_hosted_api.py::assert_allowed` 网关 + `importlib` 懒加载，不放松 v0.5 静态 import ban。
 
 **核心功能**:
 - [ ] **REST API 服务器**

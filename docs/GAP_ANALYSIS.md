@@ -1,33 +1,33 @@
 # DLRS 实现与终极标准的差距分析
 
-> 版本：v0.5 release（2026-04 刷新）
-> 上一版基线：v0.4 release，整体完成度 78%
-> 本次基线：post-v0.5 epic #28（PRs #39–#48），整体完成度 **~83%**
+> 版本：v0.6 release（2026-04 刷新）
+> 上一版基线：v0.5 release，整体完成度 83%
+> 本次基线：post-v0.6 epic #52（PRs #64–#75），整体完成度 **~88%**
 
 ## 📊 执行摘要
 
 本文档对比当前 DLRS 仓库实现与 `DLRS_ULTIMATE.md` 中定义的完整标准，识别已实现、部分实现、尚未实现三档。读者可以把本文当成"运营进度仪表盘"。
 
-| 维度 | v0.2.0 基线 | v0.3 | v0.4 | v0.5 (本次) | ULTIMATE 目标 |
-|---|---|---|---|---|---|
-| 仓库与目录 | 90% | 95% | 95% | **95%** | 100%（pointer-first 完成） |
-| 数据采集规范 | 40% | 80% | 85% | **85%** | 100% |
-| 数据分层与存储 | 50% | 65% | 70% | **75%**（`derived/<pipeline>/` 落地 + descriptor schema） | 100% |
-| 同意与权益 | 70% | 85% | 88% | **88%** | 100% |
-| 公开层与注册表 | 30% | 70% | 80% | **80%** | 100% |
-| 审计与事件 | 40% | 50% | 70% | **70%** | 100%（含哈希链/Ledger） |
-| 权限模型 (RBAC/ReBAC/ABAC) | 0% | 0% | 0% | **0%** | 100%（v0.7+ 实施） |
-| 构建管线 (ASR/KG/微调) | 0% | 0% | 0% | **45%**（4 条离线管线 + descriptor + CI；GraphRAG/微调留 v0.6+） | 100% |
-| 运行层 (REST/WS/3D) | 0% | 0% | 0% | **0%** | 100%（v0.7+ 实施） |
-| AI 标识 / 水印 / C2PA | 5% | 10% | 35% | **40%**（descriptor 强制 `online_api_used=false`，机械化离线证明） | 100%（v1.0 实施） |
-| 跨境 / 法域引擎 | 30% | 50% | 55% | **55%** | 100% |
-| 工具与自动化 | 40% | 75% | 88% | **94%**（+ `run_pipeline` / `validate_pipelines` / `test_pipelines` / `test_asr_demo`） | 100% |
+| 维度 | v0.2.0 基线 | v0.3 | v0.4 | v0.5 | v0.6 (本次) | ULTIMATE 目标 |
+|---|---|---|---|---|---|---|
+| 仓库与目录 | 90% | 95% | 95% | 95% | **95%** | 100%（pointer-first 完成） |
+| 数据采集规范 | 40% | 80% | 85% | 85% | **85%** | 100% |
+| 数据分层与存储 | 50% | 65% | 70% | 75% | **80%**（`derived/memory_atoms/` + `derived/knowledge_graph/` 落地） | 100% |
+| 同意与权益 | 70% | 85% | 88% | 88% | **88%** | 100% |
+| 公开层与注册表 | 30% | 70% | 80% | 80% | **80%** | 100% |
+| 审计与事件 | 40% | 50% | 70% | 70% | **80%**（descriptor→audit 桥接上链 + `derived_asset_emitted` 入 enum） | 100%（含 Ledger / 联邦审计） |
+| 权限模型 (RBAC/ReBAC/ABAC) | 0% | 0% | 0% | 0% | **0%** | 100%（v0.7+ 实施） |
+| 构建管线 (ASR/KG/微调) | 0% | 0% | 0% | 45% | **65%**（6 条离线管线 + descriptor + audit bridge + hosted-API gate + CI；GraphRAG 语义搜索 / 微调 留 v0.7+） | 100% |
+| 运行层 (REST/WS/3D) | 0% | 0% | 0% | 0% | **0%** | 100%（v0.7+ 实施） |
+| AI 标识 / 水印 / C2PA | 5% | 10% | 35% | 40% | **45%**（descriptor 机械化离线证明 + hosted-API gate 机械化"何时允许 online"） | 100%（v1.0 实施） |
+| 跨境 / 法域引擎 | 30% | 50% | 55% | 55% | **55%** | 100% |
+| 工具与自动化 | 40% | 75% | 88% | 94% | **96%**（+ memory_atoms / KG / audit_bridge / hosted_api_policy / memory_graph_demo 测试） | 100% |
 
-**总体成熟度**：⭐⭐⭐⭐ **83%**（v0.4 → v0.5 增长 5 pp，主要拉动来自原本 0% 的"构建管线"维度首次落地到 45%）
+**总体成熟度**：⭐⭐⭐⭐ **88%**（v0.5 → v0.6 增长 5 pp，主要拉动来自构建管线 45% → 65% 与审计 70% → 80%）
 
-- ✅ **已完成**：v0.2–v0.4 的所有内容，加上 v0.5 的四条离线管线（asr/text/vectorization/moderation）+ derived-asset descriptor schema + `tools/run_pipeline.py` 单入口 + `tools/validate_pipelines.py` 静态守卫（机械化执行的离线优先不变量）+ `examples/asr-demo` 端到端示例 + `docs/PIPELINE_GUIDE.md`。
-- 🟡 **部分完成**：构建管线只覆盖 ASR / 文本 / 向量 / 审核，GraphRAG / memory atoms / 微调留给 v0.6；descriptor 写入 `derived/`，append-only 哈希链上链尚未对接 emitter。
-- ❌ **未实现**：运行层（REST/WS/3D）、RBAC/ReBAC/ABAC、Web 审核台原型（已下沉到 v0.6+）、C2PA 实际签发、联邦化注册表同步。
+- ✅ **已完成**：v0.2–v0.5 的所有内容，加上 v0.6 的两条新管线（memory_atoms / knowledge_graph）+ memory atom / entity-graph node / entity-graph edge / hosted-api-policy 四份新 schema + descriptor→audit/events.jsonl 机械桥接 + hosted-API opt-in 策略门 + `examples/memory-graph-demo` 端到端示例 + `docs/PIPELINE_GUIDE.md` v0.6 刷新。
+- 🟡 **部分完成**：hosted-API 策略门只落框架，实际 hosted SDK 接入留 v0.7；GraphRAG 真语义搜索 / 微调管线 / talking head 未开工；Web 审核台原型下沉到 v0.7+。
+- ❌ **未实现**：运行层（REST/WS/3D）、RBAC/ReBAC/ABAC、C2PA 实际签发、联邦化注册表同步。
 
 ---
 
@@ -94,18 +94,18 @@
 
 ## 3. 数据分层与存储（Data Layering）
 
-### 🟡 部分实现（75%）
+### 🟡 部分实现（80%）
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
 | 五层目录约定 | ✅ | Raw（pointers）/Derived/Runtime/Index/Audit 全部建目录 |
 | Raw 层 | ✅ | pointer-first，仓库零原始素材 |
-| Derived 层 | ✅ **v0.5** | `derived/<pipeline>/` 实际打通：asr/text/vectorization/moderation 均产生合同 descriptor |
+| Derived 层 | ✅ **v0.6** | `derived/<pipeline>/` 现覆盖 6 条管线：asr/text/vectorization/moderation/memory_atoms/knowledge_graph 均产生合同 descriptor |
 | Runtime 层 | 🟡 | 目录 OK，**模型权重 pointer 占位**（v0.7 运行时上线） |
-| Index 层 | 🟡 **v0.5** | `pipelines/vectorization/` 可可选推送本地 Qdrant；GraphRAG / Neo4j 留给 v0.6 |
-| Audit 层 | ✅ **v0.4** | `events.jsonl` + emitter + 哈希链 |
+| Index 层 | 🟡 **v0.5** | `pipelines/vectorization/` 可选推送本地 Qdrant；v0.6 加了 `derived/knowledge_graph/{nodes,edges}.jsonl`；真语义 GraphRAG 留给 v0.7+ |
+| Audit 层 | ✅ **v0.6** | `events.jsonl` + emitter + 哈希链（v0.4）；v0.6 增 `derived_asset_emitted` 事件上链 + descriptor.audit_event_ref 反填 |
 
-### 🟡 部分实现 / 待 v0.6
+### 🟡 部分实现 / 待 v0.7+
 
 | 功能 | 优先级 | 计划版本 |
 |------|--------|------|
@@ -113,9 +113,11 @@
 | 文本清洗管线 | 高 | ✅ v0.5（`pipelines/text/`） |
 | 向量化管线 | 高 | ✅ v0.5（`pipelines/vectorization/` + 可选 Qdrant） |
 | 内容审核管线 | 高 | ✅ v0.5（`pipelines/moderation/`） |
-| GraphRAG / Neo4j 图谱 | 中 | v0.6 |
-| Memory atoms | 中 | v0.6（"在线增强"） |
-| descriptor 哈希链上链到 audit/events.jsonl | 中 | v0.6 |
+| Memory atoms 抽取 | 中 | ✅ v0.6（`pipelines/memory_atoms/`） |
+| 知识图谱（共现边） | 中 | ✅ v0.6（`pipelines/knowledge_graph/`） |
+| descriptor 哈希链上链到 audit/events.jsonl | 中 | ✅ v0.6（`pipelines/_audit_bridge.py`） |
+| GraphRAG 真语义检索 / Neo4j | 中 | v0.7+ |
+| 语音克隆训练 (TTS) | 中 | v0.7 |
 
 ---
 
@@ -170,14 +172,16 @@
 
 ## 6. 审计与事件（Audit & Events）
 
-### ✅ 已实现（70%）
+### ✅ 已实现（80%）
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
 | `audit/events.jsonl` 约定 | ✅ **v0.4** | append-only，按行 JSON |
-| Audit event schema | ✅ | `schemas/audit-event.schema.json`：8 个核心 enum + custom |
+| Audit event schema | ✅ | `schemas/audit-event.schema.json`：8 个 v0.4 核心 + 1 个 v0.6 (`derived_asset_emitted`) + custom |
 | Emitter 工具 | ✅ **v0.4** | `tools/emit_audit_event.py`（含哈希链 + 重复 event_id 拒写） |
-| 8 个核心事件类型 | ✅ | record_created / consent_verified / build_started / public_listing_requested / consent_withdrawn / take_down / inheritance_trigger / export_requested |
+| 8 个 v0.4 核心事件类型 | ✅ | record_created / consent_verified / build_started / public_listing_requested / consent_withdrawn / take_down / inheritance_trigger / export_requested |
+| **`derived_asset_emitted` 事件类型** | ✅ **v0.6** | 每条管线在写完 descriptor 后追加；descriptor.audit_event_ref 反填为 `audit/events.jsonl#L<n>` |
+| **descriptor → audit 机械桥接** | ✅ **v0.6** | `pipelines/_audit_bridge.py`；复用 v0.4 emitter 哈希链；无 manifest 静默 no-op；`--no-audit` 跳过 |
 | Provenance 占位 | ✅ | `audit/provenance.json` |
 | Takedown 日志 | ✅ | `audit/takedown_log.jsonl` |
 
@@ -185,7 +189,7 @@
 
 | 功能 | 状态 | 缺失部分 |
 |------|------|----------|
-| 哈希链 | 🟡 | 文件内已链；跨文件 / 跨记录 ledger 未实施 |
+| 哈希链 | 🟡 | 文件内已链 + descriptor 反填；跨文件 / 跨记录 ledger 未实施 |
 
 ### ❌ 未实现
 
@@ -215,7 +219,7 @@
 
 ## 8. 构建层（Build Pipeline）
 
-### 🟡 部分实现（45%，v0.5 首次落地）
+### 🟡 部分实现（65%，v0.6 拉高）
 
 | 功能 | 状态 | 计划版本 | 说明 |
 |------|------|------|------|
@@ -224,11 +228,15 @@
 | Embedding 生成 | ✅ **v0.5** | — | `pipelines/vectorization/`：`hash`（64-D 确定性）+ `sentence-transformers`（懒加载） |
 | 向量库推送 | ✅ **v0.5** | — | `--qdrant-url` 可选本地 Qdrant；payload 中 `backend` / `model_id` 分键 |
 | 内容审核 | ✅ **v0.5** | — | `pipelines/moderation/`：确定性 regex/wordlist + `pass / flag / block`；flag 不回写匹配文本 |
+| **记忆原子抽取** | ✅ **v0.6** | — | `pipelines/memory_atoms/`：`paragraph` 默认零依赖 + `spacy` 可选懒加载；`<stem>.atoms.jsonl` |
+| **知识图谱（共现边）** | ✅ **v0.6** | — | `pipelines/knowledge_graph/`：regex 后端；字面空格，标签不含 `\n`（PR #71 回归） |
 | Derived-asset descriptor | ✅ **v0.5** | — | `schemas/derived-asset.schema.json` + `pipelines/_descriptor.py`；online_api_used 强制 false |
-| Hosted-API 离线守卫 | ✅ **v0.5** | — | `tools/validate_pipelines.py` 静态拒收 hosted-API import |
-| FunASR / 多说话人分离 | 🟡 | v0.6 | v0.5 只携 faster-whisper；FunASR / 说话人分离 留给 v0.6 |
-| 记忆原子抽取 | ❌ | v0.6（online-enhanced） | — |
-| GraphRAG 知识图谱 | ❌ | v0.6 | — |
+| Hosted-API 离线守卫 | ✅ **v0.5** | — | `tools/validate_pipelines.py` 静态拒收 hosted-API import（v0.6 不放松） |
+| **descriptor → audit 桥接** | ✅ **v0.6** | — | `pipelines/_audit_bridge.py` 追加 `derived_asset_emitted` 事件 + 反填 `audit_event_ref` |
+| **hosted-API opt-in 策略门** | ✅ **v0.6** | — | `schemas/hosted-api-policy.schema.json` + `pipelines/_hosted_api.py`；默认拒绝 + per-record opt_in + 时间窗 |
+| FunASR / 多说话人分离 | 🟡 | v0.7 | v0.5/v0.6 只携 faster-whisper；说话人分离 留给 v0.7 |
+| GraphRAG 真语义检索 | ❌ | v0.7 | v0.6 是共现边图谱，不是嵌入式检索 |
+| Hosted-API SDK 实际接入 | ❌ | v0.7 | v0.6 仅落策略门框架；逐管线在 gate 后 importlib 引入 |
 | 语音克隆训练 (TTS) | ❌ | v0.7 | 与 runtime 同步引入 |
 | Talking Head 训练 | ❌ | v0.8 | — |
 | 3D Avatar 构建 | ❌ | v2.0 | — |
@@ -255,7 +263,7 @@
 
 ## 10. AI 标识、水印、C2PA
 
-### ✅ 已实现（40%）
+### ✅ 已实现（45%）
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
@@ -264,6 +272,7 @@
 | 多语言标签 | ✅ **v0.4** | `label_locales[]` 含 zh-CN / en |
 | `watermark_methods[]` 声明 | ✅ **v0.4** | enum 占位（实施在 v1.0） |
 | Descriptor `online_api_used=false` 机械化证明 | ✅ **v0.5** | 每条派生资产 descriptor 必须声明未调用托管 API，`tools/validate_pipelines.py` 静态拒收 hosted-API import |
+| **hosted-API opt-in 策略门** | ✅ **v0.6** | `schemas/hosted-api-policy.schema.json` + `pipelines/_hosted_api.py` 机械化“何时允许 online”；默认拒绝 + per-record opt_in + provider/pipeline 白名单 + 时间窗 |
 
 ### ❌ 未实现
 
@@ -300,29 +309,36 @@
 
 ## 12. 工具与自动化
 
-### ✅ 已实现（94%）
+### ✅ 已实现（96%）
 
-| 工具 | v0.2 | v0.3 | v0.4 | v0.5 | 描述 |
-|---|---|---|---|---|---|
-| `validate_repo.py` | ✅ | ✅ | ✅ | ✅ | 全仓 manifest 校验 |
-| `validate_manifest.py` | ✅ | ✅ | ✅ | ✅ | 单 manifest CLI |
-| `new_human_record.py` | ✅ | ✅ | ✅ | ✅ | 档案脚手架 |
-| `i18n_helper.py` | ✅ | ✅ | ✅ | ✅ | i18n 辅助 |
-| `check_sensitive_files.py` | ✅ | ✅ | ✅ | ✅ | 防御性敏感文件检测 |
-| `build_registry.py` | ✅ | ✅ | ✅ | ✅ | jsonl + csv + **html (v0.4)** |
-| `lint_schemas.py` | – | ✅ | ✅ | ✅ | Draft 2020-12 校验 |
-| `validate_examples.py` | – | ✅ | ✅ | ✅ | 示例校验 |
-| `validate_media.py` | – | ✅ | ✅ | ✅ | ffprobe pointer 校验 |
-| `test_registry.py` | – | ✅ (12) | ✅ (14) | ✅ (14) | registry 入选规则用例 |
-| `upload_to_storage.py` | – | ✅ | ✅ | ✅ | 对象存储上传骨架 |
-| `estimate_costs.py` | – | ✅ | ✅ | ✅ | 容量/费用估算 |
-| `batch_validate.py` | – | – | ✅ **v0.4** | ✅ (11/11) | 一次性聚合 + JSON 报告 |
-| `emit_audit_event.py` | – | – | ✅ **v0.4** | ✅ | append-only 审计写入器 |
-| **`run_pipeline.py`** | – | – | – | ✅ **v0.5** | 统一管线 CLI 入口 |
-| **`validate_pipelines.py`** | – | – | – | ✅ **v0.5** | hosted-API import 黑名单 + `derived/<spec.name>/` 输出前缀守卫 |
-| **`test_pipelines.py`** | – | – | – | ✅ **v0.5** | 子进程驱动运行 4 条管线 + descriptor 测试 |
-| **`test_asr_demo.py`** | – | – | – | ✅ **v0.5** | `examples/asr-demo` 端到端测试 |
-| **`test_derived_asset_schema.py`** | – | – | – | ✅ **v0.5** | `schemas/derived-asset.schema.json` 健全性测试 |
+| 工具 | v0.2 | v0.3 | v0.4 | v0.5 | v0.6 | 描述 |
+|---|---|---|---|---|---|---|
+| `validate_repo.py` | ✅ | ✅ | ✅ | ✅ | ✅ | 全仓 manifest 校验 |
+| `validate_manifest.py` | ✅ | ✅ | ✅ | ✅ | ✅ | 单 manifest CLI |
+| `new_human_record.py` | ✅ | ✅ | ✅ | ✅ | ✅ | 档案脚手架 |
+| `i18n_helper.py` | ✅ | ✅ | ✅ | ✅ | ✅ | i18n 辅助 |
+| `check_sensitive_files.py` | ✅ | ✅ | ✅ | ✅ | ✅ | 防御性敏感文件检测 |
+| `build_registry.py` | ✅ | ✅ | ✅ | ✅ | ✅ | jsonl + csv + **html (v0.4)** |
+| `lint_schemas.py` | – | ✅ | ✅ | ✅ | ✅ | Draft 2020-12 校验 |
+| `validate_examples.py` | – | ✅ | ✅ | ✅ | ✅ | 示例校验 |
+| `validate_media.py` | – | ✅ | ✅ | ✅ | ✅ | ffprobe pointer 校验 |
+| `test_registry.py` | – | ✅ (12) | ✅ (14) | ✅ (14) | ✅ (14) | registry 入选规则用例 |
+| `upload_to_storage.py` | – | ✅ | ✅ | ✅ | ✅ | 对象存储上传骨架 |
+| `estimate_costs.py` | – | ✅ | ✅ | ✅ | ✅ | 容量/费用估算 |
+| `batch_validate.py` | – | – | ✅ **v0.4** | ✅ (11/11) | ✅ (16/16) | 一次性聚合 + JSON 报告 |
+| `emit_audit_event.py` | – | – | ✅ **v0.4** | ✅ | ✅ | append-only 审计写入器 |
+| `run_pipeline.py` | – | – | – | ✅ **v0.5** | ✅ (6) | 统一管线 CLI 入口 (asr/text/vec/mod/memory_atoms/KG) |
+| `validate_pipelines.py` | – | – | – | ✅ **v0.5** | ✅ | hosted-API import 黑名单 + `derived/<spec.name>/` 输出前缀守卫（v0.6 不放松） |
+| `test_pipelines.py` | – | – | – | ✅ **v0.5** | ✅ (9/9) | 统一测试驱动（6 per-pipeline + 3 横切） |
+| `test_asr_demo.py` | – | – | – | ✅ **v0.5** | ✅ | `examples/asr-demo` 端到端测试 |
+| `test_derived_asset_schema.py` | – | – | – | ✅ **v0.5** | ✅ | `schemas/derived-asset.schema.json` 健全性测试 |
+| **`test_memory_atom_schema.py`** | – | – | – | – | ✅ **v0.6** | `schemas/memory-atom.schema.json` 17 个 sanity 用例 |
+| **`test_entity_graph_schema.py`** | – | – | – | – | ✅ **v0.6** | KG node/edge schema 22 个 sanity 用例 |
+| **`test_memory_atoms_pipeline.py`** | – | – | – | – | ✅ **v0.6** | memory_atoms 管线测试（含 leak-guard） |
+| **`test_knowledge_graph_pipeline.py`** | – | – | – | – | ✅ **v0.6** | knowledge_graph 管线测试 |
+| **`test_descriptor_audit_bridge.py`** | – | – | – | – | ✅ **v0.6** | descriptor→audit 桥接测试（含哈希链跨管线、`--no-audit`、无 manifest 静默 no-op） |
+| **`test_hosted_api_policy.py`** | – | – | – | – | ✅ **v0.6** | hosted-API 策略门测试（schema golden + 6 反例 + 默认拒绝 + 时间窗） |
+| **`test_memory_graph_demo.py`** | – | – | – | – | ✅ **v0.6** | `examples/memory-graph-demo` 端到端测试 |
 
 ### ❌ 未实现
 
@@ -334,16 +350,17 @@
 
 ---
 
-## 13. 与 ULTIMATE 的主要差距（截至 v0.5）
+## 13. 与 ULTIMATE 的主要差距（截至 v0.6）
 
 | 差距 | 现状 | 影响 | 处置 |
 |---|---|---|---|
-| 构建管线部分落地（~45%） | v0.5 交付 4 条离线管线 + descriptor + CI；GraphRAG / TTS / talking head / 3D / C2PA 未开工 | 已能证明“仓库 → 派生资产”闭环，但在线增强 / 运行时能力仍缺 | v0.6 叠 GraphRAG / online-enhanced；v0.7 运行时 |
-| RBAC / ReBAC / ABAC 缺失 | schema 已有 sensitivity / cross-border 字段，但运行时没人执行 | 公网部署不可控 | v0.7 与 REST API 同步 |
-| Web 审核台缺失 | 仅静态 HTML | 大规模运营审核效率低 | v0.6+，与 runtime 一同推出 |
-| C2PA / 水印实施缺失 | v0.5 用 descriptor `online_api_used=false` 机械化证明离线；实际水印 / C2PA 凭证未签发 | 输出可信度依赖外部检测器 | v1.0 |
+| 构建管线进一步拉高（~65%） | v0.6 交付 6 条离线管线 + descriptor + audit bridge + hosted-API gate + CI；GraphRAG 真语义搜索 / TTS / talking head / 3D / C2PA 未开工 | 已能证明“仓库 → 派生资产 + 双向审计”闭环，运行时能力仍缺 | v0.7 运行时 + 托管 SDK 接入；v0.8+ 多模态生成 |
+| hosted-API 调用未接入实际 SDK | v0.6 只落策略门框架，不写实际 SDK 调用方 | 接入者需手动在 gate 后面补 importlib + 运行时调用 | v0.7，逐管线加 |
+| RBAC / ReBAC / ABAC 缺失 | schema 已有 sensitivity / cross-border / hosted-api-policy 字段，但运行时没人执行 | 公网部署不可控 | v0.7 与 REST API 同步 |
+| Web 审核台缺失 | 仅静态 HTML | 大规模运营审核效率低 | v0.7+，与 runtime 一同推出 |
+| C2PA / 水印实施缺失 | v0.5 descriptor `online_api_used=false` + v0.6 hosted-API gate 机械化证明离线 / 何时 online；实际水印 / C2PA 凭证未签发 | 输出可信度依赖外部检测器 | v1.0 |
 | 国际化 / 法域引擎缺失 | 文档化，未引擎化 | 合规风险靠 review 兜底 | v0.7（与 RBAC 同步） |
-| descriptor 哈希未上链 | v0.5 已生成 descriptor + sha256，但未写入 audit/events.jsonl 哈希链 | 可追溯性变弱，外部审核需手动拼接 | v0.6（与 online-enhanced 同期） |
+| descriptor 哈希上链 → 已交付 | ✅ v0.6 audit bridge 把 6 条管线的 descriptor 全部追加为 `derived_asset_emitted` 事件上哈希链；`audit_event_ref` 双向反填 | 追溯性增强；远端审核可以从事件 → descriptor 召回 | 其余联邦化上链留 v1.0 |
 | 联邦化注册表缺失 | 仅单仓单 jsonl | 难以多机构协同 | v1.0+ |
 
 ---
@@ -358,6 +375,6 @@
 
 ---
 
-**文档版本**：3.0（v0.5 release）
-**上次更新**：2026-04-26（v0.5 epic #28，PRs #39–#48）
+**文档版本**：4.0（v0.6 release）
+**上次更新**：2026-04-26（v0.6 epic #52，PRs #64–#75）
 **下次更新建议**：v0.6（GraphRAG / online-enhanced / descriptor 哈希上链上线后）

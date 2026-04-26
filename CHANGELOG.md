@@ -2,16 +2,26 @@
 
 All notable changes to the DLRS project will be documented in this file.
 
-## v0.6 Draft (in progress)
+## v0.6.0 (2026-04-26)
 
-**Status**: RFC / WIP. Builds on the v0.5 offline-first build pipelines with
+**Status**: Released. Builds on the v0.5 offline-first build pipelines with
 memory atoms, a knowledge-graph extraction pipeline, a descriptor → audit
-event bridge, and an opt-in hosted-API policy gate. Sub-issues land
-incrementally as one PR each (epic [#52](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/52)). Contents below populated by
-each merged sub-PR.
+event bridge, and an opt-in hosted-API policy gate. Epic
+[#52](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/52)
+landed in 11 sub-PRs (#64–#75) under the v0.5 governance "one issue = one
+PR, `Closes #N` on its own line" rule. Overall completion: ~88%.
+
+Source of truth for these notes is the
+[v0.6.0 GitHub Release](https://github.com/Digital-Life-Repository-Standard/DLRS/releases/tag/v0.6.0).
 
 ### Added
 
+- `docs/PIPELINE_GUIDE.md` refreshed to v0.6: new §2.5 (`memory_atoms`),
+  §2.6 (`knowledge_graph`), §3 (descriptor → audit bridge), §4
+  (hosted-API opt-in policy gate). §6 author-a-pipeline checklist
+  extended with the audit-bridge and hosted-API gate steps. §7 "what
+  v0.6 deliberately is not" replaces the v0.5 equivalent. §8 references
+  list now includes every v0.6 schema, module, and demo. (#62, this PR)
 - `tools/test_pipelines.py` extended into the umbrella driver for the
   full DLRS pipeline test suite. Per-pipeline tests (asr / text /
   vectorization / moderation / memory_atoms / knowledge_graph) and the
@@ -73,7 +83,17 @@ each merged sub-PR.
 
 ### Closes
 
-- #58 (via this PR).
+- #53 (housekeeping; PR #64)
+- #54 (memory-atom schema; PR #65)
+- #55 (entity-graph node + edge schemas; PR #66)
+- #56 (memory_atoms pipeline; PR #67)
+- #57 (knowledge_graph pipeline; PR #69)
+- #70 (knowledge_graph regex newline fix; PR #71)
+- #58 (descriptor → audit bridge; PR #72)
+- #59 (hosted-API opt-in policy gate; PR #73)
+- #60 (memory-graph demo; PR #74)
+- #61 (pipeline tests + CI integration; PR #75)
+- #62 (PIPELINE_GUIDE + GAP/STATUS/ROADMAP/CHANGELOG/README refresh; this PR)
 
 ---
 

@@ -1,8 +1,8 @@
-# DLRS v0.5 Pipeline Guide
+# DLRS v0.6 Pipeline Guide
 
-> Companion to `examples/asr-demo/README.md`. The demo answers *"can I run it?"*; this guide answers *"how is it built and what guarantees can I rely on?"*.
+> Companion to `examples/asr-demo/README.md` (v0.5) and `examples/memory-graph-demo/README.md` (v0.6). The demos answer *"can I run it?"*; this guide answers *"how is it built and what guarantees can I rely on?"*.
 
-DLRS v0.5 introduces four offline-first build pipelines that turn raw artefacts referenced by a record into derived assets fit for downstream consumption (registry display, RAG, moderation review). All four pipelines share the same contract, the same provenance descriptor, and the same hard offline-first invariant — they exist primarily to keep the rest of DLRS honest about *where* its derived data comes from.
+DLRS v0.5 introduced four offline-first build pipelines that turn raw artefacts referenced by a record into derived assets fit for downstream consumption (registry display, RAG, moderation review). DLRS v0.6 adds two more (memory atoms, knowledge graph), wires every descriptor into the audit log via a mechanical bridge, and provides an opt-in policy gate for the *one* future case where a record explicitly authorises a hosted-API code path. All six pipelines share the same contract, the same provenance descriptor, and the same hard offline-first default — they exist primarily to keep the rest of DLRS honest about *where* its derived data comes from.
 
 ## 0. Mental model
 
@@ -11,6 +11,8 @@ record/
 ├── manifest.json
 ├── public_profile.json
 ├── artifacts/raw_pointers/audio/voice.pointer.json   # or repo://artifacts/raw/audio/voice.wav
+├── audit/events.jsonl                         # hash-chained audit log (v0.4+)
+├── policy/hosted_api.json                     # OPTIONAL — opt-in hosted-API policy (v0.6)
 └── derived/
     ├── asr/voice.transcript.json              # pipeline: asr
     ├── asr/voice.transcript.descriptor.json
@@ -20,12 +22,17 @@ record/
     ├── vectorization/voice.index.json         # pipeline: vectorization
     ├── vectorization/voice.index.descriptor.json
     ├── moderation/voice.moderation.json       # pipeline: moderation
-    └── moderation/voice.moderation.descriptor.json
+    ├── moderation/voice.moderation.descriptor.json
+    ├── memory_atoms/voice.atoms.jsonl         # pipeline: memory_atoms (v0.6)
+    ├── memory_atoms/voice.atoms.descriptor.json
+    ├── knowledge_graph/voice.nodes.jsonl      # pipeline: knowledge_graph (v0.6)
+    ├── knowledge_graph/voice.edges.jsonl
+    └── knowledge_graph/voice.graph.descriptor.json
 ```
 
-The full chain is `audio → asr → text → {vectorization, moderation}`. Each step writes its output under `derived/<pipeline-name>/` and a sibling `<stem>.descriptor.json` provenance file that **always** validates against `schemas/derived-asset.schema.json`.
+The v0.5 chain is `audio → asr → text → {vectorization, moderation}`. The v0.6 chain extends it via `text → memory_atoms → knowledge_graph`. Each step writes its output under `derived/<pipeline-name>/` and a sibling `<stem>.descriptor.json` provenance file that **always** validates against `schemas/derived-asset.schema.json`. v0.6 adds: each descriptor write is mirrored as one `derived_asset_emitted` event in `audit/events.jsonl`, hash-chained into the existing audit log.
 
-You do not have to run all four. Each pipeline accepts an explicit `--input` so the chain can be entered at any stage.
+You do not have to run all six. Each pipeline accepts an explicit `--input` so the chain can be entered at any stage, and `--no-audit` lets fixture / dry-run invocations skip the audit bridge entirely.
 
 ## 1. The pipeline contract (issue #30 / #35)
 
@@ -45,7 +52,9 @@ The contract is enforced at static-validation time, not runtime, so a regression
 
 ### The offline-first invariant
 
-`tools/validate_pipelines.py` walks every `pipelines/**/*.py` file and refuses to merge any module that imports a hosted-API client (`openai`, `anthropic`, `google.generativeai`, `cohere`, `aliyun_sdk_bailian`, …). This is what turns "v0.5 is offline-first" from documentation into machine-checked policy. Every pipeline's descriptor mirrors this in JSON: `model.online_api_used` is always `false` when the model block is set.
+`tools/validate_pipelines.py` walks every `pipelines/**/*.py` file and refuses to merge any module that imports a hosted-API client (`openai`, `anthropic`, `google.generativeai`, `cohere`, `aliyun_sdk_bailian`, …). This is what turns "DLRS is offline-first by default" from documentation into machine-checked policy. Every pipeline's descriptor mirrors this in JSON: `model.online_api_used` is always `false` when the model block is set.
+
+v0.6 keeps the static guard *unchanged*. The opt-in hosted-API policy gate (see §4) does **not** relax the import ban; pipelines that need a hosted backend lazy-import the SDK via `importlib.import_module(...)` *inside* a branch already guarded by `pipelines._hosted_api.assert_allowed(...)`. There is still no way to ship a hosted-API code path that runs without an explicit per-record policy.
 
 ### The descriptor (issue #35)
 
@@ -142,6 +151,9 @@ Output: `derived/vectorization/<stem>.index.json` (`{backend, model_id, dim, ent
 
 ### 2.4 `moderation` — deterministic policy scan (issue #34)
 
+*(memory_atoms — §2.5 — and knowledge_graph — §2.6 — pick up after this section.)*
+
+
 Reads cleaned text, runs a regex/wordlist policy, writes a flag list and an outcome.
 
 The built-in v0.5 policy is intentionally narrow:
@@ -176,25 +188,120 @@ python tools/run_pipeline.py moderation \
 
 Output: `derived/moderation/<stem>.moderation.json` (`{policy, version, outcome, summary, flags[]}`) plus a descriptor whose `moderation_outcome` mirrors the JSON outcome.
 
-## 3. Running pipelines
+### 2.5 `memory_atoms` — paragraph / sentence atomisation (issue #56)
 
-### 3.1 In a record (recommended)
+Reads cleaned text and produces line-delimited memory atom records suitable for downstream RAG, recall, and lifecycle marking. v0.6 introduces this stage so the rest of v0.6 (knowledge graph, future episodic recall) has a stable input format.
+
+Two backends:
+
+- **`paragraph`** (default, dependency-free) — splits on blank-line boundaries; one atom per paragraph. Deterministic, byte-stable across reruns.
+- **`spacy`** — opt-in, sentence-granular. Lazy-imported. Requires `pip install spacy` plus a model (`python -m spacy download en_core_web_sm`). Honours `--spacy-model`.
+
+Each atom carries: `atom_id` (ULID), `record_id`, `source_pointer` (relative path back to the cleaned text), absolute char-offsets that round-trip into the source (`clean_text[atom.char_start:atom.char_end] == atom.text`), creation time, and `sensitivity` (defaults to `S1_INTERNAL`; override per-record via `--sensitivity`). The schema is `schemas/memory-atom.schema.json` (13 fields, 11 required, `additionalProperties: false`); see #54 for the full field list.
+
+CLI:
+
+```bash
+python tools/run_pipeline.py memory_atoms \
+  --record path/to/record \
+  [--input derived/text/voice.clean.txt] \
+  [--backend paragraph|spacy] [--spacy-model en_core_web_sm] \
+  [--sensitivity S0_PUBLIC|S1_INTERNAL|S2_CONFIDENTIAL|S3_BIOMETRIC|S4_RESTRICTED] \
+  [--output-dir DIR] [--no-audit]
+```
+
+Output: `derived/memory_atoms/<stem>.atoms.jsonl` (one JSON atom per line) plus a single `<stem>.atoms.descriptor.json`. The descriptor's `parameters` records `backend`, `spacy_model` (when applicable), and the atom count.
+
+Leak-safety: atoms carry the cleaned text *as-is*, so anything redacted by the v0.5 `text` pipeline stays redacted (the v0.5 redaction tokens like `<EMAIL>` are unchanged). `tools/test_memory_atoms_pipeline.py` asserts a leak-guard property: every atom string survives a regex scan for the v0.5 PII patterns and never reintroduces a raw match.
+
+### 2.6 `knowledge_graph` — regex entity + co-mention edge extraction (issue #57)
+
+Reads memory atoms (or any line-delimited JSON with `text` + `atom_id`) and emits a small co-mention knowledge graph: capitalised name candidates as nodes, atoms-in-common-as-co-mention as edges.
+
+One backend (`regex`) by default. The candidate regex matches a capitalised word optionally followed by additional capitalised words (`Alice`, `Bob`, `European Commission`) using a literal space — never `\s+` — so labels never contain `\n` (the v0.6.1 fix from PR #71). Candidates are normalised (case-folded for de-dup) and filtered against a small stopword list shipped with the pipeline.
+
+Node schema: `schemas/entity-graph-node.schema.json` (`node_id`, `record_id`, `label`, `entity_type`, `mention_count`, `source_atom_ids[]`, optional `metadata`). Edge schema: `schemas/entity-graph-edge.schema.json` (`edge_id`, `record_id`, `source_node_id`, `target_node_id`, `relation`, `weight`, `source_atom_ids[]`). Both are `additionalProperties: false`; see #55 for full field lists.
+
+CLI:
+
+```bash
+python tools/run_pipeline.py knowledge_graph \
+  --record path/to/record \
+  [--input derived/memory_atoms/voice.atoms.jsonl] \
+  [--sensitivity S0_PUBLIC|S1_INTERNAL|S2_CONFIDENTIAL|S3_BIOMETRIC|S4_RESTRICTED] \
+  [--output-dir DIR] [--no-audit]
+```
+
+Output: `derived/knowledge_graph/<stem>.nodes.jsonl`, `<stem>.edges.jsonl`, and a single `<stem>.graph.descriptor.json` whose `output.path` points at the nodes file (with `parameters.edges_path` recording the edges sibling). The descriptor's `parameters` includes node count, edge count, and the regex's commit-pinned identifier so reruns are reproducible.
+
+Leak-safety: nodes carry only the matched label, not the surrounding atom text. `source_atom_ids[]` is an indirection, not the original text; resolving it requires read access to `derived/memory_atoms/`.
+
+## 3. Descriptor → audit/events.jsonl bridge (issue #58)
+
+v0.6 wires every descriptor write into the v0.4 hash-chained audit log. After a pipeline finishes its descriptor (and after `tools/validate_pipelines.py` would have run on it), `pipelines._audit_bridge.maybe_bridge` does three things:
+
+1. Appends a `derived_asset_emitted` event to `audit/events.jsonl` carrying `pipeline`, `record_id`, the descriptor's `derived_id`, and the descriptor's `output.outputs_hash`.
+2. Reuses the v0.4 emitter (`tools/emit_audit_event.py`) so the new event participates in the same hash chain — `prev_hash` of event N = `hash` of event N-1, with the genesis event's `prev_hash` set to `null`. The bridge introduces no new chain semantics.
+3. Back-fills the descriptor's `audit_event_ref` field with `audit/events.jsonl#L<n>` — a stable pointer back into the chain — so reviewers can pivot from artefact → authorisation in one click.
+
+`derived_asset_emitted` is the 9th value in `schemas/audit-event.schema.json::event_type.enum`; the eight v0.4 lifecycle events are unchanged, and the enum is still closed via `additionalProperties: false`.
+
+The bridge is a deliberately thin module so pipelines can opt out:
+
+- `--no-audit` on any pipeline CLI suppresses the bridge call site (the descriptor is still emitted, just without an audit-log mirror). Used by fixtures, dry-runs, and the unit tests for #58.
+- If the record has no `manifest.json` (e.g., a stand-alone `--input` / `--output-dir` run with no enclosing record), the bridge is a silent no-op; there is no error and no event.
+
+The regression test for the bridge is `tools/test_descriptor_audit_bridge.py`, run as one of the cross-cutting tests inside `tools/test_pipelines.py`. It covers: event append + schema compliance, hash chaining across two pipelines, descriptor back-fill, `--no-audit` skip, and silent-no-op without a manifest.
+
+## 4. Hosted-API opt-in policy gate (issue #59)
+
+DLRS is offline-first by default. v0.5 enforced this with the static `validate_pipelines.py` import ban; v0.6 keeps that ban and adds a *narrow* mechanism for opting back in, per-record, without weakening the default.
+
+A pipeline that wants to call a hosted API must:
+
+1. **Read the record's policy file.** The data subject (or their authorised agent) commits `<record>/policy/hosted_api.json`, validated against `schemas/hosted-api-policy.schema.json`. Required fields: `schema_version`, `opt_in: bool`, `allowed_providers[]` (drawn from a closed enum: `openai`, `anthropic`, `google_generativeai`, `cohere`, `deepl`, `replicate`, `aliyun_bailian`, `azure_openai`, `aws_bedrock`, `custom`), `allowed_pipelines[]` (snake_case names matching `PipelineSpec.name`), `consent_evidence_ref`, `issued_at`, `expires_at`. Optional: `data_residency`, `notes`, `rate_limits`. `additionalProperties: false`.
+2. **Gate the call site.** Any hosted-API code path goes inside:
+   ```python
+   from pipelines._hosted_api import assert_allowed
+   assert_allowed(record_root, pipeline_name="vectorization", provider="openai")
+   sdk = importlib.import_module("openai")  # lazy-import inside the gate
+   ```
+   `assert_allowed` raises `HostedApiNotAllowed` unless every check passes:
+   - policy file exists
+   - `opt_in is True`
+   - `provider in allowed_providers`
+   - `pipeline_name in allowed_pipelines`
+   - `issued_at <= now < expires_at` (half-open window; `expires_at` denies, `issued_at` permits)
+3. **Static guard stays on.** Because the SDK is `importlib`'d *inside* the gated branch, `tools/validate_pipelines.py` continues to refuse anything unconditional. The combination — static ban + per-record runtime gate + lazy import — is what makes "DLRS authorises a hosted call" auditable.
+
+`load_policy(record_root)` returns `None` when the policy file is absent (default-deny path); it raises `HostedApiNotAllowed` if the file is present but malformed (invalid JSON, schema violation, `expires_at <= issued_at`). `list_allowed_providers(policy)` is a convenience for `--show-policy`-style CLIs.
+
+v0.6 ships the gate but **does not** wire any pipeline to actually call a hosted API. That decision is deferred to v0.7 (or the first sub-PR that needs it) so reviewers can assess the policy contract on its own merits. The audit bridge composes cleanly: a pipeline that successfully passes `assert_allowed` should record a `derived_asset_emitted` audit event whose `metadata.hosted_provider` field captures the provider used; that field is reserved but unwritten in v0.6.
+
+The regression test for the gate is `tools/test_hosted_api_policy.py`, run as one of the cross-cutting tests inside `tools/test_pipelines.py`. It covers: schema golden + 6 negative schema cases (missing fields, drift, unknown provider, uppercase pipeline name, opt_in not bool, additionalProperties), default-deny, `opt_in=false`, provider whitelist, pipeline whitelist, time bounds (before `issued_at` / after `expires_at`), `expires_at <= issued_at`, malformed JSON, and `list_allowed_providers` consistency.
+
+## 5. Running pipelines
+
+### 5.1 In a record (recommended)
 
 ```bash
 # from the repo root
-python tools/run_pipeline.py asr           --record path/to/record
-python tools/run_pipeline.py text          --record path/to/record
-python tools/run_pipeline.py vectorization --record path/to/record
-python tools/run_pipeline.py moderation    --record path/to/record
+python tools/run_pipeline.py asr             --record path/to/record
+python tools/run_pipeline.py text            --record path/to/record
+python tools/run_pipeline.py vectorization   --record path/to/record
+python tools/run_pipeline.py moderation      --record path/to/record
+python tools/run_pipeline.py memory_atoms    --record path/to/record
+python tools/run_pipeline.py knowledge_graph --record path/to/record
 ```
 
 `run_pipeline.py` is the single entrypoint. Every pipeline is `python tools/run_pipeline.py <name>`; subcommands are listed by `python tools/run_pipeline.py --help`.
 
-### 3.2 End-to-end demo
+### 5.2 End-to-end demos
 
-`examples/asr-demo/` is the canonical end-to-end fixture. `bash examples/asr-demo/run_demo.sh` regenerates a deterministic placeholder WAV (DLRS is pointer-first, so audio is never committed) and walks all four pipelines. See `examples/asr-demo/README.md` for the full walkthrough and the `REAL_ASR=1` / `REAL_EMBED=1` opt-in flags.
+- `examples/asr-demo/` (v0.5) is the canonical audio chain fixture. `bash examples/asr-demo/run_demo.sh` regenerates a deterministic placeholder WAV (DLRS is pointer-first, so audio is never committed) and walks ASR → text → vectorization → moderation. See `examples/asr-demo/README.md` for the full walkthrough and the `REAL_ASR=1` / `REAL_EMBED=1` opt-in flags.
+- `examples/memory-graph-demo/` (v0.6) is the canonical memory-graph chain fixture. `bash examples/memory-graph-demo/run_demo.sh` stages a fictional 3-paragraph diary excerpt and walks text → memory_atoms → knowledge_graph, then prints the resulting 3-event hash-chained audit log. See `examples/memory-graph-demo/README.md` for the walkthrough and the `REAL_ATOMS=1` opt-in for the spaCy backend.
 
-### 3.3 Stand-alone (no record)
+### 5.3 Stand-alone (no record)
 
 Each pipeline also accepts an absolute `--input` and a `--output-dir`, so you can run any single stage on a one-off file:
 
@@ -206,30 +313,42 @@ python tools/run_pipeline.py text \
 
 When `--record` is absent, the descriptor's `record_id` falls back to `dlrs_unknown` (which still satisfies the schema's `^dlrs_[a-zA-Z0-9_-]{4,}$` pattern) and the offline-first invariant still applies.
 
-## 4. Authoring a new pipeline
+## 6. Authoring a new pipeline
 
 1. Create `pipelines/<name>/__init__.py`. Implement a `_run(args)` function.
 2. Register a `PipelineSpec(name="<name>", inputs=[...], outputs=[...], dependencies=[...], output_pointer_template="derived/<name>/...", register=..., run=_run)` in `pipelines/__init__.py`.
 3. Build descriptors with `pipelines._descriptor.DescriptorBuilder` so they validate against `schemas/derived-asset.schema.json` without per-pipeline boilerplate.
-4. Add a `tools/test_<name>_pipeline.py` with at least: a unit test of the core transformation, a leak-guard test if your pipeline produces a redacted/flagged artefact, and an end-to-end CLI test against a synthetic record. Returning 0/1 from `main()` is enough — `tools/test_pipelines.py` runs the script as a subprocess.
-5. Lazy-import any heavy dependency inside `_run()` (or a helper called from `_run()`), never at module top-level. Add the dependency to `tools/requirements.txt` only if it's truly always needed; otherwise document the opt-in in this guide and the pipeline's CLI `--help`.
-6. Run `python tools/validate_pipelines.py` and `python tools/batch_validate.py`. Both must pass.
+4. After writing the descriptor, call `pipelines._audit_bridge.maybe_bridge(record_root, pipeline_name=..., descriptor=..., descriptor_path=..., skip=getattr(args, "no_audit", False))` so v0.6's descriptor → audit bridge picks up your pipeline automatically (see §3). Add `--no-audit` to your CLI parser via `parser.add_argument("--no-audit", action="store_true", help="...")`.
+5. If your pipeline calls a hosted API, gate the call site with `pipelines._hosted_api.assert_allowed(record_root, pipeline_name=..., provider=...)` and lazy-import the SDK *inside* the gated branch via `importlib.import_module(...)`. Top-level `import openai` (or any hosted client) is rejected by `tools/validate_pipelines.py`. See §4 for the full contract.
+6. Add a `tools/test_<name>_pipeline.py` with at least: a unit test of the core transformation, a leak-guard test if your pipeline produces a redacted/flagged artefact, and an end-to-end CLI test against a synthetic record. Returning 0/1 from `main()` is enough — `tools/test_pipelines.py` runs the script as a subprocess. Append the test to either `PER_PIPELINE_TESTS` (if it's a per-pipeline behaviour test) or `CROSS_CUTTING_TESTS` (if it spans multiple pipelines, like the audit bridge).
+7. Lazy-import any heavy dependency inside `_run()` (or a helper called from `_run()`), never at module top-level. Add the dependency to `tools/requirements.txt` only if it's truly always needed; otherwise document the opt-in in this guide and the pipeline's CLI `--help`.
+8. Run `python tools/validate_pipelines.py` and `python tools/batch_validate.py`. Both must pass.
 
 The hosted-API import guard will reject your pipeline at validation time if you accidentally `import openai` (or any of the listed hosted clients) anywhere in the file. Local clients like `qdrant_client` are explicitly allowed because Qdrant runs in a container the user hosts.
 
-## 5. What v0.5 deliberately is not
+## 7. What v0.6 deliberately is not
 
-- **Not a managed service.** v0.5 ships the libraries, not the daemon. Multi-tenant orchestration is v0.7.
-- **Not a benchmark suite.** The `dummy` and `hash` backends are designed for reproducible CI; their numbers carry no semantic meaning. Real benchmarks belong in v0.6 alongside GraphRAG.
-- **Not a hosted-API integration layer.** The whole point of v0.5 is that everything still works without one. v0.6 introduces an *opt-in* hosted-API backend behind the same `Policy` / `EmbeddingBackend` interfaces; the offline-first invariant stays the default.
+- **Not a managed service.** v0.6 still ships the libraries, not the daemon. Multi-tenant orchestration is v0.7.
+- **Not a benchmark suite.** The `dummy`, `hash`, `paragraph`, and `regex` backends are designed for reproducible CI; their numbers carry no semantic meaning. Real benchmarks belong in v0.7 alongside the runtime layer.
+- **Not a hosted-API integration layer.** v0.6 ships the policy gate (§4) but does not wire any pipeline to actually call a hosted API. The first hosted-API backend lands as a follow-up sub-PR and must compose with the gate; the offline-first default stays the default.
+- **Not a replacement for the v0.4 audit emitter.** v0.6's bridge appends *one new event type* (`derived_asset_emitted`) to the existing hash-chained log. The eight v0.4 lifecycle events are unchanged; the v0.4 emitter remains the single point of write.
 - **Not a replacement for `validate_repo.py`.** Pipelines write derived data; they do not own the manifest or pointer schemas. Manifest validation, sensitive-file checks, and registry generation remain in the v0.3/v0.4 validators.
 
-## 6. References
+## 8. References
 
-- Issue #28 — v0.5 offline-first epic.
+- Issue [#28](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/28) — v0.5 offline-first epic.
+- Issue [#52](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/52) — v0.6 memory atoms + knowledge graph + descriptor audit bridge epic.
 - `pipelines/__init__.py` — pipeline registry.
+- `pipelines/_descriptor.py` — shared descriptor builder.
+- `pipelines/_audit_bridge.py` — v0.6 descriptor → `audit/events.jsonl` bridge.
+- `pipelines/_hosted_api.py` — v0.6 hosted-API opt-in policy gate.
 - `tools/validate_pipelines.py` — static guard (offline-first + output-prefix invariant).
-- `tools/test_pipelines.py` — umbrella test driver used by CI's `pipelines` job.
+- `tools/test_pipelines.py` — umbrella test driver used by CI's `pipelines` job (per-pipeline + cross-cutting).
 - `schemas/derived-asset.schema.json` — descriptor schema.
-- `examples/asr-demo/` — end-to-end fixture.
+- `schemas/audit-event.schema.json` — audit-event schema (extended with `derived_asset_emitted` in v0.6).
+- `schemas/memory-atom.schema.json` — v0.6 memory atom schema.
+- `schemas/entity-graph-node.schema.json` / `schemas/entity-graph-edge.schema.json` — v0.6 knowledge graph schemas.
+- `schemas/hosted-api-policy.schema.json` — v0.6 hosted-API opt-in policy schema.
+- `examples/asr-demo/` — v0.5 end-to-end fixture.
+- `examples/memory-graph-demo/` — v0.6 end-to-end fixture.
 - `docs/COMPLIANCE_CHECKLIST.md` — cross-references to PIPL / GDPR / EU AI Act / 中国深度合成办法.
