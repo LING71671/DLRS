@@ -2,8 +2,13 @@
 
 <div align="center">
 
-**DLRS 是一个面向数字生命档案的开放标准草案**  
-**重点解决隐私优先、自愿授权、结构化存档、可撤回、可审计、Schema 校验和模板化提交等问题**
+**DLRS 定义 `.life` 可运行数字生命档案文件标准** —— 一个**双标准**：
+
+1. **`.life` 档案文件格式** —— 经本人或合法授权方许可生成、可分发的数字生命档案包
+2. **`.life` 运行时协议** —— 兼容 runtime 加载 `.life` 后，在聊天 / 虚拟世界 / 3D 场景中生成 *AI 数字生命实例*
+
+面向隐私优先、自愿授权、结构化存档、可撤回、可审计、Schema 校验和模板化提交。  
+**`.life` 不是"真人复活"** —— 加载后产生的是一个始终可标识的 *AI 数字生命实例*，必须可撤回、可审计。
 
 > **📢 RFC Stage | 征求意见阶段**  
 > This is an early-stage open standard draft. Feedback, translations, schema improvements, and ethical review are welcome.  
@@ -22,10 +27,39 @@
 
 ## 🎯 什么是 DLRS？
 
-**DLRS (Digital Life Repository Standard)** 是一个**开放标准草案**，用于隐私优先、基于授权的数字生命档案。
+**DLRS (Digital Life Repository Standard)** 是一个**开放标准草案**，由两条相互配套的标准组成：
 
-它定义了：
-- 📋 档案目录结构和 JSON Schema
+### 📦 `.life` 档案文件格式
+
+一个 `.life` 文件是一个 **可分发的、签名的、有时限的数字生命档案包**，由本人（或合法授权方）许可生成。它可以包含：
+
+- 身份描述、授权证据、验证等级
+- 记忆结构（memory atoms、知识图谱）
+- 人格偏好、forbidden_uses 列表
+- 多模态资产指针（pointer 模式）或加密块（encrypted 模式）
+- 模型引用、撤回端点（withdrawal_endpoint）
+- 哈希链审计日志子集
+
+规范见 [`docs/LIFE_FILE_STANDARD.md`](docs/LIFE_FILE_STANDARD.md) ·
+Schema [`schemas/life-package.schema.json`](schemas/life-package.schema.json)。
+
+### 🚀 `.life` 运行时协议
+
+兼容 runtime 加载 `.life` 后，按照协议在聊天系统、虚拟世界、3D 场景或其他数字环境中生成一个 **可交互、可撤回、可审计的 AI 数字生命实例**。运行时 MUST：
+
+- 把每条输出标识为 *AI 数字生命实例*（永远不可声称"等同于真人"）
+- 强制执行 `forbidden_uses[]`
+- 在会话开始时 + 至少每 24h 重新轮询 `withdrawal_endpoint`
+- 超过 `expires_at` 拒绝挂载
+- 决不把两个 `.life` 的记忆混合到同一个实例
+
+规范见 [`docs/LIFE_RUNTIME_STANDARD.md`](docs/LIFE_RUNTIME_STANDARD.md)。
+
+### 🧩 配套基础设施
+
+DLRS 同时定义了 `.life` 标准依赖的底层结构：
+
+- 📋 DLRS 仓库 / 档案目录结构和 JSON Schema（v0.6 已稳定）
 - ✅ 授权和撤回模型
 - 🔒 隐私边界和敏感度分级
 - 🏛️ 治理规则和审核流程
@@ -38,22 +72,26 @@
 
 **重要声明**：
 
-- ❌ **不是**"复活人类"或"克隆人格"的技术
+- ❌ **不是**"复活人类"或"克隆人格"的技术 —— `.life` 加载后产生的是 *AI 数字生命实例*，永远不等同于真人
+- ❌ **不是**无授权 / 无撤回机制的死后复现工具 —— 任何 `.life` 都必须有有效的 `withdrawal_endpoint`，任何 runtime 都 MUST 实时尊重撤回
 - ❌ **不是**保证 AI 分身等同真人的承诺
 - ❌ **不是**法律合规的保证
-- ❌ **不是**永久存储解决方案
-- ❌ **不是**成熟的生产系统
+- ❌ **不是**永久存储解决方案 —— `.life` 必须有 `expires_at`，超期 MUST 拒绝挂载
+- ❌ **不是**成熟的生产系统 —— 本仓库当前阶段交付的是规范 + Schema + 示例打包器；**reference runtime 实现尚未交付**（推迟到 v0.8+）
 - ❌ **不是**法律建议的替代品
 
 ---
 
 ## ✅ DLRS 是什么
 
+- ✅ **`.life` 双标准**：文件格式 + 运行时协议，独立 semver 推进
 - ✅ **开放标准草案**：用于讨论和改进
-- ✅ **隐私优先**：敏感数据不直接存储在 Git
-- ✅ **基于授权**：所有档案必须有明确授权证据
-- ✅ **可撤回**：用户可以随时撤回授权
-- ✅ **可审计**：所有操作都有审计日志
+- ✅ **隐私优先**：敏感数据不直接存储在 Git；`.life` pointer 模式默认不打包原始资产
+- ✅ **基于授权**：所有档案必须有明确授权证据；`.life` 必须声明 `issued_by` + `consent_evidence_ref` + `verification_level`
+- ✅ **可撤回**：用户可以随时撤回授权；`.life` 强制 `withdrawal_endpoint`，runtime MUST 实时尊重
+- ✅ **可审计**：所有操作都有审计日志（哈希链上链）；`.life` 内嵌 `audit/events.jsonl` 子集
+- ✅ **可标识**：runtime 加载 `.life` 后产生的实例必须始终标识为 *AI 数字生命实例*（`ai_disclosure` 最低 `visible_label_required`）
+- ✅ **有时限**：`.life` 必须声明 `expires_at`；超期 MUST 拒绝挂载
 - ✅ **实验性**：非约束性参考实现
 - ✅ **社区驱动**：欢迎贡献和反馈
 
