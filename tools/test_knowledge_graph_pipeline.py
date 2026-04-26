@@ -156,6 +156,65 @@ def _unit_stop_tokens_and_min_mentions(errors: list[str]) -> None:
     )
 
 
+def _unit_no_newline_in_labels(errors: list[str]) -> None:
+    """Regression for issue #70.
+
+    Before the fix, ``_CANDIDATE_RE`` used ``\\s+`` between capitalised
+    tokens, so a single context unit containing internal ``\\n`` would
+    merge proper nouns across line breaks into a multi-line label such
+    as ``'Alice\\nCorp'``. After the fix the separator is a literal
+    space and adjacent-line mentions stay separate.
+    """
+    units = [
+        "The conference featured speakers from\nBeijing and representatives "
+        "of Alice\nCorp who met with delegates from the\nEuropean Commission "
+        "in The Hague.",
+    ]
+    nodes, _edges = extract_regex_graph(
+        context_units=units,
+        record_id="dlrs_test_lin",
+        evidence_pointer="derived/text/sample.clean.txt",
+        sensitivity="S1_INTERNAL",
+        min_mentions=1,
+        pipeline_version="0.6.0",
+    )
+    labels = [n["label"] for n in nodes]
+    for n in nodes:
+        _assert(
+            "\n" not in n["label"],
+            f"unit/no-newline: label contains literal newline: {n['label']!r}",
+            errors,
+        )
+        for alias in n["aliases"]:
+            _assert(
+                "\n" not in alias,
+                f"unit/no-newline: alias contains literal newline: {alias!r}",
+                errors,
+            )
+    # Adjacent-line mentions must survive as separate entities.
+    _assert(
+        "Alice" in labels and "Corp" in labels,
+        f"unit/no-newline: 'Alice' and 'Corp' must be SEPARATE nodes, got {labels}",
+        errors,
+    )
+    _assert(
+        "Beijing" in labels,
+        f"unit/no-newline: expected 'Beijing' to survive, got {labels}",
+        errors,
+    )
+    # Multi-word entities separated by a real space still work.
+    _assert(
+        "European Commission" in labels,
+        f"unit/no-newline: expected 'European Commission' multi-word entity, got {labels}",
+        errors,
+    )
+    _assert(
+        "The Hague" in labels,
+        f"unit/no-newline: expected 'The Hague' multi-word entity, got {labels}",
+        errors,
+    )
+
+
 def _unit_salience_scales(errors: list[str]) -> None:
     units = [
         "Alice met Alice. Alice waved.",  # 'Alice' x3 in source order
@@ -398,6 +457,8 @@ def main() -> int:
     _unit_redaction_placeholder_filtering(errors)
     print("test_knowledge_graph_pipeline: unit/stop-tokens + min_mentions")
     _unit_stop_tokens_and_min_mentions(errors)
+    print("test_knowledge_graph_pipeline: unit/no-newline-in-labels (issue #70 regression)")
+    _unit_no_newline_in_labels(errors)
     print("test_knowledge_graph_pipeline: unit/salience scales with mentions")
     _unit_salience_scales(errors)
     print("test_knowledge_graph_pipeline: e2e atoms.jsonl input")
