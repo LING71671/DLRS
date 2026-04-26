@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/tier.schema.json",
+  "title": "DLRS .life Tier Block",
+  "description": "v0.8 Topic 3 — multi-dimensional `tier` block for the `.life` package descriptor. Replaces v0.7's single-dimension `verification_level` field with a 6-dimensional credit-rating system. The builder MUST auto-compute `score`, `level`, and `dimensions` from the package contents; hand-filled tier blocks are out-of-spec and rejected by `tools/build_life_package.py` at build time. The `name` and `glyph` are sourced from a versioned naming appendix (Schema D Cosmic Evolution: Quark → Singularity, see `docs/appendix/TIER_NAMING_SCHEMA_D.md`) and may evolve without a spec major bump. Authoritative spec: `docs/LIFE_TIER_SPEC.md`. This schema exports its shapes via `$defs` so they can be `$ref`-included from `life-package.schema.json` in a future integration PR; no v0.7 file's validation behaviour changes until that integration lands.",
+  "$ref": "#/$defs/tier_block",
+  "$defs": {
+    "tier_block": {
+      "type": "object",
+      "description": "The full `tier` object embedded in `life-package.json`. All seven fields are required so machine consumers can rely on the contract; no field is optional. Decisions: tier is fully public (D5.4 — credit rating cannot be hidden); machine fields (`score`, `level`, `dimensions`) are spec-frozen; `name` + `glyph` belong to the versioned naming appendix.",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "level",
+        "name",
+        "glyph",
+        "dimensions",
+        "computed_at",
+        "computed_by"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "description": "Composite tier score on a 0–100 scale. Auto-computed by the builder from the six `dimensions` using default weights: `consent_completeness` ×2, `identity_verification` ×2, others ×1. Each dimension contributes (level_index / max_level_index) × weight × 100 / sum_of_weights. The result is rounded to the nearest integer and clamped to [0, 100].",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "level": {
+          "type": "string",
+          "description": "Roman-numeral tier level I–XII. Derived deterministically from `score` via the boundaries fixed in `docs/appendix/TIER_NAMING_SCHEMA_D.md`. The schema enforces the score → level mapping via `allOf` rules; a mismatch fails validation.",
+          "enum": [
+            "I",
+            "II",
+            "III",
+            "IV",
+            "V",
+            "VI",
+            "VII",
+            "VIII",
+            "IX",
+            "X",
+            "XI",
+            "XII"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable tier name from the active naming appendix. For Schema D the canonical names are: I=Quark, II=Atom, III=Molecule, IV=Stardust, V=Nebula, VI=Protostar, VII=Main Sequence, VIII=Red Giant, IX=White Dwarf, X=Neutron Star, XI=Pulsar, XII=Singularity. Future appendices may swap names without a schema major bump; consumers MUST treat `level` (not `name`) as the canonical machine identifier.",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "glyph": {
+          "type": "string",
+          "description": "Single visual glyph (1–4 Unicode codepoints) representing the tier. Schema D glyphs: ⋅ ⊙ ⋮⋮ ✧ 🌫 ✦ ★ ◉ ⚪ ⚫ ◎ ●. Glyphs are display-only; consumers SHOULD NOT match on glyph string. The codepoint count cap of 16 leaves headroom for combining marks and ZWJ sequences.",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "dimensions": {
+          "$ref": "#/$defs/tier_dimensions"
+        },
+        "computed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC 3339 / ISO 8601 UTC timestamp at which the tier was computed. MUST equal the package's `created_at` when integrated into `life-package.json` (the tier is computed during the build, not after)."
+        },
+        "computed_by": {
+          "type": "string",
+          "description": "Identifier of the builder tool + version that computed the tier. Convention: `<path>@<semver>`, e.g. `tools/build_life_package.py@0.2.0`. The `@` separator is mandatory so consumers can split builder identity from version. Hand-rolled tier blocks (e.g. `human@manual`) are explicitly rejected by this pattern.",
+          "pattern": "^[A-Za-z0-9_./-]+@[A-Za-z0-9_.+-]+$",
+          "minLength": 3,
+          "maxLength": 256
+        }
+      },
+      "allOf": [
+        {
+          "description": "Score → level binding for tier I (0–8).",
+          "if": { "properties": { "score": { "minimum": 0, "maximum": 8 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "I" } } }
+        },
+        {
+          "description": "Score → level binding for tier II (9–16).",
+          "if": { "properties": { "score": { "minimum": 9, "maximum": 16 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "II" } } }
+        },
+        {
+          "description": "Score → level binding for tier III (17–24).",
+          "if": { "properties": { "score": { "minimum": 17, "maximum": 24 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "III" } } }
+        },
+        {
+          "description": "Score → level binding for tier IV (25–32).",
+          "if": { "properties": { "score": { "minimum": 25, "maximum": 32 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "IV" } } }
+        },
+        {
+          "description": "Score → level binding for tier V (33–40).",
+          "if": { "properties": { "score": { "minimum": 33, "maximum": 40 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "V" } } }
+        },
+        {
+          "description": "Score → level binding for tier VI (41–50).",
+          "if": { "properties": { "score": { "minimum": 41, "maximum": 50 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "VI" } } }
+        },
+        {
+          "description": "Score → level binding for tier VII (51–60).",
+          "if": { "properties": { "score": { "minimum": 51, "maximum": 60 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "VII" } } }
+        },
+        {
+          "description": "Score → level binding for tier VIII (61–68).",
+          "if": { "properties": { "score": { "minimum": 61, "maximum": 68 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "VIII" } } }
+        },
+        {
+          "description": "Score → level binding for tier IX (69–76).",
+          "if": { "properties": { "score": { "minimum": 69, "maximum": 76 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "IX" } } }
+        },
+        {
+          "description": "Score → level binding for tier X (77–84).",
+          "if": { "properties": { "score": { "minimum": 77, "maximum": 84 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "X" } } }
+        },
+        {
+          "description": "Score → level binding for tier XI (85–92).",
+          "if": { "properties": { "score": { "minimum": 85, "maximum": 92 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "XI" } } }
+        },
+        {
+          "description": "Score → level binding for tier XII (93–100).",
+          "if": { "properties": { "score": { "minimum": 93, "maximum": 100 } }, "required": ["score"] },
+          "then": { "properties": { "level": { "const": "XII" } } }
+        }
+      ]
+    },
+    "tier_dimensions": {
+      "type": "object",
+      "description": "The six independent tier dimensions. All six are required — partial dimension blocks are not valid; missing observability counts as the lowest level for that dimension. Decisions D5.3 (six dimensions adopted in full).",
+      "additionalProperties": false,
+      "required": [
+        "identity_verification",
+        "asset_completeness",
+        "consent_completeness",
+        "detail_level",
+        "audit_chain_strength",
+        "jurisdiction_clarity"
+      ],
+      "properties": {
+        "identity_verification": {
+          "type": "string",
+          "description": "How firmly the issuer's identity is established at issuance time. Levels (low → high): `unverified` (no identity check); `self_attested` (subject claims identity, no third party); `email_verified` (control of an email address proven); `id_verified` (government ID checked); `kyc_verified` (full KYC by a regulated provider); `notarized` (in-person notarial witness). Replaces v0.7's `verification_level` field; mapping table in spec §6.",
+          "enum": [
+            "unverified",
+            "self_attested",
+            "email_verified",
+            "id_verified",
+            "kyc_verified",
+            "notarized"
+          ]
+        },
+        "asset_completeness": {
+          "type": "string",
+          "description": "How many .life capability classes have at least one bound asset. Levels (low → high): `minimal` (one capability, e.g. text-only); `partial` (2–3 capabilities); `standard` (4–6 capabilities, the typical complete `.life`); `comprehensive` (7+ capabilities including all primary modalities); `archive_grade` (every capability the runtime can name plus full longitudinal coverage).",
+          "enum": [
+            "minimal",
+            "partial",
+            "standard",
+            "comprehensive",
+            "archive_grade"
+          ]
+        },
+        "consent_completeness": {
+          "type": "string",
+          "description": "How well-founded the consent base is. Levels (low → high): `none` (no consent on file — only valid when the subject is the issuer and the package is self-issued); `text_only` (free-text consent statement, no signature); `signed` (cryptographic / handwritten signature on the consent document); `notarized` (notarial witness on the consent document); `multi_party_attested` (executor + at least one independent attesting party signed).",
+          "enum": [
+            "none",
+            "text_only",
+            "signed",
+            "notarized",
+            "multi_party_attested"
+          ]
+        },
+        "detail_level": {
+          "type": "string",
+          "description": "Per-asset fidelity averaged across the package. Levels (low → high): `low_fidelity` (compressed / heavily downsampled assets); `medium` (standard distribution quality); `high_fidelity` (production-grade quality, e.g. studio-recorded voice); `cinematic` (raw masters, lossless audio, motion-captured visuals).",
+          "enum": [
+            "low_fidelity",
+            "medium",
+            "high_fidelity",
+            "cinematic"
+          ]
+        },
+        "audit_chain_strength": {
+          "type": "string",
+          "description": "Strength of the in-package audit chain (`audit/events.jsonl`). Levels (low → high): `minimal` (events present but no `prev_hash` chain); `linked` (every event has `prev_hash` linking to the previous); `signed_chain` (the chain head is signed by the issuer); `notarized_chain` (the signed chain head is countersigned by an independent notary).",
+          "enum": [
+            "minimal",
+            "linked",
+            "signed_chain",
+            "notarized_chain"
+          ]
+        },
+        "jurisdiction_clarity": {
+          "type": "string",
+          "description": "How clearly the package declares its legal context. Levels (low → high): `unspecified` (no jurisdiction declared); `declared` (jurisdiction + governing law + executor legal status all filled); `cross_validated` (declarations validated against an external registry); `court_recognized` (a court or competent authority has recognised the declarations).",
+          "enum": [
+            "unspecified",
+            "declared",
+            "cross_validated",
+            "court_recognized"
+          ]
+        }
+      }
+    }
+  }
+}

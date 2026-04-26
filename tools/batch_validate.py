@@ -40,6 +40,7 @@ DEFAULT_STEPS = [
     ("test_genesis_schema", [sys.executable, str(TOOLS / "test_genesis_schema.py")]),
     ("test_lifecycle_schema", [sys.executable, str(TOOLS / "test_lifecycle_schema.py")]),
     ("test_binding_schema", [sys.executable, str(TOOLS / "test_binding_schema.py")]),
+    ("test_tier_schema", [sys.executable, str(TOOLS / "test_tier_schema.py")]),
     # The 'pipelines' step calls tools/test_pipelines.py, which itself
     # dispatches every per-pipeline test plus the v0.6 cross-cutting
     # tests transitively. The cross-cutting tests are also listed
