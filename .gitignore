@@ -35,3 +35,6 @@ __pycache__/
 # Exceptions: allow tiny placeholder files if explicitly whitelisted
 !docs/**/*.png
 !assets/public/**/*.png
+
+# v0.4: machine-readable validation reports are CI artefacts, not source
+reports/

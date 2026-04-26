@@ -1,0 +1,10 @@
+{
+  "record_id": "dlrs_EXAMPLE_estate_conflict_frozen",
+  "display_name": "estate-conflict (fictional)",
+  "summary": "Fictional record demonstrating the v0.4 estate-conflict-frozen pattern: a deceased subject's archive that is under family / legal dispute. Runtime is frozen, deletion is blocked by legal_hold, and the record MUST NOT appear in the public registry until the dispute resolves.",
+  "avatar_preview_uri": null,
+  "ai_disclosure": "Synthetic AI output. Frozen pending dispute resolution; no public runtime is exposed.",
+  "allowed_public_interactions": [
+    "view_profile"
+  ]
+}

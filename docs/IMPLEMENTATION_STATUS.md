@@ -1,16 +1,29 @@
 # DLRS Hub 实施状态总结
 
+> 详细差距分析见 `docs/GAP_ANALYSIS.md`。本文是"高速摘要"。
+
 ## 📊 快速概览
 
-**当前版本**: v0.2.0  
-**总体完成度**: 60-65%  
+**当前版本**: v0.4.0
+**总体完成度**: ~78%
 **参考标准**: DLRS_ULTIMATE.md
+**最近发布**: PR #16 (v0.3) + v0.4 release PR
+
+### v0.3 → v0.4 主要增量
+
+- 仓库防御层：`.gitattributes` 把音视频/3D/模型权重路由到 Git LFS；`docs/LFS_GUIDE.md` 解释何时用 LFS、何时用 pointer。
+- 自动化：`tools/batch_validate.py` 一键产出 `reports/validate_<ts>.json`，CI 把它作为 artifact 上传，未来审核台可直接消费。
+- 审计：`tools/emit_audit_event.py` + `audit/events.jsonl` append-only 约定，含哈希链与重复 event_id 拒写。`schemas/audit-event.schema.json` 收紧到 8 个核心 enum + custom。
+- 合规：`docs/COMPLIANCE_CHECKLIST.md` 把 PIPL / GDPR / EU AI Act / 中国深度合成办法逐条映射到 manifest 字段与 validator。
+- AI 标识：`manifest.public_disclosure` 字段 + `if/then` 硬约束（任何 `public_*` 可见性必须声明）。`label_locales[]`、`watermark_methods[]`、`c2pa_claim_generator` 都已是 schema 一部分；实际水印实施推到 v1.0。
+- 静态注册表：`tools/build_registry.py` 同时产出 `registry/index.html`（零依赖、内联 CSS），可直接托管到 gh-pages，替代之前规划的 Web 审核台原型。
+- 示例：新增 `examples/minor-protected`、`examples/estate-conflict-frozen`，验证未成年人与遗产争议两个反例都被 registry 排除；`tools/test_registry.py` 增加对应 2 个用例（共 14）。
 
 ---
 
-## ✅ 已完成的核心功能
+## ✅ 已完成的核心功能（v0.4）
 
-### 1. 仓库基础设施（90%）
+### 1. 仓库基础设施（95%）
 - ✅ 完整的目录结构（`humans/`, `templates/`, `examples/`, `schemas/`）
 - ✅ `manifest.json` 规范（包含所有核心字段）
 - ✅ 指针文件系统（`.pointer.json`）
@@ -20,7 +33,8 @@
 - ✅ 区域化和跨境字段
 - ✅ 基础审计字段
 
-### 2. 文档体系（85%）
+### 2. 文档体系（92%）
+- ✅ `docs/COLLECTION_STANDARD.md`、`docs/HIGH_FIDELITY_GUIDE.md`、`docs/OBJECT_STORAGE_POINTERS.md`、`docs/LFS_GUIDE.md`、`docs/COMPLIANCE_CHECKLIST.md`
 - ✅ 详细的 README（保姆级教程）
 - ✅ 完整的 Getting Started 指南
 - ✅ 30+ 问答的 FAQ
@@ -28,301 +42,44 @@
 - ✅ 中英文双语支持（i18n）
 - ✅ 4 个示例档案
 
-### 3. 工具和脚本（50%）
-- ✅ `validate_repo.py` - 仓库验证
-- ✅ `build_registry.py` - 索引生成
-- ✅ `new_human_record.py` - 档案创建
-- ✅ `i18n_helper.py` - 翻译管理
-- ✅ `check_sensitive_files.py` - 敏感文件检测（基础）
+### 3. 工具和脚本（88%）
+- ✅ `validate_repo.py` / `validate_manifest.py` / `validate_examples.py`
+- ✅ `validate_media.py`（ffprobe pointer 元数据校验）
+- ✅ `lint_schemas.py`（Draft 2020-12 schema 校验）
+- ✅ `build_registry.py`（jsonl + csv + **html**）
+- ✅ `test_registry.py`（14 个 registry 入选规则用例）
+- ✅ `new_human_record.py`、`i18n_helper.py`、`check_sensitive_files.py`
+- ✅ `upload_to_storage.py`、`estimate_costs.py`
+- ✅ **`batch_validate.py`** —— 聚合所有 validator + JSON 报告
+- ✅ **`emit_audit_event.py`** —— append-only 审计事件写入器（含哈希链）
 
 ---
 
-## 🟡 部分完成的功能
+## 🟡 / ❌ 详细差距
 
-### 1. 数据采集规范（40%）
-- ✅ 基础文件命名规范
-- ✅ 指针文件格式
-- ✅ 敏感度分级（S0-S4）
-- ❌ 缺少详细的音视频采集技术规范
-- ❌ 缺少媒体元数据自动验证
+为避免文档双向漂移，所有部分完成 / 未实现的清单都迁移到 `docs/GAP_ANALYSIS.md` 单一来源。摘要：
 
-### 2. 数据分层（50%）
-- ✅ 目录结构存在（`artifacts/`, `derived/`, `runtime/`, `audit/`）
-- ❌ 缺少实际的数据处理管线
-- ❌ 缺少对象存储集成
-- ❌ 缺少向量库和图数据库
+- **构建管线**（ASR / 向量库 / GraphRAG / 微调）—— 0%，v0.5 起逐步开工。
+- **运行层**（LLM 对话、TTS、实时 ASR、talking head、3D、REST/WS）—— 0%，v0.6 起逐步开工。
+- **权限模型**（RBAC / ReBAC / ABAC、法域策略引擎、Legal Hold 强制）—— 0%，v0.7 与 REST API 同步引入。
+- **AI 标识 & 水印实施**（视频/图像/音频水印、C2PA 实际签发）—— schema 层已完备，实施推到 v1.0。
+- **联邦化注册表**—— 未启动，v1.0+ 候选。
 
-### 3. 审计系统（40%）
-- ✅ 基础审计字段（`created_at`, `last_modified_at`）
-- ✅ Provenance 文件结构
-- ❌ 缺少 append-only 日志实现
-- ❌ 缺少完整的事件系统
-
-### 4. 公开层（30%）
-- ✅ 公开索引结构（`registry/humans.index.jsonl`）
-- ✅ 徽章概念
-- ❌ 缺少 AI 标识自动生成
-- ❌ 缺少水印系统
-- ❌ 缺少 C2PA 集成
+详细对照表：[`docs/GAP_ANALYSIS.md`](GAP_ANALYSIS.md)。
 
 ---
 
-## ❌ 未实现的关键功能
+## 💡 关键建议（v0.4 视角）
 
-### 1. 数据采集规范（0%）
-- ❌ 语音采集规范（ElevenLabs 标准：44.1/48kHz, 24-bit, -18dB）
-- ❌ 视频采集规范（Tavus 标准：1080p, 25fps, 30秒说话+30秒静止）
-- ❌ 3D Avatar 规范（VRM/glTF/OpenUSD）
-- ❌ Blendshape 和情绪标签
-- ❌ 文本语料最小/高保真要求
-- ❌ 媒体元数据自动提取（ffprobe）
-
-### 2. 构建层（0%）
-- ❌ ASR 转写管线（Whisper/FunASR）
-- ❌ 文本解析和清洗
-- ❌ 向量化管线（embedding 生成）
-- ❌ 记忆原子抽取
-- ❌ 知识图谱构建（GraphRAG）
-- ❌ 语音克隆训练（TTS）
-- ❌ 视频头像训练（talking head）
-- ❌ 3D Avatar 构建
-- ❌ 内容审核管线
-- ❌ C2PA 凭证生成
-
-### 3. 运行层（0%）
-- ❌ 文本对话引擎（LLM 集成）
-- ❌ 语音合成引擎（TTS）
-- ❌ 语音识别引擎（实时 ASR）
-- ❌ 视频头像渲染
-- ❌ 3D Avatar 运行时
-- ❌ 实时音频流（WebSocket/WebRTC）
-- ❌ REST API 服务器
-- ❌ WebSocket API
-- ❌ 会话管理
-- ❌ 检索增强（RAG）
-- ❌ 长期记忆系统
-
-### 4. 权限系统（0%）
-- ❌ RBAC（基于角色）
-- ❌ ReBAC（基于关系，OpenFGA）
-- ❌ ABAC（基于属性，OPA/Cedar）
-- ❌ 法域策略引擎
-- ❌ 敏感度访问控制
-- ❌ Legal Hold 机制
-- ❌ 自动化撤回流程
-
-### 5. 技术栈集成（0%）
-- ❌ vLLM（LLM 推理）
-- ❌ Whisper/FunASR（ASR）
-- ❌ OpenVoice/CosyVoice（TTS）
-- ❌ SadTalker/Tavus（视频头像）
-- ❌ VRM/glTF/OpenUSD（3D）
-- ❌ Qdrant/Pinecone（向量库）
-- ❌ Neo4j/ArangoDB（图数据库）
-- ❌ GraphRAG（图谱 RAG）
-- ❌ LoRA/QLoRA（微调）
-- ❌ C2PA（内容凭证）
-- ❌ AudioSeal（音频水印）
-
-### 6. API 接口（0%）
-- ❌ REST API 实现
-- ❌ WebSocket API 实现
-- ❌ 实时音频流
-- ❌ 3D 世界适配器
-- ❌ OpenAPI 服务器（虽然有规范文档）
+1. 保持"仓库优先 + pointer-first"。即使开始构建管线，标准文档与 schema 仍是 DLRS 的根基。
+2. **v0.5 = offline-first**：把 Whisper / Qdrant / 文本清洗做到本地可重现；不引入托管 API，便于研究与复审。
+3. **v0.6 = online-enhanced**：在 v0.5 基础上叠 GraphRAG 与可选托管 API。
+4. **v0.7 与 REST API 同步引入 RBAC / ReBAC / ABAC**——把 schema 字段（sensitivity, cross-border, legal_hold）真正接入运行时，避免"v0.7 单纯 RBAC、v0.8 才接入"的两次 breaking change。
+5. **AI 标识**：v0.4 已把声明做硬，v1.0 把水印实施做硬；中间版本不要回退已收紧的 schema。
+6. 所有破坏性 schema 调整必须先发 issue + 走 v0.X.0 minor，不在 patch 版本里改 enum。
 
 ---
 
-## 🎯 与 ULTIMATE 标准的主要差距
-
-### 差距 1: 缺少可执行的采集规范
-**ULTIMATE 要求**:
-- 低保真：1-2分钟语音 + 60秒视频
-- 中保真：30-90分钟语音 + 10-30分钟视频
-- 高保真：2-3小时语音 + 多段视频 + 影视级 3D
-
-**当前状态**: 只有概念性描述，无技术规范和自动验证
-
-### 差距 2: 缺少完整的数据管线
-**ULTIMATE 要求**: 五层分离
-1. Raw（原始素材）
-2. Derived（派生数据）
-3. Runtime（运行态模型）
-4. Index（向量/图谱索引）
-5. Audit（审计日志）
-
-**当前状态**: 只有目录结构，无实际处理流程
-
-### 差距 3: 缺少运行时系统
-**ULTIMATE 要求**: 
-- 仓库层 → 构建层 → 运行层 → 公开层
-- REST + WebSocket + 实时音频 + 3D 适配器
-
-**当前状态**: 只有静态仓库，无动态运行能力
-
-### 差距 4: 缺少权限和审计实现
-**ULTIMATE 要求**:
-- RBAC + ReBAC + ABAC 三层权限
-- 8 个核心事件的完整审计链
-- Append-only 不可篡改日志
-
-**当前状态**: 只有权限字段，无实际控制逻辑
-
-### 差距 5: 缺少 AI 标识和水印
-**ULTIMATE 要求**:
-- 所有公开输出必须带显式标识
-- 媒体文件必须带隐式水印
-- C2PA 内容凭证
-
-**当前状态**: 只有概念，无实现
-
----
-
-## 📈 优先级建议
-
-### 🔴 高优先级（必须实现）
-
-1. **媒体采集规范文档** - 详细的技术要求
-2. **媒体元数据验证** - ffprobe 集成
-3. **对象存储集成** - S3/OSS/COS
-4. **基础构建管线** - ASR + 向量化
-5. **REST API 服务器** - 基础 CRUD
-6. **权限系统** - 至少 RBAC
-7. **审计事件系统** - 完整事件定义
-8. **AI 标识系统** - 自动标识生成
-
-### 🟡 中优先级（应该实现）
-
-1. 向量数据库集成（Qdrant）
-2. 知识图谱构建（GraphRAG）
-3. 语音克隆训练（TTS）
-4. 视频头像训练（talking head）
-5. WebSocket API（实时通信）
-6. 水印系统（可见/不可见）
-7. C2PA 集成（内容凭证）
-8. 3D Avatar 支持（VRM/glTF）
-
-### 🟢 低优先级（可延后）
-
-1. DVC/lakeFS 集成
-2. 区块链审计
-3. 联邦学习
-4. AudioSeal 音频水印
-5. OpenUSD 支持
-6. 游戏引擎集成
-
----
-
-## 🗺️ 实施路线图
-
-### Phase 1: 完善仓库层（1-2个月）
-- 完善 JSON Schema
-- 实现 ffprobe 验证
-- 添加 GitHub Actions CI
-- 编写采集规范文档
-- 配置 Git LFS
-- 对象存储上传脚本
-
-### Phase 2: 构建基础管线（2-3个月）
-- 集成 Whisper ASR
-- 文本解析和清洗
-- 集成 Qdrant 向量库
-- Embedding 生成
-- 记忆原子抽取
-- 内容审核
-
-### Phase 3: 实现运行时（3-4个月）
-- REST API 服务器
-- 集成 vLLM
-- 基础对话引擎
-- RBAC 权限系统
-- 会话管理
-- RAG 检索
-
-### Phase 4: 高级功能（4-6个月）
-- TTS 语音克隆
-- WebSocket 实时通信
-- GraphRAG 知识图谱
-- AI 标识和水印
-- C2PA 内容凭证
-- 完整审计事件系统
-
-### Phase 5: 3D 和高保真（6-12个月）
-- Talking head 训练
-- VRM/glTF 支持
-- 3D Avatar 运行时
-- Audio2Face 集成
-- 全身动作捕捉
-- OpenUSD 支持
-
----
-
-## 💡 关键建议
-
-### 1. 保持聚焦
-- 当前的仓库层已经很好
-- 不要急于实现所有功能
-- 先完善规范和文档
-
-### 2. 分阶段交付
-- v0.3: 完善仓库 + 媒体验证
-- v0.4: 基础构建管线
-- v0.5: 基础运行时
-- v1.0: 完整文本对话
-- v2.0: 语音和视频
-- v3.0: 3D Avatar
-
-### 3. 社区驱动
-- 文档已足够吸引贡献
-- 优先"可演示"而非"完美"
-- 建立清晰的贡献路径
-
-### 4. 合规优先
-- 运行时功能前先完善合规
-- 优先审计、权限、标识
-- 与律师合作完善政策
-
----
-
-## 📊 成熟度评分
-
-| 维度 | 评分 | 说明 |
-|------|------|------|
-| 仓库结构 | ⭐⭐⭐⭐⭐ 90% | 优秀 |
-| 文档体系 | ⭐⭐⭐⭐⭐ 85% | 优秀 |
-| 数据规范 | ⭐⭐⭐ 40% | 需加强 |
-| 验证工具 | ⭐⭐⭐ 50% | 一般 |
-| 构建管线 | ⭐ 0% | 未开始 |
-| 运行时 | ⭐ 0% | 未开始 |
-| 权限系统 | ⭐ 0% | 未开始 |
-| 审计系统 | ⭐⭐ 40% | 需加强 |
-| 公开层 | ⭐⭐ 30% | 需加强 |
-| API 接口 | ⭐ 0% | 未开始 |
-
-**总体成熟度: ⭐⭐⭐ 60-65%**
-
----
-
-## 🎓 结论
-
-DLRS Hub v0.2 是一个**优秀的起点**，已经完成了坚实的基础工作。但距离"高保真数字生命系统"还有很长的路要走。
-
-**优势**:
-- ✅ 完整的仓库结构
-- ✅ 详细的文档体系
-- ✅ 清晰的标准定义
-- ✅ 国际化支持
-
-**差距**:
-- ❌ 缺少可执行的技术规范
-- ❌ 缺少数据处理管线
-- ❌ 缺少运行时系统
-- ❌ 缺少实际的权限和审计
-
-**建议**: 保持"仓库优先"定位，逐步添加构建和运行能力，优先实现可演示的核心功能。这是一个 3-5 年的长期项目。
-
----
-
-**文档版本**: 1.0  
-**创建日期**: 2026-04-25  
-**参考**: DLRS_ULTIMATE.md, docs/GAP_ANALYSIS.md
+**文档版本**: 2.0（v0.4 release）
+**最后更新**: 2026-04-26
+**参考**: DLRS_ULTIMATE.md, docs/GAP_ANALYSIS.md, ROADMAP.md

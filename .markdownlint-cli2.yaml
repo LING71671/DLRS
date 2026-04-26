@@ -1,0 +1,24 @@
+# Markdownlint configuration for DLRS docs.
+# DLRS_ULTIMATE.md is intentionally a long-form Chinese document with very long
+# lines; line-length and inline-html rules are relaxed accordingly.
+config:
+  default: true
+  MD013:
+    line_length: 200
+    code_blocks: false
+    tables: false
+    headings: false
+  MD033: false   # allow inline HTML in static registry index page snippets
+  MD041: false   # do not require first line h1 (some docs are long-form intros)
+  MD036: false   # emphasis used as heading is acceptable in collected notes
+  MD024:
+    siblings_only: true
+  MD040: false   # not all code fences require language hint (legacy)
+  MD034: false   # bare URLs are explicitly used in some cite contexts
+  MD025:
+    front_matter_title: ""
+ignores:
+  - "**/node_modules/**"
+  - ".github/PULL_REQUEST_TEMPLATE/**"
+  - "DLRS_ULTIMATE.md"
+  - "DLRS.md"
