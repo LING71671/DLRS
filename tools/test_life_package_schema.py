@@ -218,6 +218,18 @@ def main() -> int:
     empty_contents["contents"] = []
     cases.append(("contents empty array", empty_contents, False))
 
+    upper_sha = _good_pointer_pkg()
+    upper_sha["contents"][0]["sha256"] = "sha256:" + "A" * 64
+    cases.append(("contents sha256 accepts uppercase hex (case-insensitive)", upper_sha, True))
+
+    mixed_sha = _good_pointer_pkg()
+    mixed_sha["contents"][0]["sha256"] = "sha256:" + ("aB" * 32)
+    cases.append(("contents sha256 accepts mixed-case hex", mixed_sha, True))
+
+    upper_plaintext_sha = _good_encrypted_pkg()
+    upper_plaintext_sha["encryption"]["assets"][0]["plaintext_sha256"] = "sha256:" + "F" * 64
+    cases.append(("encryption plaintext_sha256 accepts uppercase hex", upper_plaintext_sha, True))
+
     # --- runtime_compatibility / forbidden_uses guards ------------------
     empty_runtime = _good_pointer_pkg()
     empty_runtime["runtime_compatibility"] = []

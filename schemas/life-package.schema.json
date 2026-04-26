@@ -182,8 +182,8 @@
               },
               "plaintext_sha256": {
                 "type": "string",
-                "description": "sha256 of the *plaintext* asset. Runtime verifies this AFTER decrypt; it is the integrity check on the original bytes.",
-                "pattern": "^sha256:[a-f0-9]{64}$"
+                "description": "sha256 of the *plaintext* asset. Runtime verifies this AFTER decrypt; it is the integrity check on the original bytes. Hex digits are case-insensitive (consistent with audit-event.schema.json and derived-asset.schema.json).",
+                "pattern": "^sha256:[A-Fa-f0-9]{64}$"
               },
               "nonce": {
                 "type": "string",
@@ -214,8 +214,8 @@
           },
           "sha256": {
             "type": "string",
-            "description": "sha256 of the file as stored in the zip (compressed-size after decompression equals size below; sha256 is computed on the decompressed bytes).",
-            "pattern": "^sha256:[a-f0-9]{64}$"
+            "description": "sha256 of the file as stored in the zip (compressed-size after decompression equals size below; sha256 is computed on the decompressed bytes). Hex digits are case-insensitive (consistent with audit-event.schema.json and derived-asset.schema.json).",
+            "pattern": "^sha256:[A-Fa-f0-9]{64}$"
           },
           "size": {
             "type": "integer",
