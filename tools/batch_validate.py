@@ -37,6 +37,7 @@ DEFAULT_STEPS = [
     ("test_asr_pipeline", [sys.executable, str(TOOLS / "test_asr_pipeline.py")]),
     ("test_text_pipeline", [sys.executable, str(TOOLS / "test_text_pipeline.py")]),
     ("test_vectorization_pipeline", [sys.executable, str(TOOLS / "test_vectorization_pipeline.py")]),
+    ("test_moderation_pipeline", [sys.executable, str(TOOLS / "test_moderation_pipeline.py")]),
 ]
 
 
