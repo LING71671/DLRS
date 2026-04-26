@@ -6,11 +6,14 @@
 
 A standardized repository for establishing the "Global Digital Life Initiative"
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](CHANGELOG.md)
-[![i18n](https://img.shields.io/badge/i18n-2%20languages-blue.svg)](docs/i18n/)
+> **📢 This project is currently in RFC stage. Feedback, translations, schema improvements, and ethical review are welcome.**  
+> **本项目目前处于 RFC（征求意见）阶段，欢迎反馈、翻译、Schema 改进和伦理审查。**
 
-**Languages / 语言:** English | [简体中文](README.md) | [日本語](README.ja.md) 🚧 | [한국어](README.ko.md) 📝
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/LICENSE)
+[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/CHANGELOG.md)
+[![i18n](https://img.shields.io/badge/i18n-2%20languages-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/tree/master/docs/i18n)
+
+**Languages / 语言:** English | [简体中文](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/README.md) | [日本語](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/README.ja.md) 🚧 | [한국어](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/README.ko.md) 📝
 
 </div>
 
@@ -527,9 +530,9 @@ DLRS Hub provides the following badges:
 
 Recommended services:
 
-- China: Alibaba Cloud OSS, Tencent Cloud COS
-- International: AWS S3, Google Cloud Storage
-- Self-hosted: MinIO
+- Mainland China: [Alibaba Cloud OSS](https://www.alibabacloud.com/product/object-storage-service), [Tencent Cloud COS](https://www.tencentcloud.com/products/cos)
+- International: [AWS S3](https://aws.amazon.com/s3/), [Google Cloud Storage](https://cloud.google.com/storage)
+- Self-hosted: [MinIO](https://min.io/)
 
 Configuration example:
 
