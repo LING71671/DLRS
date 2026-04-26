@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/memory-atom.schema.json",
+  "title": "DLRS Memory Atom",
+  "description": "A single long-term-memory atom extracted from a DLRS record's derived text. Memory atoms are the unit of recall used by the v0.6 memory pipeline and downstream consumers (RAG, GraphRAG narratives, personal-history search). Each atom MUST be redaction-safe at write time: any PII recognised by the v0.5 redaction pass MUST already have been replaced with its category placeholder (e.g. <EMAIL>, <PHONE_CN>) before the atom text is written. The text field MUST NOT carry the original matched substring under any circumstances. v0.6 introduces this schema; the actual emitter is pipelines/memory_atoms/ (issue #56).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "atom_id",
+    "record_id",
+    "source_pointer",
+    "text",
+    "confidence",
+    "sensitivity",
+    "erasable",
+    "redaction_safe",
+    "created_at",
+    "pipeline_version"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of this schema. Bump on any breaking change.",
+      "const": "dlrs-memory-atom/1.0"
+    },
+    "atom_id": {
+      "type": "string",
+      "description": "Stable identifier for this atom within the owning record. ULID or UUIDv4. MUST be immutable once written: re-running the pipeline produces a new atom_id even when the input text is byte-identical, so historical atoms remain attributable and erasable independently.",
+      "pattern": "^(dlrs_atom_)?[A-Za-z0-9_-]{8,}$",
+      "examples": ["01HW91QJTR4ETRBM3DNJK4Y9MA", "dlrs_atom_4f3e2a8c"]
+    },
+    "record_id": {
+      "type": "string",
+      "description": "Owning DLRS record identifier. Matches the manifest.json record_id of the source record so atoms can be relinked, redacted, or erased on consent withdrawal.",
+      "pattern": "^dlrs_[A-Za-z0-9_-]{4,}$",
+      "examples": ["dlrs_94f1c9b8_lin-example"]
+    },
+    "source_pointer": {
+      "type": "string",
+      "description": "Path (relative to the owning record root) of the artefact that this atom was extracted from. Typically a derived/text/<stem>.clean.txt produced by pipelines/text/, but MAY also be a derived/asr/<stem>.transcript.json segment or a raw_pointers/text/*.txt file. MUST NOT be an absolute filesystem path or an external URL.",
+      "pattern": "^(?!/)(?!https?://)(?!s3://)(?!gs://)[^\\s].*$",
+      "examples": [
+        "derived/text/diary_2026-04-01.clean.txt",
+        "derived/asr/voice_master.transcript.json"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "description": "The atom's content. MUST already be redaction-safe: any value matching the v0.5 redaction rule set (url_with_credentials, email, id_cn, phone_cn, ipv4, credit_card_like, phone_generic) MUST have been substituted with its category placeholder before this field is written. Original matched substrings MUST NOT appear here. Length capped to keep atom-grain meaningful; longer extractions should be chunked into multiple atoms.",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Confidence the extraction is accurate, in [0, 1]. Deterministic baseline backends (paragraph-grain, regex) typically pin this to a fixed value (0.6); model-based backends should propagate the model's own confidence.",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "sensitivity": {
+      "type": "string",
+      "description": "Sensitivity tier inherited from the source record's manifest. Memory atoms MAY NOT be promoted to a less restrictive tier than their source.",
+      "enum": [
+        "S0_PUBLIC",
+        "S1_INTERNAL",
+        "S2_SENSITIVE",
+        "S2_CONFIDENTIAL",
+        "S3_BIOMETRIC",
+        "S4_RESTRICTED",
+        "S4_IDENTITY"
+      ]
+    },
+    "erasable": {
+      "type": "boolean",
+      "description": "Whether this atom can be deleted in response to a consent withdrawal request. Atoms whose deletion would leave dangling KG edges or break narrative coherence MAY set this to false; downstream tooling MUST then route the withdrawal through human review instead of silently dropping the atom."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional ISO 8601 UTC timestamp after which downstream consumers SHOULD drop this atom from active recall. Used for time-bounded atoms (e.g. transient context, expiring consent windows). Absence means no implicit expiry."
+    },
+    "redaction_safe": {
+      "type": "boolean",
+      "description": "Schema-enforced const true. Pipelines MUST run their text through the v0.5 redaction pass before writing the atom and MUST set this field to true. The presence of the field is itself the contract; consumers SHOULD reject any atom where redaction_safe != true.",
+      "const": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp when the atom was emitted. Atoms emitted by deterministic backends on byte-identical inputs MAY share the same created_at across reruns; this is acceptable because atom_id remains unique per run."
+    },
+    "pipeline_version": {
+      "type": "string",
+      "description": "Version of the pipeline that emitted the atom. SemVer, or 'git:<sha>' when the pipeline is built directly from a commit.",
+      "pattern": "^(?:\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?|git:[0-9a-f]{7,40})$",
+      "examples": ["0.6.0", "0.6.0-rc1", "git:abcd1234"]
+    },
+    "audit_event_ref": {
+      "type": "string",
+      "description": "Optional pointer to the audit/events.jsonl line emitted when this atom was written. Format: 'audit/events.jsonl#L<n>'. Populated by the descriptor->audit bridge (issue #58); absence on a freshly-written atom is allowed as long as the owning descriptor's audit_event_ref is populated.",
+      "pattern": "^audit/events\\.jsonl#L[1-9][0-9]*$",
+      "examples": ["audit/events.jsonl#L142"]
+    }
+  }
+}
