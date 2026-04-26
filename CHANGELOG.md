@@ -56,8 +56,8 @@ Sub-issues #100–#105.
   `action == "state_changed"` requires `from_state` + `to_state`;
   `supersedes.maxItems: 1` enforces fork-yes / merge-no statically.
   [#102]
-- `tools/test_lifecycle_schema.py` — 42 sanity-test cases (4
-  happy-path + 38 negative) covering all four shapes, wired into
+- `tools/test_lifecycle_schema.py` — 42 sanity-test cases (9
+  happy-path + 33 negative) covering all four shapes, wired into
   `tools/batch_validate.py`. The 42 reflects the post-merge fixes
   applied in #110 (memorial `else` clause + `..` path-traversal
   rejection on `mutation_log_ref`) plus the asset_id pattern fix
