@@ -203,7 +203,7 @@ Each asset's `genesis/<asset_id>.genesis.json` (Topic 1) gains a
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `version` | semver | yes | Independent of the package's version. |
-| `supersedes` | array | no | At most ONE predecessor `asset_id` (decision **D2=C**). |
+| `supersedes` | array | no | At most ONE predecessor `asset_id` (decision **D2=C**). Items MUST match the same asset_id pattern (`^[a-z][a-z0-9_-]{2,127}$`) used by `mutation_event.asset_id`, `cascade_index.derived_assets`, and `genesis.schema.json::asset_id`. |
 | `created_at` | datetime | yes | First creation timestamp. |
 | `last_mutation_at` | datetime | no | Datetime of the latest entry in the asset's mutation log. |
 | `mutation_log_ref` | path | no | `lifecycle/<...>.mutations.jsonl`. REQUIRED when any non-creation mutation exists. The pattern explicitly rejects `..` path-traversal segments (matching the `life-package.schema.json` `contents[].path` convention). |

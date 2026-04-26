@@ -202,9 +202,14 @@ def main() -> int:
     bad = _good_asset_lifecycle(); bad["state"] = "expired"
     cases.append(("asset: state=expired (package-only) rejected at asset level", asset_v, bad, False))
 
-    # supersedes max 1
-    bad = _good_asset_lifecycle(); bad["supersedes"] = ["a", "b"]
+    # supersedes max 1 (use valid asset_ids so we test maxItems specifically)
+    bad = _good_asset_lifecycle(); bad["supersedes"] = ["voice-master-v0", "voice-master-v1"]
     cases.append(("asset: supersedes has 2 entries", asset_v, bad, False))
+
+    # supersedes items MUST match asset_id pattern (cross-schema consistency
+    # with mutation_event.asset_id, cascade_index.derived_assets, genesis.asset_id).
+    bad = _good_asset_lifecycle(); bad["supersedes"] = ["X"]
+    cases.append(("asset: supersedes item violates asset_id pattern", asset_v, bad, False))
 
     # mutation_log_ref pattern violation
     bad = _good_asset_lifecycle(); bad["mutation_log_ref"] = "audit/voice.jsonl"

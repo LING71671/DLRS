@@ -59,9 +59,12 @@ Sub-issues #100–#105.
   to null on non-memorial states; `mutation_log_ref` pattern uses
   the same `..`-rejection lookahead as `life-package.schema.json`.
   [#102]
-- `tools/test_lifecycle_schema.py` — 41 sanity-test cases (4
-  happy-path + 37 negative) covering all four shapes, wired into
-  `tools/batch_validate.py`. [#102]
+- `tools/test_lifecycle_schema.py` — 42 sanity-test cases (4
+  happy-path + 38 negative) covering all four shapes, wired into
+  `tools/batch_validate.py`. The 42 reflects the post-merge fixes
+  applied in #110 (memorial `else` clause + `..` path-traversal
+  rejection on `mutation_log_ref`) plus the asset_id pattern fix
+  in #112. [#102]
 - `docs/LIFE_BINDING_SPEC.md` — per-topic normative spec for Topic 3
   (Runtime Binding). Defines `binding/runtime_binding.json` and
   encodes the four locked Topic-3 decisions: hybrid capability
