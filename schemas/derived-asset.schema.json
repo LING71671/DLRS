@@ -35,7 +35,7 @@
     "pipeline": {
       "type": "string",
       "description": "Pipeline that produced this artefact. MUST equal the SPEC.name of a registered pipeline under pipelines/.",
-      "enum": ["asr", "text", "vectorization", "moderation", "custom"]
+      "enum": ["asr", "text", "vectorization", "moderation", "memory_atoms", "knowledge_graph", "custom"]
     },
     "pipeline_version": {
       "type": "string",
@@ -128,7 +128,7 @@
         "path": {
           "type": "string",
           "description": "Relative path from the record root, MUST start with derived/<pipeline>/.",
-          "pattern": "^derived/(asr|text|vectorization|moderation|custom)/.+",
+          "pattern": "^derived/(asr|text|vectorization|moderation|memory_atoms|knowledge_graph|custom)/.+",
           "examples": ["derived/asr/voice_master.transcript.json"]
         },
         "outputs_hash": {
