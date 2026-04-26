@@ -92,6 +92,9 @@ jobs:
       - name: Run pipeline test suite
         run: python tools/test_pipelines.py
 
+      - name: Run descriptor->audit bridge test (#58)
+        run: python tools/test_descriptor_audit_bridge.py
+
   docs:
     name: Lint docs (markdownlint + linkcheck)
     runs-on: ubuntu-latest

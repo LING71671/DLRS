@@ -37,6 +37,7 @@ DEFAULT_STEPS = [
     ("test_memory_atom_schema", [sys.executable, str(TOOLS / "test_memory_atom_schema.py")]),
     ("test_entity_graph_schema", [sys.executable, str(TOOLS / "test_entity_graph_schema.py")]),
     ("pipelines", [sys.executable, str(TOOLS / "test_pipelines.py")]),
+    ("descriptor_audit_bridge", [sys.executable, str(TOOLS / "test_descriptor_audit_bridge.py")]),
     ("asr_demo", [sys.executable, str(TOOLS / "test_asr_demo.py")]),
 ]
 

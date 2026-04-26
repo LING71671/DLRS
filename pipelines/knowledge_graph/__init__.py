@@ -49,6 +49,7 @@ from pipelines._descriptor import (
     validate_descriptor,
     write_json,
 )
+from pipelines._audit_bridge import maybe_bridge
 
 PIPELINE_VERSION = "0.6.0"
 
@@ -104,6 +105,13 @@ def _register(parser: argparse.ArgumentParser) -> None:
         "--output-dir",
         default=None,
         help="Override output directory. Default: <record>/derived/knowledge_graph/.",
+    )
+    parser.add_argument(
+        "--no-audit",
+        action="store_true",
+        help="Skip the descriptor->audit/events.jsonl bridge (#58). Useful "
+             "for fixture generation. The bridge is also a no-op when the "
+             "record root has no manifest.json.",
     )
 
 
@@ -271,6 +279,16 @@ def _run(args: argparse.Namespace) -> int:
     descriptor = builder.finalise(out_path_in_record, nodes_path)
     validate_descriptor(descriptor, DERIVED_SCHEMA_PATH)
     write_json(descriptor_path, descriptor)
+
+    audit_ref = maybe_bridge(
+        record_root=record_root,
+        pipeline_name="knowledge_graph",
+        descriptor=descriptor,
+        descriptor_path=descriptor_path,
+        skip=getattr(args, "no_audit", False),
+    )
+    if audit_ref:
+        print(f"[knowledge_graph] audit_event_ref={audit_ref}", file=sys.stderr)
 
     print(f"[knowledge_graph] backend={args.backend} input={input_path}", file=sys.stderr)
     print(
