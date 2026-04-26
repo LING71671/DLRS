@@ -25,8 +25,9 @@ untouched until a pipeline is explicitly run against them.
     digit runs, generic phone numbers). Replacements use stable
     category placeholders (`<EMAIL>`, `<PHONE_CN>`, `<ID_CN>`, `<IPV4>`,
     `<CARD>`, `<PHONE>`, `<URL_WITH_CREDENTIALS>`). `redactions.json`
-    sidecar carries `rule_name + start/end + replacement` only and is
-    auditable without re-leaking matched substrings.
+    sidecar carries `kind + start/end + replacement` only (`kind` is the
+    rule name, e.g. `email`) and is auditable without re-leaking matched
+    substrings.
   - `pipelines/vectorization/` — paragraph-aware chunking with absolute char
     offsets, `hash` (deterministic 64-D) and `sentence-transformers` backends,
     optional Qdrant push (`backend` and `model_id` stored as separate

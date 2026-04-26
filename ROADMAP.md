@@ -146,8 +146,8 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
   - `pipelines/asr/`：`dummy`（确定性、零依赖）+ `faster-whisper`（懒加载、可选）
   - 时间戳对齐 + 多语言；GPU/CPU 切换由 `--device` 控制
 - [x] **文本处理管线**（#32）
-  - `pipelines/text/`：NFKC 正规化 + 保守正则脱敏（邮箱、CN 手机、CN 身份证、IBAN、IPv4/IPv6、护照）
-  - `redactions.json` 旁注只记 `rule_name + start/end + replacement`，绝不回写原文
+  - `pipelines/text/`：NFKC 正规化 + 保守正则脱敏，优先级顺序为：含凭据 URL（`<URL_WITH_CREDENTIALS>`）、邮箱（`<EMAIL>`）、CN 身份证（`<ID_CN>`）、CN 手机（`<PHONE_CN>`）、IPv4（`<IPV4>`）、信用卡号（`<CARD>`）、通用电话号（`<PHONE>`）
+  - `redactions.json` 旁注只记 `kind + start/end + replacement`（`kind` 即规则名，如 `email`），绝不回写原文
 - [x] **向量化管线**（#33）
   - `pipelines/vectorization/`：段落感知切分 + 绝对字符偏移 + `hash` / `sentence-transformers` 双后端
   - 可选 `--qdrant-url` 推送到本地 Qdrant；payload 把 `backend` 与 `model_id` 分开存

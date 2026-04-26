@@ -15,7 +15,7 @@
 - **派生资产 schema**：`schemas/derived-asset.schema.json` + `pipelines/_descriptor.py` 让每条 pipeline 输出都附带 provenance descriptor（who/what/where/hashes），`model.online_api_used` 始终为 `false`。
 - **四条离线管线**：
   - `pipelines/asr/` — `dummy`（确定性）+ `faster-whisper`（懒加载）双后端；多语言 + 时间戳；`--device cpu|cuda`。
-  - `pipelines/text/` — NFKC 正规化 + 保守正则脱敏（邮箱、CN 手机/身份证、IBAN、IPv4/IPv6、护照）；`redactions.json` 旁注永远不回写原文。
+  - `pipelines/text/` — NFKC 正规化 + 保守正则脱敏（含凭据 URL、邮箱、CN 身份证、CN 手机、IPv4、信用卡号、通用电话号）；替换使用类别 token（`<EMAIL>` / `<PHONE_CN>` / `<ID_CN>` / `<IPV4>` / `<CARD>` / `<PHONE>` / `<URL_WITH_CREDENTIALS>`）；`redactions.json` 旁注仅记 `kind + start/end + replacement`，永远不回写原文。
   - `pipelines/vectorization/` — 段落感知切分 + 绝对字符偏移；`hash`（确定性 64-D）+ `sentence-transformers` 双后端；可选本地 Qdrant 推送（`backend` / `model_id` 分键）。
   - `pipelines/moderation/` — 确定性 regex/wordlist 策略 + 严重度聚合（`pass | flag | block`）；`--policy-file` JSON/YAML 自定义；flag 永远不回写匹配文本。
 - **CI 集成**：`.github/workflows/validate.yml` 新增 `pipelines` 矩阵 job（Python 3.11 / 3.12）；`tools/test_pipelines.py` 子进程驱动 + `tools/batch_validate.py` 11 个 step 全绿。
@@ -66,7 +66,7 @@
 - ✅ `pipelines/__init__.py` —— `PipelineSpec` 注册表 + 分发
 - ✅ `pipelines/_descriptor.py` —— 共享 `DescriptorBuilder`，对接 `schemas/derived-asset.schema.json`
 - ✅ `pipelines/asr/` —— `dummy`（确定性、零依赖）+ `faster-whisper`（懒加载）双后端
-- ✅ `pipelines/text/` —— NFKC 正规化 + 保守正则脱敏（邮箱、CN 手机/身份证、IBAN、IPv4/IPv6、护照）
+- ✅ `pipelines/text/` —— NFKC 正规化 + 保守正则脱敏（含凭据 URL、邮箱、CN 身份证、CN 手机、IPv4、信用卡号、通用电话号）；替换使用类别 token（`<EMAIL>` / `<PHONE_CN>` / `<ID_CN>` / `<IPV4>` / `<CARD>` / `<PHONE>` / `<URL_WITH_CREDENTIALS>`）
 - ✅ `pipelines/vectorization/` —— 段落感知切分 + 绝对字符偏移 + `hash` / `sentence-transformers` + 可选本地 Qdrant
 - ✅ `pipelines/moderation/` —— 确定性 regex/wordlist 策略 + 严重度聚合（pass / flag / block）+ `--policy-file`
 - ✅ `examples/asr-demo/` —— 自包含端到端示例（`bash run_demo.sh` 一键产出 9 个派生工件 + 4 份 descriptor）

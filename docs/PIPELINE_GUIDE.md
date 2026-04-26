@@ -113,7 +113,7 @@ python tools/run_pipeline.py text \
   [--output-dir DIR]
 ```
 
-Outputs: `derived/text/<stem>.clean.txt` (the cleaned text), `<stem>.redactions.json` (one entry per substitution: `rule_name`, `start`, `end`, `replacement` — never the matched substring), and a descriptor. The redactions sidecar is what makes the normalisation diff auditable without re-leaking the data we just stripped.
+Outputs: `derived/text/<stem>.clean.txt` (the cleaned text), `<stem>.redactions.json` (one entry per substitution: `kind`, `start`, `end`, `replacement` — where `kind` is the rule name like `email` or `phone_cn`, never the matched substring), and a descriptor. The redactions sidecar is what makes the normalisation diff auditable without re-leaking the data we just stripped.
 
 ### 2.3 `vectorization` — chunk + embed (issue #33)
 
@@ -162,7 +162,7 @@ Outcome aggregation:
 - otherwise `medium` severity flag anywhere → **`flag`**
 - otherwise → **`pass`**
 
-The `moderation.json` artefact carries `rule_name`, `category`, `severity`, and `start`/`end` for each flag — **never** the matched substring. The unit test `tools/test_moderation_pipeline.py` asserts this property explicitly, so the moderation file itself cannot become a leak vector for the content it's flagging.
+The `moderation.json` artefact carries `rule`, `category`, `severity`, and `start`/`end` for each flag — **never** the matched substring. The unit test `tools/test_moderation_pipeline.py` asserts this property explicitly, so the moderation file itself cannot become a leak vector for the content it's flagging.
 
 CLI:
 
