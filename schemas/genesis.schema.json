@@ -1,0 +1,287 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/genesis.schema.json",
+  "title": "DLRS .life Asset Genesis",
+  "description": "Provenance record for a single asset inside a `.life` package. v0.8 (asset architecture epic, sub-issue #101). Every asset declared in `manifest/manifest.json` SHOULD have a sibling `genesis/<asset_id>.genesis.json` that answers four questions: what method produced it, what inputs fed in, where compute happened, and which consent scopes authorised the production. The genesis file is what makes withdrawal cascades, hosted-API leak audits, license disputes, and reproducibility checks tractable. See docs/LIFE_GENESIS_SPEC.md for the normative text.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "asset_id",
+    "method",
+    "source_inputs",
+    "compute",
+    "consent_scope_checked",
+    "audit_event_ref",
+    "audit_event_id",
+    "reproducibility_level",
+    "consent_scope"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of this schema. Bumped on any breaking change. Loaders MUST refuse genesis files with an unknown schema_version.",
+      "const": "dlrs-life-genesis/0.1"
+    },
+    "asset_id": {
+      "type": "string",
+      "description": "Identifier of the asset this genesis describes. MUST equal the `asset_id` declared for the corresponding entry in `manifest/manifest.json`.",
+      "pattern": "^[a-z][a-z0-9_-]{2,127}$"
+    },
+    "asset_kind": {
+      "type": "string",
+      "description": "Optional asset-kind tag. Mirrors the manifest entry; copied here so genesis is self-describing without forcing the loader to also load the manifest. Free-form string is allowed because asset kinds evolve faster than this schema.",
+      "minLength": 1,
+      "examples": ["voice_clone", "memory_atoms", "knowledge_graph", "image_avatar"]
+    },
+    "method": {
+      "type": "object",
+      "description": "Identifies the build process that produced the asset. Decision D3=C: methods are not required to be bit-identical reproducible, but they MUST be identifiable.",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Canonical method identifier. Examples: `xtts-v2-finetune`, `paragraph-memory-atoms`, `regex-knowledge-graph`. Free-form, but stable: the same method MUST always use the same name.",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "description": "Method version. SemVer or commit-SHA fragment. Used together with code_commit for reproducibility checks.",
+          "minLength": 1,
+          "examples": ["1.2.3", "git:108b50c"]
+        },
+        "config_ref": {
+          "type": "string",
+          "description": "Optional path (inside `.life`) to a JSON/YAML file containing the full training/build configuration (hyperparameters, seed, dataset filters). Loaders MAY hash this file to detect drift across re-runs.",
+          "minLength": 1
+        },
+        "code_repo": {
+          "type": "string",
+          "description": "Optional URL of the source repository implementing the method. Helpful but not required (closed-source methods may omit it).",
+          "format": "uri"
+        },
+        "code_commit": {
+          "type": "string",
+          "description": "Optional commit SHA pinning the implementation. Required when reproducibility_level is `bit_identical` or `param_identical`.",
+          "pattern": "^[0-9a-fA-F]{7,64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "source_inputs": {
+      "type": "array",
+      "description": "Every input artefact consumed during production, in declared order. The combination of source_inputs + method.code_commit + method.config_ref is what makes a build reproducible (when reproducibility_level allows). Empty arrays are forbidden: a fully-synthetic asset that takes no inputs SHOULD declare a single virtual input pointing at the base model (decision D1=C).",
+      "items": {
+        "type": "object",
+        "required": ["type", "ref", "sha256", "consent_ref", "consent_scope"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "What kind of input this is. `recording` = original media file. `text` = text artefact. `derived` = an upstream pipeline output (e.g. cleaned transcript). `base_model` = a pretrained model used as a starting point — declared as a virtual input per decision D1=C so the package is self-describing. `dataset` = a public/curated corpus.",
+            "enum": ["recording", "text", "image", "video", "derived", "base_model", "dataset", "other"]
+          },
+          "ref": {
+            "type": "string",
+            "description": "Path inside the `.life` zip OR an external URI. Internal paths are required for `recording`, `text`, `image`, `video`, `derived`. External URIs are allowed for `base_model` and `dataset` (where the artefact lives on a public registry).",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "description": "SHA-256 of the input bytes, hex. Case-insensitive. For `base_model` virtual inputs the hash MUST be of the published weights file; loaders MAY skip the hash check on such inputs but MUST surface a warning when they do.",
+            "pattern": "^[0-9a-fA-F]{64}$"
+          },
+          "consent_ref": {
+            "type": "string",
+            "description": "Pointer to the consent evidence covering this input. Either a path inside `consent/` (e.g. `consent/recording-2025-01-12.signed.pdf`) or `not_applicable` for inputs that do not carry per-input consent (a public base model under permissive license, a public dataset).",
+            "minLength": 1
+          },
+          "consent_scope": {
+            "type": "array",
+            "description": "Subset of the package-level `consent_scope` enum (decision D4=A) that THIS input was authorised for. Empty arrays are rejected. For `base_model` / `dataset` inputs whose use is governed by license rather than consent, declare the single value `license_governed`.",
+            "items": { "$ref": "#/$defs/consent_scope_enum" },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "license": {
+            "type": "string",
+            "description": "Optional license tag. REQUIRED for `base_model` and `dataset` inputs (to support license-compatibility audits). Examples: `apache-2.0`, `mit`, `cc-by-nc-4.0`, `proprietary-eula`.",
+            "minLength": 1
+          },
+          "source_url": {
+            "type": "string",
+            "description": "Optional canonical URL (publication, model card, registry page). RECOMMENDED for `base_model` and `dataset` inputs.",
+            "format": "uri"
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "compute": {
+      "type": "object",
+      "description": "Where and when production happened. Decision D2=B: hosted-API use is declared and surfaced, but does NOT block ingestion. Loaders weigh hosted-API exposure via the tier system (#104) instead.",
+      "required": ["platform", "operator", "started_at", "finished_at", "hosted_api_used", "data_left_local"],
+      "properties": {
+        "platform": {
+          "type": "string",
+          "description": "Free-form description of the compute environment. Examples: `local-mac-m2`, `local-linux-rtx4090`, `aws-ec2-g5.xlarge`, `colab-pro-t4`. Used for forensic auditing, not policy.",
+          "minLength": 1
+        },
+        "operator": {
+          "type": "string",
+          "description": "Identifier (email, DID, registry handle) of the natural or legal person who actually ran the build. MUST match an `issued_by.identifier` of the package OR an authorised `operator` declared in policy. Loaders MAY reject mismatches.",
+          "minLength": 1
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 UTC timestamp when the build started."
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 UTC timestamp when the build finished writing the asset. MUST be greater than or equal to started_at."
+        },
+        "hosted_api_used": {
+          "type": "boolean",
+          "description": "True iff any non-local API saw input bytes during production. The `policy/hosted_api.json` opt-in gate (v0.6) controls runtime hosted-API calls; THIS field is independent and concerns build time."
+        },
+        "hosted_api_providers": {
+          "type": "array",
+          "description": "REQUIRED when hosted_api_used is true. Each entry names a provider that saw input bytes. Used by leak-detection audits and by tier.audit_chain_strength scoring.",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "examples": ["openai", "elevenlabs", "anthropic", "azure-speech"] },
+              "endpoint": { "type": "string", "format": "uri" },
+              "purpose": { "type": "string", "minLength": 1, "examples": ["voice_synthesis_training", "transcription", "embedding"] },
+              "data_retention_policy_ref": { "type": "string", "format": "uri" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "data_left_local": {
+          "type": "boolean",
+          "description": "True iff the build kept all source bytes on the operator's local infrastructure (hosted_api_used MAY still be true if only derived outputs were sent off-machine). Used by privacy-conscious loaders to filter packages."
+        },
+        "gpu": { "type": "string", "minLength": 1, "description": "Optional GPU identifier (e.g. `nvidia-rtx-4090`, `apple-m2-max`). Helps with reproducibility (`bit_identical` is GPU-sensitive)." },
+        "duration_seconds": { "type": "number", "minimum": 0 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "hosted_api_used": { "const": true } }, "required": ["hosted_api_used"] },
+          "then": { "required": ["hosted_api_providers"], "properties": { "hosted_api_providers": { "minItems": 1 } } }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "consent_scope_checked": {
+      "type": "object",
+      "description": "Records that the build process actually verified, at production time, that the consent evidence covered the scopes used. This is what makes consent enforcement machine-checkable rather than aspirational.",
+      "required": ["verified", "verifier", "verifier_version", "verified_at", "scopes_used"],
+      "properties": {
+        "verified": {
+          "type": "boolean",
+          "description": "True iff a verifier confirmed every entry in scopes_used was authorised by the consent evidence at verified_at. Loaders MUST refuse genesis files with `verified: false` unless an explicit overrides policy is in effect."
+        },
+        "verifier": {
+          "type": "string",
+          "description": "Identifier of the tool that performed verification. Examples: `tools/build_life_package.py`, `dlrs-runtime/0.9.0`.",
+          "minLength": 1
+        },
+        "verifier_version": {
+          "type": "string",
+          "description": "Version of the verifier. SemVer or commit fragment.",
+          "minLength": 1
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "scopes_used": {
+          "type": "array",
+          "description": "Every consent scope this build relied on. MUST be a subset of the package-level `consent_scope` and of the union of source_inputs[*].consent_scope.",
+          "items": { "$ref": "#/$defs/consent_scope_enum" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "audit_event_ref": {
+      "type": "string",
+      "description": "Pointer into the package-level audit log. Format: `audit/<filename>#L<line>` matching the existing v0.6 descriptor-audit bridge convention.",
+      "pattern": "^audit/[^\\s]+#L[0-9]+$"
+    },
+    "audit_event_id": {
+      "type": "string",
+      "description": "Stable id of the audit event recording the asset's birth. ULID/UUID4 or any non-empty machine identifier. The audit event itself MUST exist in audit/events.jsonl with action=`asset_created` and refer back to this asset_id.",
+      "minLength": 1
+    },
+    "reproducibility_level": {
+      "type": "string",
+      "description": "Decision D3=C, graded enum. `bit_identical` = re-running the method with the same source_inputs, code_commit, and config_ref produces byte-identical output (rare; requires deterministic kernels and pinned RNGs). `param_identical` = same training inputs and method but model parameters may differ across runs due to non-deterministic CUDA/GPU kernels. `not_reproducible` = retraining will not yield equivalent assets (e.g. hosted-API outputs the operator cannot replay).",
+      "enum": ["bit_identical", "param_identical", "not_reproducible"]
+    },
+    "consent_scope": {
+      "type": "array",
+      "description": "Decision D4=A, fixed enum. The set of scopes the asset is authorised for. Loaders MUST refuse to use the asset for purposes outside this set, regardless of what the binding/runtime asks for. New scopes are added by spec versions; older packages stay valid.",
+      "items": { "$ref": "#/$defs/consent_scope_enum" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "base_model": {
+      "type": "object",
+      "description": "Decision D1=C. RECOMMENDED block for fine-tuned assets (voice clones, persona adapters, …). When present, the same base model SHOULD also appear as a `base_model` source input so license tracing works in both directions.",
+      "required": ["name", "license", "sha256"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "examples": ["coqui/XTTS-v2", "meta-llama/Llama-3.1-8B"] },
+        "license": { "type": "string", "minLength": 1, "examples": ["cc-by-nc-4.0", "llama-3.1-community"] },
+        "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "source_url": { "type": "string", "format": "uri" }
+      },
+      "additionalProperties": false
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional free-form notes. NOT a substitute for required fields.",
+      "maxLength": 4096
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["reproducibility_level"],
+        "properties": { "reproducibility_level": { "enum": ["bit_identical", "param_identical"] } }
+      },
+      "then": {
+        "properties": { "method": { "required": ["name", "version", "code_commit"] } }
+      }
+    }
+  ],
+  "$defs": {
+    "consent_scope_enum": {
+      "type": "string",
+      "description": "v0.8 fixed consent-scope vocabulary. New entries are added by spec versions. The list is intentionally short to force issuers to think about each scope rather than dumping a free-form description.",
+      "enum": [
+        "voice_clone",
+        "memorial_voice",
+        "voice_recognition",
+        "text_persona",
+        "image_avatar",
+        "video_avatar",
+        "interactive_chat",
+        "knowledge_qa",
+        "memory_recall",
+        "agent_action",
+        "third_party_distribution",
+        "commercial_use",
+        "research_use",
+        "derivative_training",
+        "public_archival",
+        "license_governed"
+      ]
+    }
+  }
+}
