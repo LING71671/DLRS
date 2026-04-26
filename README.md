@@ -267,24 +267,6 @@ python tools/validate_repo.py
 
 ---
 
-## 📌 GitHub About 建议
-
-建议维护者将 GitHub About 设置为：
-
-```
-DLRS: Privacy-first digital life archive standard for consent governance, AI avatars, and digital legacy records | 数字生命仓库标准
-```
-
-建议添加的 Topics：
-```
-digital-life, digital-human, ai-avatar, digital-legacy, digital-identity, 
-privacy, privacy-by-design, consent-management, data-governance, 
-data-portability, schema, json-schema, standard, open-standard, 
-archive, template-repository, ai-ethics
-```
-
----
-
 <div align="center">
 
 **让数字生命档案更安全、更透明、更可控**
