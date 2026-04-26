@@ -1,0 +1,11 @@
+{
+  "record_id": "dlrs_EXAMPLE_memory_graph_demo",
+  "display_name": "memory-graph-demo",
+  "summary": "Fictional fixture record used to walk a reader through the v0.6 memory atoms + knowledge-graph + descriptor->audit bridge end-to-end without hosted APIs.",
+  "avatar_preview_uri": null,
+  "ai_disclosure": "Synthetic demo record. No real person is represented. Any AI-mediated artefact derived from this record is for protocol illustration only.",
+  "allowed_public_interactions": [
+    "view_profile"
+  ],
+  "languages": ["en-US"]
+}

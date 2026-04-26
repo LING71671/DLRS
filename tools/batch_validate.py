@@ -40,6 +40,7 @@ DEFAULT_STEPS = [
     ("descriptor_audit_bridge", [sys.executable, str(TOOLS / "test_descriptor_audit_bridge.py")]),
     ("hosted_api_policy", [sys.executable, str(TOOLS / "test_hosted_api_policy.py")]),
     ("asr_demo", [sys.executable, str(TOOLS / "test_asr_demo.py")]),
+    ("memory_graph_demo", [sys.executable, str(TOOLS / "test_memory_graph_demo.py")]),
 ]
 
 

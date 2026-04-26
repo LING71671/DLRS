@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.3.0",
+  "record_id": "dlrs_EXAMPLE_memory_graph_demo",
+  "display_slug": "memory-graph-demo",
+  "visibility": "private",
+  "subject": {
+    "type": "self",
+    "display_name": "memory-graph-demo (fictional)",
+    "legal_name": "PRIVATE",
+    "locale": "en-US",
+    "residency_region": "EU",
+    "is_minor": false,
+    "status": "living"
+  },
+  "rights": {
+    "uploader_role": "self",
+    "rights_basis": [
+      "consent"
+    ],
+    "evidence_refs": [
+      "consent/consent_statement.md"
+    ],
+    "allow_public_listing": false,
+    "allow_commercial_use": false,
+    "allow_model_finetune": false,
+    "allow_voice_clone": false,
+    "allow_avatar_clone": false,
+    "allow_research_use": true,
+    "cross_border_transfer_basis": "none",
+    "cross_border_transfer_status": "not_needed"
+  },
+  "consent": {
+    "captured_at": "2026-04-26T08:00:00+00:00",
+    "withdrawal_endpoint": "mailto:privacy@example.org",
+    "separate_biometric_consent": false,
+    "guardian_consent": false,
+    "consent_version": "0.3.0",
+    "allowed_scopes": [
+      "storage",
+      "structured_processing"
+    ]
+  },
+  "artifacts": [
+    {
+      "artifact_id": "a001",
+      "type": "text_corpus",
+      "format": "txt",
+      "storage_uri": "repo://artifacts/raw/text/diary.txt",
+      "checksum": "sha256:d011247d1665b53cd5344d5e06ea3d91e7903a89e18fd49633263bf7fc5bfdca",
+      "region": "EU",
+      "sensitivity": "S1_INTERNAL",
+      "contains_sensitive_data": false
+    }
+  ],
+  "deletion_policy": {
+    "allow_delete": true,
+    "allow_export": true,
+    "withdrawal_effect": "freeze_runtime_then_delete",
+    "legal_hold": false
+  },
+  "inheritance_policy": {
+    "policy_ref": "profile/inheritance_policy.json",
+    "default_action_on_death": "freeze",
+    "executor_contact_ref": null
+  },
+  "security": {
+    "primary_region": "EU",
+    "replication_regions": [],
+    "encryption_at_rest": true,
+    "kms_ref": "kms://example/key-placeholder",
+    "watermark_policy": "invisible_only",
+    "c2pa_enabled": false
+  },
+  "review": {
+    "status": "submitted",
+    "verified_consent_badge": false,
+    "public_data_only_badge": false,
+    "risk_level": "low",
+    "reviewer_notes_ref": null
+  },
+  "audit": {
+    "created_at": "2026-04-26T08:00:00+00:00",
+    "last_modified_at": "2026-04-26T08:00:00+00:00",
+    "change_log_hash": "sha256:memory_graph_demo_manifest_log_placeholder"
+  }
+}

@@ -1,0 +1,10 @@
+# run_demo.sh writes everything under derived/ + audit/. Keep the example
+# record tree minimal in git; regenerate locally to walk the pipeline
+# end-to-end.
+derived/
+audit/
+
+# DLRS is pointer-first: raw text MUST NOT be committed. run_demo.sh
+# regenerates the fictional diary on every run; the checksum in
+# manifest.json is fixed against that generator output.
+artifacts/raw/text/diary.txt
