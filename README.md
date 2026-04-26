@@ -6,11 +6,14 @@
 
 一个用于建立"全球数字生命计划"的标准化母仓库
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](CHANGELOG.md)
-[![i18n](https://img.shields.io/badge/i18n-2%20languages-blue.svg)](docs/i18n/)
+> **📢 This project is currently in RFC stage. Feedback, translations, schema improvements, and ethical review are welcome.**  
+> **本项目目前处于 RFC（征求意见）阶段，欢迎反馈、翻译、Schema 改进和伦理审查。**
 
-**语言 / Languages:** [English](README.en.md) | 简体中文 | [日本語](README.ja.md) 🚧 | [한국어](README.ko.md) 📝
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/LICENSE)
+[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/CHANGELOG.md)
+[![i18n](https://img.shields.io/badge/i18n-2%20languages-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/tree/master/docs/i18n)
+
+**语言 / Languages:** [English](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/README.en.md) | 简体中文 | [日本語](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/README.ja.md) 🚧 | [한국어](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/README.ko.md) 📝
 
 </div>
 
@@ -552,9 +555,9 @@ DLRS Hub 提供以下徽章：
 
 推荐使用：
 
-- 国内：阿里云 OSS、腾讯云 COS
-- 国际：AWS S3、Google Cloud Storage
-- 私有：MinIO
+- 中国大陆：[阿里云 OSS](https://www.aliyun.com/product/oss)、[腾讯云 COS](https://cloud.tencent.com/product/cos)
+- 国际：[AWS S3](https://aws.amazon.com/s3/)、[Google Cloud Storage](https://cloud.google.com/storage)
+- 私有部署：[MinIO](https://min.io/)
 
 配置示例：
 
