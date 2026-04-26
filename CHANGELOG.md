@@ -2,6 +2,31 @@
 
 All notable changes to the DLRS project will be documented in this file.
 
+## v0.8 (Draft)
+
+**Status**: In progress. v0.8 closes the four asset-architecture gaps left
+by v0.7-vision-shift: provenance (Genesis), evolution (Lifecycle),
+consumption (Binding), and orchestration (Assembly), plus a
+multi-dimensional tier system that replaces v0.7's single-axis
+`verification_level`.
+
+Tracked in epic
+[#106](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/106).
+Sub-issues #100–#105.
+
+### Added
+
+- `docs/LIFE_ASSET_ARCHITECTURE.md` — authoritative human-readable
+  record of the four-topic architecture discussion (Genesis /
+  Lifecycle / Binding / Tier / Assembly). Single overview document
+  capturing all final decisions, design rationale, cross-topic
+  dependencies, the Schema D Cosmic Evolution naming registry
+  (Quark → Singularity), the memorial dispute period (7-day
+  reverse-attestation window), and a "rejected alternatives"
+  appendix preserving institutional memory of options considered and
+  declined. Entry point for sub-issues #101–#105 which deliver the
+  per-topic normative specs and schemas. [#100]
+
 ## v0.7-vision-shift (2026-04-26)
 
 **Status**: Released. Repositions DLRS's ULTIMATE from "Digital Life
