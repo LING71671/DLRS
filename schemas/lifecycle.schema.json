@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlrs.standard/schemas/lifecycle.schema.json",
+  "title": "DLRS .life Asset Lifecycle",
+  "description": "Lifecycle metadata for `.life` packages and the assets they ship (v0.8 asset-architecture epic, sub-issue #102). Defines four document shapes via `$defs`: `package_lifecycle` (top-level fields in `life-package.json`), `asset_lifecycle` (block embedded in each `genesis/<asset_id>.genesis.json`), `mutation_event` (one record of an append-only `lifecycle/<asset_id>.mutations.jsonl` log), and `cascade_index` (the package-wide `lifecycle/cascade_index.json` file mapping source-input refs to derived-asset ids). See docs/LIFE_LIFECYCLE_SPEC.md for the normative text. The schema itself does NOT directly validate any single file at the document root; it only exports re-usable shapes referenced from other schemas and from the lifecycle test suite.",
+  "type": "object",
+  "$defs": {
+    "lifecycle_state": {
+      "type": "string",
+      "description": "Package-level lifecycle states. `active` = current and serviceable. `superseded` = newer version exists; loaders SHOULD prefer the successor but MAY still load this one for replay/audit. `expired` = `expires_at` reached; loaders MUST refuse interactive use. `withdrawn` = subject revoked authorisation; loaders MUST refuse all use. `frozen` = read-only loadable (no new writes; assets stay reachable). `memorial` = subject deceased and the package was flipped per decision D4 — read-only loadable by default, may be extended by an authorised executor.",
+      "enum": ["active", "superseded", "expired", "withdrawn", "frozen", "memorial"]
+    },
+    "asset_lifecycle_state": {
+      "type": "string",
+      "description": "Asset-level lifecycle states. Superset of `lifecycle_state` plus `tainted` (decision D3=B): when a source input is withdrawn, derived assets are NOT deleted (which would break the audit chain) but flipped to `tainted`. Compliant runtimes MUST refuse to use `tainted` assets. Note: `expired` and `memorial` apply only at package level (an individual asset cannot independently be in those states); they are excluded here.",
+      "enum": ["active", "superseded", "withdrawn", "tainted", "frozen"]
+    },
+    "supersedes_entry": {
+      "type": "object",
+      "description": "A single predecessor reference. Decision D2=C: forking (one predecessor → many descendants) is allowed; merging (many predecessors → one descendant) is forbidden, so each `supersedes_entry` array MUST have at most one element when the lifecycle event is `package_versioned`. `package_id` and `version` are human/operator readable; `sha256` is the machine-trusted identity (decision D1=D dual-identity).",
+      "required": ["package_id", "version", "sha256"],
+      "properties": {
+        "package_id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$", "description": "Semantic version of the predecessor." },
+        "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$", "description": "Content hash of the predecessor's primary metadata (life-package.json bytes)." }
+      },
+      "additionalProperties": false
+    },
+    "memorial_metadata": {
+      "type": "object",
+      "description": "Populated when `lifecycle_state == \"memorial\"`. Decision D4=C+(a)+(c): trigger MAY come from any of `executor`, `next_of_kin`, or `court_order`. The 7-day reverse-attestation dispute period (Appendix B of LIFE_ASSET_ARCHITECTURE.md) applies between `triggered_at` and `triggered_at + P7D`; loaders MUST NOT treat the package as memorial-confirmed until the dispute window has elapsed (or until the subject reverse-attests, in which case the trigger is cancelled).",
+      "required": ["triggered_at", "trigger_kind"],
+      "properties": {
+        "triggered_at": { "type": "string", "format": "date-time" },
+        "trigger_kind": {
+          "type": "string",
+          "enum": ["executor", "next_of_kin", "court_order"]
+        },
+        "trigger_actor": {
+          "type": "string",
+          "description": "Identifier of the human/legal person who triggered the memorial state (e.g. executor's email/DID, next-of-kin's identifier, court reference number).",
+          "minLength": 1
+        },
+        "evidence_ref": {
+          "type": "string",
+          "description": "Optional path inside `consent/` or `audit/` pointing to evidence (death certificate, court order). RECOMMENDED for `court_order`.",
+          "minLength": 1
+        },
+        "dispute_window_ends_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "`triggered_at + 7 days` (UTC). After this instant the memorial state is confirmed (no further reverse-attestation possible)."
+        },
+        "dispute_window_status": {
+          "type": "string",
+          "enum": ["open", "expired", "cancelled_by_subject"],
+          "description": "`open` during the 7-day window. `expired` once it has passed without reverse-attestation. `cancelled_by_subject` if the subject reverse-attested via the v0.7 `withdrawal_endpoint` to cancel a malicious trigger; the package's `lifecycle_state` MUST then be reset to `active` (not memorial)."
+        },
+        "executor_can_extend": {
+          "type": "boolean",
+          "description": "True iff an authorised executor MAY sign new versions after the dispute window expires (e.g. memorial events, archival publishing). Decision D4 sub-clause (c)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "package_lifecycle": {
+      "type": "object",
+      "description": "Top-level package-lifecycle fields. These are added to `life-package.json` (next to v0.7's existing fields). The companion update to `schemas/life-package.schema.json` is part of the v0.8 schema-integration PR (out of scope for this spec PR); validators MAY apply this fragment standalone in the meantime.",
+      "required": ["version", "lifecycle_state", "frozen"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Semantic version of THIS package. Decision D1=D human-side. Combined with the package's content sha256 (recorded in the manifest), the (semver, sha256) pair is the dual identity used by lifecycle.",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$"
+        },
+        "supersedes": {
+          "type": "array",
+          "description": "Predecessor packages this version replaces. Decision D2=C: forking allowed, merging forbidden. Therefore this array MUST have at most ONE element for any non-merge version event. The schema enforces `maxItems: 1` to make merge attempts statically rejectable.",
+          "items": { "$ref": "#/$defs/supersedes_entry" },
+          "maxItems": 1,
+          "uniqueItems": true
+        },
+        "lifecycle_state": { "$ref": "#/$defs/lifecycle_state" },
+        "frozen": {
+          "type": "boolean",
+          "description": "True iff the package is read-only loadable. MUST be true when `lifecycle_state` is `frozen` or `memorial`."
+        },
+        "memorial_metadata": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/memorial_metadata" }
+          ],
+          "description": "Populated only when `lifecycle_state == \"memorial\"`; null otherwise. Conditional rules below enforce this."
+        },
+        "recommended_re_consent_after": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Decision D5=C, soft re-consent reminder. NOT a hard expiry (the v0.7 `expires_at` field still owns hard expiry). Loaders SHOULD surface a non-blocking banner once this instant is reached."
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "lifecycle_state": { "const": "memorial" } }, "required": ["lifecycle_state"] },
+          "then": {
+            "required": ["memorial_metadata", "frozen"],
+            "properties": {
+              "memorial_metadata": { "$ref": "#/$defs/memorial_metadata" },
+              "frozen": { "const": true }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "lifecycle_state": { "const": "frozen" } }, "required": ["lifecycle_state"] },
+          "then": { "properties": { "frozen": { "const": true } } }
+        }
+      ]
+    },
+    "asset_lifecycle": {
+      "type": "object",
+      "description": "The lifecycle block embedded inside each `genesis/<asset_id>.genesis.json` next to the v0.8 Genesis fields. Captures per-asset version, predecessors, mutation log pointer, hard expiry, and current state including the asset-only `tainted` value.",
+      "required": ["version", "created_at", "state"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$",
+          "description": "Semantic version of THIS asset (independent of the enclosing package's version)."
+        },
+        "supersedes": {
+          "type": "array",
+          "description": "Predecessor asset_ids this version replaces. Decision D2=C: at most one predecessor.",
+          "items": { "type": "string", "minLength": 1 },
+          "maxItems": 1,
+          "uniqueItems": true
+        },
+        "created_at": { "type": "string", "format": "date-time" },
+        "last_mutation_at": { "type": "string", "format": "date-time" },
+        "mutation_log_ref": {
+          "type": "string",
+          "description": "Path inside the `.life` zip (e.g. `lifecycle/voice-master-v1.mutations.jsonl`). Required when the asset has any non-creation mutation events. The referenced file MUST be JSONL where each line validates against `#/$defs/mutation_event`.",
+          "pattern": "^lifecycle/[A-Za-z0-9_./-]+\\.mutations\\.jsonl$"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Hard expiry for this asset specifically (independent of the package-level `expires_at`). Loaders MUST refuse to use this asset after this instant."
+        },
+        "state": { "$ref": "#/$defs/asset_lifecycle_state" },
+        "tainted_reason": {
+          "type": "string",
+          "description": "REQUIRED when `state == \"tainted\"`. Free-form short explanation (e.g. `source_input recording-2025-01-12.wav was withdrawn at 2026-04-01T08:00:00Z`).",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "tainted" } }, "required": ["state"] },
+          "then": { "required": ["tainted_reason"] }
+        }
+      ]
+    },
+    "mutation_event": {
+      "type": "object",
+      "description": "One record in `lifecycle/<asset_id>.mutations.jsonl`. Append-only: no record may be removed or rewritten. The audit log (`audit/events.jsonl`) is the canonical event source; mutation logs are a denormalised per-asset view to make withdrawal cascades and reproducibility audits cheap.",
+      "required": ["schema_version", "ts", "asset_id", "action"],
+      "properties": {
+        "schema_version": { "const": "dlrs-life-mutation/0.1" },
+        "ts": { "type": "string", "format": "date-time" },
+        "asset_id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{2,127}$" },
+        "action": {
+          "type": "string",
+          "description": "Mutation kinds. `asset_created` = first creation event. `input_added` / `input_withdrawn` = source-input set changed. `asset_retrained` = method or config bumped, new sha256 produced. `state_changed` = `state` transitioned (active→tainted, etc.). `superseded_by` = a successor version exists.",
+          "enum": ["asset_created", "input_added", "input_withdrawn", "asset_retrained", "state_changed", "superseded_by"]
+        },
+        "actor": { "type": "string", "minLength": 1 },
+        "from_state": { "$ref": "#/$defs/asset_lifecycle_state" },
+        "to_state": { "$ref": "#/$defs/asset_lifecycle_state" },
+        "input_ref": { "type": "string", "minLength": 1 },
+        "successor_asset_id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{2,127}$" },
+        "audit_event_ref": { "type": "string", "pattern": "^audit/[^\\s]+#L[1-9][0-9]*$" },
+        "audit_event_id": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 1024 }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "action": { "const": "state_changed" } }, "required": ["action"] },
+          "then": { "required": ["from_state", "to_state"] }
+        },
+        {
+          "if": { "properties": { "action": { "enum": ["input_added", "input_withdrawn"] } }, "required": ["action"] },
+          "then": { "required": ["input_ref"] }
+        },
+        {
+          "if": { "properties": { "action": { "const": "superseded_by" } }, "required": ["action"] },
+          "then": { "required": ["successor_asset_id"] }
+        }
+      ]
+    },
+    "cascade_index": {
+      "type": "object",
+      "description": "The `lifecycle/cascade_index.json` file: a package-wide map from each source-input ref (recording, text, dataset, base_model, etc.) to every asset that consumed it. Used by withdrawal-cascade implementations to find all derived assets affected by a single source withdrawal in O(1) instead of O(assets * inputs).",
+      "required": ["schema_version", "generated_at", "entries"],
+      "properties": {
+        "schema_version": { "const": "dlrs-life-cascade-index/0.1" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "entries": {
+          "type": "array",
+          "description": "One entry per distinct source input ref. The `derived_assets` list is the closure: assets directly OR transitively derived from the input.",
+          "items": {
+            "type": "object",
+            "required": ["source_input_ref", "source_input_sha256", "derived_assets"],
+            "properties": {
+              "source_input_ref": { "type": "string", "minLength": 1 },
+              "source_input_sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+              "derived_assets": {
+                "type": "array",
+                "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{2,127}$" },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
