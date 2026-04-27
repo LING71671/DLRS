@@ -58,7 +58,7 @@ A `.life` package can include:
   `.life` files require an authorized representative + an active
   withdrawal endpoint.
 - ❌ A working runtime — this epic ships specs + schema + an example
-  builder. Runtime reference implementations are deferred to v0.8+.
+  builder. Runtime reference implementations are deferred to v0.9+.
 - ❌ A container for raw biometric data in pointer mode. By default
   raw audio / video / image stays in upstream object storage; the
   `.life` only ships *pointers*.
@@ -357,7 +357,7 @@ with `.life` and SHOULD NOT advertise itself as such.
 
 ## 9. Non-goals (deferred)
 
-- Working runtime reference implementation (deferred to v0.8+ DLRS
+- Working runtime reference implementation (deferred to v0.9+ DLRS
   repo versions).
 - Cryptographic signature scheme for `signature_ref` (deferred to
   `life-format v0.2`, likely C2PA).

@@ -1,4 +1,4 @@
-# Digital Life Repository Standard (DLRS) v0.6.0
+# Digital Life Repository Standard (DLRS) v0.8-asset-architecture
 
 <div align="center">
 
@@ -15,7 +15,7 @@
 > 这是早期开放标准草案。欢迎反馈、翻译、Schema 改进和伦理审查。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.6.0-orange.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/releases/tag/v0.6.0)
+[![Version](https://img.shields.io/badge/version-v0.8--asset--architecture-orange.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/releases/tag/v0.8-asset-architecture)
 [![i18n](https://img.shields.io/badge/i18n-2%20languages-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/tree/master/docs/i18n)
 [![RFC](https://img.shields.io/badge/RFC-Open%20for%20Comment-green.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/docs/community/RFC-DLRS-v0.2.md)
 
@@ -59,7 +59,7 @@ Schema [`schemas/life-package.schema.json`](schemas/life-package.schema.json)。
 
 DLRS 同时定义了 `.life` 标准依赖的底层结构：
 
-- 📋 DLRS 仓库 / 档案目录结构和 JSON Schema（v0.6 已稳定）
+- 📋 DLRS 仓库 / 档案目录结构和 JSON Schema（v0.6 已稳定，v0.8 新增资产架构四层 + Tier 系统）
 - ✅ 授权和撤回模型
 - 🔒 隐私边界和敏感度分级
 - 🏛️ 治理规则和审核流程
@@ -77,7 +77,7 @@ DLRS 同时定义了 `.life` 标准依赖的底层结构：
 - ❌ **不是**保证 AI 分身等同真人的承诺
 - ❌ **不是**法律合规的保证
 - ❌ **不是**永久存储解决方案 —— `.life` 必须有 `expires_at`，超期 MUST 拒绝挂载
-- ❌ **不是**成熟的生产系统 —— 本仓库当前阶段交付的是规范 + Schema + 示例打包器；**reference runtime 实现尚未交付**（推迟到 v0.8+）
+- ❌ **不是**成熟的生产系统 —— 本仓库当前阶段交付的是规范 + Schema + 示例打包器；**reference runtime 实现尚未交付**（推迟到 v0.9+）
 - ❌ **不是**法律建议的替代品
 
 ---
@@ -223,30 +223,40 @@ python tools/validate_repo.py
 
 ## 📊 当前状态
 
-**版本**: v0.6.0  
+**版本**: v0.8-asset-architecture  
 **状态**: RFC（征求意见）阶段  
-**完成度**: 约 88% (v0.6.0 release)
+**完成度**: 约 82% (v0.8-asset-architecture release；v0.7 的 ~80% 基础上 +Asset Architecture 四层 + Tier 系统 + 5 阶段 assembly，分母因 ULTIMATE 重新定位为 `.life` 双标准而扩大)
+
+### v0.8 主要增量
+
+v0.8-asset-architecture（[epic #106](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/106)）为 `.life` 补齐资产维度和 runtime 装配协议：
+
+- **资产架构四层**：Genesis（产生过程可追溯）/ Lifecycle（支持 supersedes、memorial、撤回级联）/ Binding（能力声明 + 编排 + 硬约束）/ Tier（6 维加权派生的信用评分）
+- **Schema D Cosmic Evolution**：Tier 12 档命名（Quark → Singularity），机器字段冻结，name/glyph 进可演化附录
+- **5 阶段 assembly 流水线**：Verify / Resolve / Assemble / Run / Guard，Provider Registry + `LifeCapabilityProvider` 接口 + 分级沙箱 + hosted-API AND-gate
+- **Builder v0.2**：`tools/build_life_package.py` 自动从 contents 派生 tier 并写回 descriptor，hand-rolled tier 被 `computed_by` 模式直接 schema 层拒绝
+
+详见 `docs/LIFE_ASSET_ARCHITECTURE.md` + `docs/LIFE_TIER_SPEC.md` + `docs/LIFE_RUNTIME_STANDARD.md` Part B。
 
 ### ✅ 已完成
 - 基础目录结构
-- JSON Schema 定义
-- 授权和撤回模型
-- 隐私边界定义
-- 验证工具
-- 示例档案
+- `.life` 文件格式 spec + JSON Schema（v0.7-vision-shift）
+- `.life` runtime 协议 spec（v0.7 + v0.8 Part B 5 阶段 assembly）
+- 授权、撤回、memorial、forbidden_uses
+- 资产架构四层 + Tier 系统 + Schema D 命名（v0.8）
+- 构建管线（v0.5 offline-first + v0.6 memory_atoms / knowledge_graph）
+- 验证工具 + 示例档案
 - 中英文文档
 
 ### 🚧 进行中
 - 社区反馈收集
 - Schema 优化
-- 文档完善
 - 多语言翻译
 
 ### 📋 计划中
-- 媒体采集规范
-- 构建管线
-- 运行时系统
-- 权限和审计实现
+- `dlrs-runtime` 参考实现（v0.9+，按 spec 跑 5 阶段 assembly 的第一版）
+- 加密 mode + 签名（life-format v0.2）
+- 权限模型（RBAC / ReBAC / ABAC）
 
 详见 [ROADMAP.md](ROADMAP.md) 和 [实施状态](docs/IMPLEMENTATION_STATUS.md)
 

@@ -6,7 +6,8 @@
 > ([`docs/LIFE_FILE_STANDARD.md`](LIFE_FILE_STANDARD.md), schema
 > [`schemas/life-package.schema.json`](../schemas/life-package.schema.json))
 > to produce an *AI digital life instance*. This epic ships the spec
-> only; a reference runtime implementation is **deferred to v0.8+**.
+> only; v0.8-asset-architecture added Part B (5-stage assembly) as
+> spec; a reference runtime implementation is **deferred to v0.9+**.
 
 [#79]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/79
 
@@ -39,7 +40,7 @@ regardless of transport.
 - Data residency / sovereignty rules (those are encoded in the
   `.life` itself via `verification_level`, `withdrawal_endpoint`,
   and the upstream object-storage policy in pointer mode).
-- Reference runtime implementation (deferred to v0.8+).
+- Reference runtime implementation (deferred to v0.9+).
 
 ---
 
@@ -418,7 +419,7 @@ A runtime that does not enforce all five is **not** compatible with
 
 ## 11. Non-goals (deferred)
 
-- Working runtime reference implementation (deferred to DLRS v0.8+
+- Working runtime reference implementation (deferred to DLRS v0.9+
   in this repo, OR an out-of-tree implementation by a downstream
   project).
 - Specific transport protocol (WebSocket / gRPC / REST) — runtime is

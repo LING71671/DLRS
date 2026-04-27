@@ -1,4 +1,4 @@
-# Digital Life Repository Standard (DLRS) v0.6.0
+# Digital Life Repository Standard (DLRS) v0.8-asset-architecture
 
 <div align="center">
 
@@ -14,7 +14,7 @@ Privacy-first, consent-based, structured, revocable, auditable, schema-validated
 > This is an early-stage open standard draft. Feedback, translations, schema improvements, and ethical review are welcome.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.6.0-orange.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/releases/tag/v0.6.0)
+[![Version](https://img.shields.io/badge/version-v0.8--asset--architecture-orange.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/releases/tag/v0.8-asset-architecture)
 [![i18n](https://img.shields.io/badge/i18n-2%20languages-blue.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/tree/master/docs/i18n)
 [![RFC](https://img.shields.io/badge/RFC-Open%20for%20Comment-green.svg)](https://github.com/Digital-Life-Repository-Standard/DLRS/blob/master/docs/community/RFC-DLRS-v0.2.md)
 
@@ -58,7 +58,7 @@ Spec: [`docs/LIFE_RUNTIME_STANDARD.md`](docs/LIFE_RUNTIME_STANDARD.md).
 
 DLRS also defines the underlying structures that the `.life` standard rests on:
 
-- 📋 DLRS repository / archive directory structure and JSON schemas (stable as of v0.6)
+- 📋 DLRS repository / archive directory structure and JSON schemas (stable as of v0.6; v0.8 adds the four-layer asset architecture and tier system)
 - ✅ Consent and withdrawal models
 - 🔒 Privacy boundaries and sensitivity levels
 - 🏛️ Governance rules and review processes
@@ -76,7 +76,7 @@ DLRS also defines the underlying structures that the `.life` standard rests on:
 - ❌ **NOT** a guarantee that AI avatars equal real persons
 - ❌ **NOT** a guarantee of legal compliance
 - ❌ **NOT** a permanent storage solution — every `.life` MUST declare `expires_at`; runtimes MUST refuse to mount after it
-- ❌ **NOT** a mature production system — this repo currently ships specs + schema + an example builder; **no reference runtime implementation is shipped** (deferred to v0.8+)
+- ❌ **NOT** a mature production system — this repo currently ships specs + schema + an example builder; **no reference runtime implementation is shipped** (deferred to v0.9+)
 - ❌ **NOT** a substitute for legal advice
 
 ---
@@ -222,30 +222,40 @@ Welcome contributions for more language translations! See [i18n guide](docs/i18n
 
 ## 📊 Current Status
 
-**Version**: v0.6.0  
+**Version**: v0.8-asset-architecture  
 **Status**: RFC (Request for Comments) stage  
-**Completion**: Approximately 88% (v0.6.0 release)
+**Completion**: Approximately 82% (v0.8-asset-architecture release; v0.7's ~80% plus Asset Architecture four layers + Tier system + 5-stage assembly; denominator expanded when ULTIMATE was repositioned as the `.life` dual standard)
+
+### v0.8 highlights
+
+v0.8-asset-architecture ([epic #106](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/106)) completes the asset dimension and runtime assembly protocol for `.life`:
+
+- **Four-layer asset architecture**: Genesis (traceable provenance) / Lifecycle (supersedes, memorial, withdrawal cascade) / Binding (capability declaration + orchestration + hard constraints) / Tier (6-dimensional weighted credit rating)
+- **Schema D Cosmic Evolution**: 12 tier levels (Quark → Singularity); machine fields frozen; name/glyph in an evolvable appendix
+- **5-stage assembly pipeline**: Verify / Resolve / Assemble / Run / Guard; Provider Registry + `LifeCapabilityProvider` interface + graded sandbox + hosted-API AND-gate
+- **Builder v0.2**: `tools/build_life_package.py` auto-derives the tier block from contents; hand-rolled tier blocks are rejected at the schema layer via the `computed_by` pattern
+
+See `docs/LIFE_ASSET_ARCHITECTURE.md` + `docs/LIFE_TIER_SPEC.md` + `docs/LIFE_RUNTIME_STANDARD.md` Part B.
 
 ### ✅ Completed
 - Basic directory structure
-- JSON schema definitions
-- Consent and withdrawal model
-- Privacy boundary definitions
-- Validation tools
-- Example archives
+- `.life` file-format spec + JSON Schema (v0.7-vision-shift)
+- `.life` runtime protocol spec (v0.7 + v0.8 Part B 5-stage assembly)
+- Consent, withdrawal, memorial, forbidden_uses
+- Four-layer asset architecture + tier system + Schema D naming (v0.8)
+- Build pipelines (v0.5 offline-first + v0.6 memory_atoms / knowledge_graph)
+- Validation tools + example archives
 - Bilingual documentation
 
 ### 🚧 In Progress
 - Community feedback collection
 - Schema optimization
-- Documentation refinement
 - Multi-language translation
 
 ### 📋 Planned
-- Media collection standards
-- Build pipelines
-- Runtime systems
-- Permission and audit implementation
+- `dlrs-runtime` reference implementation (v0.9+; first version that actually runs the 5-stage assembly per spec)
+- Encrypted mode + signing (life-format v0.2)
+- Permission models (RBAC / ReBAC / ABAC)
 
 See [ROADMAP.md](ROADMAP.md) and [Implementation Status](docs/IMPLEMENTATION_STATUS.md)
 
