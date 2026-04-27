@@ -9,6 +9,9 @@ __pycache__/
 *.pyc
 .venv/
 .env
+*.egg-info/
+build/
+dist/
 
 # Never commit raw high-risk personal data
 *.mp4

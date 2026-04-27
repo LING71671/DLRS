@@ -92,6 +92,47 @@ jobs:
       - name: Run pipeline test suite (per-pipeline + v0.6 cross-cutting)
         run: python tools/test_pipelines.py
 
+  runtime-scaffold:
+    name: v0.9 runtime scaffold (sub-issue #120)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install runtime package (editable)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Run runtime-scaffold test suite
+        run: python tools/test_runtime_scaffold.py
+
+      - name: Confirm `lifectl` console script installed
+        run: |
+          lifectl version
+          # exit non-zero on info / run is expected (scaffold-only stubs)
+          set +e
+          lifectl info pretend.life
+          info_rc=$?
+          lifectl run pretend.life
+          run_rc=$?
+          set -e
+          if [ "$info_rc" -eq 0 ] || [ "$run_rc" -eq 0 ]; then
+            echo "ERROR: lifectl info/run unexpectedly succeeded in scaffold-only build"
+            exit 1
+          fi
+          echo "scaffold stubs exit non-zero as expected (info=$info_rc, run=$run_rc)"
+
   docs:
     name: Lint docs (markdownlint + linkcheck)
     runs-on: ubuntu-latest

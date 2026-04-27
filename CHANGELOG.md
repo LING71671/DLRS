@@ -2,6 +2,78 @@
 
 All notable changes to the DLRS project will be documented in this file.
 
+## v0.9 — Reference Runtime Implementation (in progress)
+
+**Status**: Epic
+[#119](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/119)
+open. Goal: ship the reference runtime for `life-runtime v0.1.1`
+(v0.7 §1–10 + v0.8 Part B 5-stage assembly), single `.life` only.
+Multi-`.life`, `.world` and DLRS Extension Architecture remain v0.10+.
+
+Sub-issues:
+[#120](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/120)
+scaffold,
+[#121](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/121)
+Stage 1 Verify,
+[#122](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/122)
+Stage 2 Resolve,
+[#123](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/123)
+Stage 3 Assemble,
+[#124](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/124)
+Stage 4 Run,
+[#125](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/125)
+Stage 5 Guard,
+[#126](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/126)
+echo Provider + e2e conformance harness + Quickstart docs.
+
+### Added (sub-issue #120 — scaffold)
+
+- `runtime/` Python package (`runtime/__init__.py` exporting `__version__
+  = "0.9.0.dev0"` and `LIFE_RUNTIME_PROTOCOL_VERSION = "0.1.1"`) with
+  empty sub-packages laid out for the 5 assembly stages: `verify/`,
+  `resolve/`, `assemble/`, `run/`, `guard/`, plus `providers/` (built-in
+  Provider implementations) and `audit/` (runtime-side hash-chain
+  emitter). Each empty stage carries a one-line docstring naming the
+  sub-issue that populates it.
+- `runtime/cli/lifectl.py` — `lifectl` CLI entrypoint with three
+  sub-commands. `lifectl version` prints `lifectl 0.9.0.dev0
+  (life-runtime v0.1.1)` and exits 0. `lifectl info <pkg>` and
+  `lifectl run <pkg>` parse their arguments but exit non-zero with a
+  "not yet implemented in this sub-issue" message that points the
+  reader at the right follow-up sub-issue (#121 / #121-#126).
+- `pyproject.toml` at repo root — declares `dlrs-runtime` package
+  (`name = "dlrs-runtime"`, `version = "0.9.0.dev0"`, `requires-python
+  >= 3.10`, deps `jsonschema` + `pyyaml`) and exports the `lifectl`
+  console script via `[project.scripts]`. Setuptools is told to
+  package only `runtime*` so the existing `tools/` and `pipelines/`
+  trees stay out of the wheel.
+- `runtime/audit/emitter.py` — `RuntimeAuditEmitter` stub class that
+  raises `NotImplementedError` referencing sub-issue #125 (the full
+  v0.4 hash-chain emitter ships there).
+- `runtime/README.md` — package-level overview pointing at the runtime
+  spec and naming each sub-package's owning sub-issue.
+- `tools/test_runtime_scaffold.py` — eight sanity-test cases covering
+  package import, `Runtime` stub class, `lifectl version` output, the
+  scaffold-only stub exits, `lifectl --help` listing all three
+  sub-commands, the parseability of `pyproject.toml` (asserting the
+  `lifectl` console-script entry), and that all eight `runtime/`
+  sub-packages exist.
+- `.github/workflows/validate.yml` — new `runtime-scaffold` CI job
+  parallel to the existing `pipelines` job, matrix Python 3.11 + 3.12.
+  Installs `dlrs-runtime` editable, runs the scaffold test driver, and
+  asserts both that the `lifectl` console-script is on `PATH` (`lifectl
+  version` succeeds) and that `lifectl info` / `lifectl run` exit
+  non-zero in the scaffold-only build.
+
+### Hard-rule invariants preserved
+
+This sub-issue ships no execution code, so the v0.7 + v0.8 hard-rule
+invariants (D1=C in-life sandbox / D2=B `bundled_in_life` Provider
+refusal / D5=mixed hosted-API AND-gate / D6=fail-close Stage gating)
+are upheld trivially: the scaffold cannot violate them because none of
+the gates run yet. Sub-issues #121–#126 reinstate each invariant as
+they implement the corresponding Stage.
+
 ## v0.8-asset-architecture (2026-04-26)
 
 **Status**: Released. v0.8 closes the four asset-architecture gaps left
