@@ -2,17 +2,21 @@
 
 All notable changes to the DLRS project will be documented in this file.
 
-## v0.8 (Draft)
+## v0.8-asset-architecture (2026-04-26)
 
-**Status**: In progress. v0.8 closes the four asset-architecture gaps left
+**Status**: Released. v0.8 closes the four asset-architecture gaps left
 by v0.7-vision-shift: provenance (Genesis), evolution (Lifecycle),
 consumption (Binding), and orchestration (Assembly), plus a
 multi-dimensional tier system that replaces v0.7's single-axis
 `verification_level`.
 
 Tracked in epic
-[#106](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/106).
-Sub-issues #100–#105.
+[#106](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/106)
+(closed). Sub-issues #100–#105 all merged; four post-merge review
+follow-ups (#109, #112, #114, #116) merged alongside. Final integration
+step (this release) folds the tier block into `life-package.schema.json`
+and teaches `tools/build_life_package.py` to auto-compute it from
+package contents, completing the v0.8 spec → builder loop.
 
 ### Added
 
@@ -123,9 +127,50 @@ Sub-issues #100–#105.
   first-class), D4=C (three-field surface — already in binding
   spec), D5=C (OS package manager bootstrap), and the new D6
   (fail-close stage gating). Adds four new audit event types:
-  `capability_bound`, `assembly_aborted`, `withdrawal_check`, and
+  `capability_bound`, `assembly_aborted`, `withdrawal_poll` (reuse of
+  the v0.7 event with a v0.8 field requirement), and
   `lifecycle_transition_observed`. Part A (the v0.7 eight-step
   load sequence) is unchanged. [#105]
+- `schemas/life-package.schema.json` — v0.8 integration: adds optional
+  top-level `tier` property referencing inlined `$defs.tier_block` +
+  `$defs.tier_dimensions` (copied verbatim from
+  `schemas/tier.schema.json` so offline validators do not need to
+  resolve cross-file `$ref`). Marks `verification_level` as deprecated
+  in description text (remains REQUIRED for v0.1 back-compat). 10 new
+  sanity cases in `tools/test_life_package_schema.py` (64 total, up
+  from 54): tier omitted (back-compat), tier present (consistent
+  score/level), lowest / highest boundary, score↔level mismatch
+  rejection, hand-rolled `computed_by` rejection, score out of range,
+  off-enum dimension, missing required dimension, unknown tier field.
+- `tools/build_life_package.py` v0.2 — auto-computes the `tier` block
+  from the staged package: maps v0.7 `verification_level` to v0.8
+  `identity_verification` per `docs/LIFE_TIER_SPEC.md` §6, infers
+  `asset_completeness` from capability-bearing top-level directories,
+  defaults the remaining four dimensions conservatively, applies
+  weighted-average scoring (identity & consent ×2, others ×1), and
+  bands the result into the 12 Schema D tiers. Adds six
+  `--tier-<dim>` CLI overrides and a `--no-tier` escape hatch for
+  emitting v0.7-shaped descriptors. `computed_by` is stamped with the
+  mandatory `@<version>` separator so hand-rolled tier blocks fail
+  schema validation.
+- `docs/LIFE_FILE_STANDARD.md` — adds the `tier` row to the
+  top-level descriptor table and marks `verification_level` as
+  deprecated in v0.8, pointing at `docs/LIFE_TIER_SPEC.md` §6 for the
+  migration mapping.
+
+### Changed
+
+- `docs/IMPLEMENTATION_STATUS.md` — bumped to doc version 6.0 with a
+  new v0.8 increment summary; overall maturity adjusted from ~80% to
+  ~82% (Asset Architecture + Tier + Assembly spec deltas).
+- `docs/GAP_ANALYSIS.md` — baseline moved to post-#106; `.life`
+  Archive Standard maturity 70% → 82%, `.life` Runtime Standard
+  30% → 45%; overall 80% → 82%.
+- `ROADMAP.md` — marks `life-format v0.1.0` and `life-runtime v0.1`
+  as Delivered; adds `life-format v0.1.1` (Asset Architecture) and
+  `life-runtime v0.1.1` (Assembly) rows as Delivered under
+  v0.8-asset-architecture; reference runtime deferral moved from
+  v0.8+ to v0.9+.
 
 [#101]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/101
 [#102]: https://github.com/Digital-Life-Repository-Standard/DLRS/issues/102

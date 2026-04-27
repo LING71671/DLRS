@@ -102,6 +102,141 @@ def _canonical_dump(obj: dict) -> str:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
+# -------- v0.8 tier auto-compute -----------------------------------------
+#
+# These tables and weights mirror the normative definitions in
+# `docs/LIFE_TIER_SPEC.md` §3–§5 and `schemas/tier.schema.json`. The
+# builder computes the tier block deterministically from package
+# contents + CLI-supplied hints. Hand-rolled tier blocks are forbidden
+# (the schema rejects `computed_by` without a `@` separator); callers
+# MUST let the builder write this field.
+
+# Ordered dimension enums (low → high). Copied verbatim from the
+# schema's enum arrays so any divergence is a test-visible bug.
+_TIER_ENUMS: dict[str, list[str]] = {
+    "identity_verification": ["unverified", "self_attested", "email_verified", "id_verified", "kyc_verified", "notarized"],
+    "asset_completeness":    ["minimal", "partial", "standard", "comprehensive", "archive_grade"],
+    "consent_completeness":  ["none", "text_only", "signed", "notarized", "multi_party_attested"],
+    "detail_level":          ["low_fidelity", "medium", "high_fidelity", "cinematic"],
+    "audit_chain_strength":  ["minimal", "linked", "signed_chain", "notarized_chain"],
+    "jurisdiction_clarity":  ["unspecified", "declared", "cross_validated", "court_recognized"],
+}
+
+# Weights from the spec §4.1. identity and consent are doubled.
+_TIER_WEIGHTS: dict[str, int] = {
+    "identity_verification": 2,
+    "consent_completeness":  2,
+    "asset_completeness":    1,
+    "detail_level":          1,
+    "audit_chain_strength":  1,
+    "jurisdiction_clarity":  1,
+}
+
+# Score → (level, name, glyph). Ranges are inclusive on both ends and
+# exactly match `schemas/tier.schema.json::$defs.tier_block.allOf` +
+# `docs/appendix/TIER_NAMING_SCHEMA_D.md`.
+_TIER_BANDS: list[tuple[int, int, str, str, str]] = [
+    (  0,   8, "I",    "Quark",         "\u22c5"),
+    (  9,  16, "II",   "Atom",          "\u2299"),
+    ( 17,  24, "III",  "Molecule",      "\u22ee\u22ee"),
+    ( 25,  32, "IV",   "Stardust",      "\u2727"),
+    ( 33,  40, "V",    "Nebula",        "\U0001f32b"),
+    ( 41,  50, "VI",   "Protostar",     "\u2726"),
+    ( 51,  60, "VII",  "Main Sequence", "\u2605"),
+    ( 61,  68, "VIII", "Red Giant",     "\u25c9"),
+    ( 69,  76, "IX",   "White Dwarf",   "\u26aa"),
+    ( 77,  84, "X",    "Neutron Star",  "\u26ab"),
+    ( 85,  92, "XI",   "Pulsar",        "\u25ce"),
+    ( 93, 100, "XII",  "Singularity",   "\u25cf"),
+]
+
+# Map v0.7 verification_level → v0.8 identity_verification default
+# (docs/LIFE_TIER_SPEC.md §6).
+_VL_TO_IDENTITY: dict[str, str] = {
+    "self_attested":         "self_attested",
+    "third_party_verified":  "id_verified",
+    "memorial_authorized":   "notarized",
+}
+
+BUILDER_VERSION = "0.2.0"
+BUILDER_ID = f"tools/build_life_package.py@{BUILDER_VERSION}"
+
+
+def _infer_asset_completeness(contents: list[dict]) -> str:
+    """Heuristic — count capability-bearing top-level directories in the
+    staged tree (pointers/ + assets/ + memory/ + knowledge/ + …). The
+    builder only sees filenames, so this is intentionally coarse."""
+    top_dirs: set[str] = set()
+    for c in contents:
+        parts = c["path"].split("/", 1)
+        if len(parts) == 2:
+            top_dirs.add(parts[0])
+    cap_dirs = top_dirs & {"pointers", "assets", "memory", "knowledge", "voice", "avatar", "persona"}
+    n = len(cap_dirs)
+    if n <= 1:
+        return "minimal"
+    if n <= 3:
+        return "partial"
+    if n <= 5:
+        return "standard"
+    return "comprehensive"  # "archive_grade" is issuer-declared only
+
+
+def _compute_tier(
+    contents: list[dict],
+    *,
+    verification_level: str,
+    computed_at: str,
+    overrides: dict[str, str] | None = None,
+) -> dict:
+    """Deterministically compute the v0.8 tier block from package
+    metadata. `overrides` lets the CLI lift specific dimensions above
+    the conservative defaults (e.g. `--tier-detail-level high_fidelity`
+    for a studio-recorded package). Score is rounded half-to-even per
+    Python's `round`; the schema's ±0 tolerance is the authoritative
+    check."""
+    overrides = overrides or {}
+
+    dims: dict[str, str] = {
+        "identity_verification": _VL_TO_IDENTITY[verification_level],
+        "asset_completeness":    _infer_asset_completeness(contents),
+        # Consent + audit + jurisdiction default conservatively; issuers
+        # lift them via CLI flags once the corresponding package
+        # artefacts actually exist.
+        "consent_completeness":  "text_only",
+        "detail_level":          "medium",
+        "audit_chain_strength":  "linked",
+        "jurisdiction_clarity":  "unspecified",
+    }
+    for k, v in overrides.items():
+        if k not in _TIER_ENUMS:
+            raise SystemExit(f"unknown tier dimension: {k}")
+        if v not in _TIER_ENUMS[k]:
+            raise SystemExit(f"invalid level '{v}' for tier dimension {k}")
+        dims[k] = v
+
+    total_w = sum(_TIER_WEIGHTS.values())
+    acc = 0.0
+    for dim, level in dims.items():
+        idx = _TIER_ENUMS[dim].index(level)
+        max_idx = len(_TIER_ENUMS[dim]) - 1
+        acc += (idx / max_idx) * _TIER_WEIGHTS[dim]
+    score = max(0, min(100, round(acc * 100 / total_w)))
+
+    for low, high, level, name, glyph in _TIER_BANDS:
+        if low <= score <= high:
+            return {
+                "score": score,
+                "level": level,
+                "name": name,
+                "glyph": glyph,
+                "dimensions": dims,
+                "computed_at": computed_at,
+                "computed_by": BUILDER_ID,
+            }
+    raise SystemExit(f"tier banding failed for score {score}")  # unreachable
+
+
 def _sha256_of(s: str) -> str:
     return "sha256:" + hashlib.sha256(s.encode("utf-8")).hexdigest()
 
@@ -296,6 +431,12 @@ def build(args: argparse.Namespace) -> int:
         contents.append({"path": rel, "sha256": sha, "size": size})
 
     # Step 4: build life-package.json.
+    tier_overrides: dict[str, str] = {}
+    for dim in _TIER_ENUMS:
+        val = getattr(args, f"tier_{dim}", None)
+        if val is not None:
+            tier_overrides[dim] = val
+
     descriptor = {
         "schema_version": "0.1.0",
         "package_id": package_id,
@@ -317,6 +458,13 @@ def build(args: argparse.Namespace) -> int:
         "audit_event_ref": f"audit/events.jsonl#L{line_number}",
         "contents": contents,
     }
+    if not args.no_tier:
+        descriptor["tier"] = _compute_tier(
+            contents,
+            verification_level=args.verification_level,
+            computed_at=created_at,
+            overrides=tier_overrides,
+        )
     _validate_descriptor(descriptor)
 
     pkg_json_path = staging_dir / "life-package.json"
@@ -422,6 +570,22 @@ def main() -> int:
         "--keep-staging",
         action="store_true",
         help="Keep the .staging-<package_id>/ directory after build (debugging)",
+    )
+    # v0.8 tier overrides — any dimension left unset is filled by
+    # _compute_tier with the conservative default described in its
+    # docstring.
+    for dim, levels in _TIER_ENUMS.items():
+        p.add_argument(
+            f"--tier-{dim.replace('_', '-')}",
+            dest=f"tier_{dim}",
+            choices=levels,
+            default=None,
+            help=f"Override the {dim} tier dimension (default: auto)",
+        )
+    p.add_argument(
+        "--no-tier",
+        action="store_true",
+        help="Omit the v0.8 tier block (v0.7 back-compat output)",
     )
     args = p.parse_args()
     return build(args)

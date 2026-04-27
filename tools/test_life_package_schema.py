@@ -335,6 +335,94 @@ def main() -> int:
         missing.pop(required_field)
         cases.append((f"missing required field {required_field}", missing, False))
 
+    # --- tier integration (v0.8) ----------------------------------------
+    def _good_tier(score: int = 54, level: str = "VII", name: str = "Main Sequence", glyph: str = "\u2605") -> dict:
+        return {
+            "score": score,
+            "level": level,
+            "name": name,
+            "glyph": glyph,
+            "dimensions": {
+                "identity_verification": "id_verified",
+                "asset_completeness": "comprehensive",
+                "consent_completeness": "signed",
+                "detail_level": "high_fidelity",
+                "audit_chain_strength": "linked",
+                "jurisdiction_clarity": "declared",
+            },
+            "computed_at": "2026-04-26T12:00:00Z",
+            "computed_by": "tools/build_life_package.py@0.2.0",
+        }
+
+    # Happy path: tier omitted (v0.7 back-compat)
+    no_tier = _good_pointer_pkg()
+    cases.append(("tier omitted (v0.7 back-compat)", no_tier, True))
+
+    # Happy path: tier present with consistent score/level
+    with_tier = _good_pointer_pkg()
+    with_tier["tier"] = _good_tier()
+    cases.append(("tier present + consistent (score 54 → VII)", with_tier, True))
+
+    # Happy path: lowest-bound score/level (0 → I)
+    low_tier = _good_pointer_pkg()
+    low_tier["tier"] = _good_tier(score=0, level="I", name="Quark", glyph="\u22c5")
+    low_tier["tier"]["dimensions"] = {
+        "identity_verification": "unverified",
+        "asset_completeness": "minimal",
+        "consent_completeness": "none",
+        "detail_level": "low_fidelity",
+        "audit_chain_strength": "minimal",
+        "jurisdiction_clarity": "unspecified",
+    }
+    cases.append(("tier lowest bound (0 → I Quark)", low_tier, True))
+
+    # Happy path: highest-bound score/level (100 → XII)
+    high_tier = _good_pointer_pkg()
+    high_tier["tier"] = _good_tier(score=100, level="XII", name="Singularity", glyph="\u25cf")
+    high_tier["tier"]["dimensions"] = {
+        "identity_verification": "notarized",
+        "asset_completeness": "archive_grade",
+        "consent_completeness": "multi_party_attested",
+        "detail_level": "cinematic",
+        "audit_chain_strength": "notarized_chain",
+        "jurisdiction_clarity": "court_recognized",
+    }
+    cases.append(("tier highest bound (100 → XII Singularity)", high_tier, True))
+
+    # Negative: score/level mismatch
+    mismatch = _good_pointer_pkg()
+    mismatch["tier"] = _good_tier(score=54, level="VIII")
+    cases.append(("tier score 54 with level VIII rejected", mismatch, False))
+
+    # Negative: hand-rolled computed_by without @
+    hand_rolled = _good_pointer_pkg()
+    hand_rolled["tier"] = _good_tier()
+    hand_rolled["tier"]["computed_by"] = "human manual"
+    cases.append(("tier computed_by missing `@` separator rejected", hand_rolled, False))
+
+    # Negative: score out of range
+    score_over = _good_pointer_pkg()
+    score_over["tier"] = _good_tier(score=101, level="XII")
+    cases.append(("tier score > 100 rejected", score_over, False))
+
+    # Negative: dimension off-enum
+    bad_dim = _good_pointer_pkg()
+    bad_dim["tier"] = _good_tier()
+    bad_dim["tier"]["dimensions"]["identity_verification"] = "fingerprint_verified"
+    cases.append(("tier dimension off-enum rejected", bad_dim, False))
+
+    # Negative: dimensions missing a required key
+    missing_dim = _good_pointer_pkg()
+    missing_dim["tier"] = _good_tier()
+    del missing_dim["tier"]["dimensions"]["jurisdiction_clarity"]
+    cases.append(("tier dimensions missing jurisdiction_clarity", missing_dim, False))
+
+    # Negative: unknown field on tier
+    extra_tier_field = _good_pointer_pkg()
+    extra_tier_field["tier"] = _good_tier()
+    extra_tier_field["tier"]["secret_bonus"] = 42
+    cases.append(("tier unknown field rejected", extra_tier_field, False))
+
     # --- run -------------------------------------------------------------
     failures = 0
     for name, doc, expect_valid in cases:

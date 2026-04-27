@@ -4,11 +4,21 @@
 
 ## 📊 快速概览
 
-**当前版本**: v0.7-vision-shift（epic [#79](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/79) 收尾）
-**总体完成度**: ~80%（v0.6 88% 基础上因 ULTIMATE 重新定位带来的 scope 扩展而回调；详见下方 "重新定位的影响"）
+**当前版本**: v0.8-asset-architecture（epic [#106](https://github.com/Digital-Life-Repository-Standard/DLRS/issues/106) 收尾）
+**总体完成度**: ~82%（v0.7 的 ~80% 基础上 +Asset Architecture 四补丁 + Tier 系统 + 5-stage assembly；v0.9 runtime 参考实现仍是最大缺口）
 **参考标准**: DLRS_ULTIMATE.md（已升级为"`.life` 文件格式 + runtime 协议双标准"）
-**最近发布**: v0.7-vision-shift epic #79（PRs #88、#89、#91、#92、#93、#94、#95、#97、#98 — 8 个子 issue 全部交付）
-**仍在跑**: 无（epic #79 全部 8 个子 issue 已关闭；下一程跨入 v0.8 Encryption + Signing for `.life` Archive，详见 ROADMAP.md）。
+**最近发布**: v0.8-asset-architecture epic #106（PRs #107、#108、#109、#110、#111、#112、#113、#114、#115、#116 — 6 个 sub-issue 全部交付 + 4 个 post-merge follow-up）
+**仍在跑**: 无（epic #106 全部 6 个 sub-issue 已合；下一程跨入 v0.9 Reference Runtime Implementation，详见 ROADMAP.md）。
+
+### v0.8 主要增量（epic #106）
+
+- **`docs/LIFE_ASSET_ARCHITECTURE.md`** — 4 补丁（Genesis / Lifecycle / Binding / Assembly）+ Tier 系统的架构总览文档；锁定 D1–D6 决策、Schema D Cosmic Evolution 命名表（Quark → Singularity）、拒绝的备选方案附录、与 v0.7 spec 的衔接说明。
+- **`docs/LIFE_GENESIS_SPEC.md` + `schemas/genesis.schema.json`** — 每个派生资产的 `genesis/<asset_id>.genesis.json` 字段规范（method / source_inputs / compute / consent_scope_checked / audit_event_ref），base_model 作为虚资产、reproducibility_level 三档、consent_scope enum。
+- **`docs/LIFE_LIFECYCLE_SPEC.md` + `schemas/lifecycle.schema.json`** — 包级 supersedes / lifecycle_state / memorial_metadata，资产级 lifecycle + mutation log JSONL，cascade_index.json，semver+hash 双标识，分叉允许 / 合并禁止，mark tainted 撤回级联，7 天 memorial 异议期。
+- **`docs/LIFE_BINDING_SPEC.md` + `schemas/binding.schema.json`** — `binding/runtime_binding.json` 字段（capabilities / orchestration / hard_constraints / surface / hosted_api_preference），capability 词表 hybrid（核心 enum + `x-` 扩展前缀），engine.strict、hard_constraints fail-close。
+- **`docs/LIFE_TIER_SPEC.md` + `schemas/tier.schema.json` + `docs/appendix/TIER_NAMING_SCHEMA_D.md`** — 6 维度（identity / asset_completeness / consent / detail / audit_chain / jurisdiction）加权派生 score 0–100 → 12 档（I–XII），机器字段冻结 + name/glyph 进可演化附录；取代 v0.7 `verification_level`（向后兼容保留）。
+- **`docs/LIFE_RUNTIME_STANDARD.md` Part B** — 5 阶段 assembly（Verify / Resolve / Assemble / Run / Guard）+ Provider Registry + `LifeCapabilityProvider` 接口 + 分级沙箱（built-in / user-installed OS 进程级；`.life`-bundled v0.8 禁止）+ hosted-API AND-gate（binding 允许 AND user opt-in）+ OS 包管理器 bootstrap + 4 条新审计事件（capability_bound / assembly_aborted / withdrawal_poll / lifecycle_transition_observed）。
+- **`schemas/life-package.schema.json` + `tools/build_life_package.py` v0.2** — tier 块集成到 top-level descriptor（optional，v0.7 back-compat），builder 自动从 contents + CLI 覆盖派生 6 维 → 计分 → 带 name/glyph 写回 descriptor；hand-rolled tier 被 `computed_by` 模式（必须 `@` 分隔）直接 schema 层拒绝。
 
 ### ULTIMATE 重新定位的影响（v0.7-vision-shift）
 
@@ -160,6 +170,6 @@ epic #79 把 DLRS 的目标态从"Git-shaped 仓库结构标准"升级为：
 
 ---
 
-**文档版本**: 5.0（v0.7-vision-shift release，epic #79 收尾）
+**文档版本**: 6.0（v0.8-asset-architecture release，epic #106 收尾）
 **最后更新**: 2026-04-26
-**参考**: DLRS_ULTIMATE.md（已升级为 `.life` 双标准），docs/GAP_ANALYSIS.md, docs/LIFE_FILE_STANDARD.md, docs/LIFE_RUNTIME_STANDARD.md, ROADMAP.md
+**参考**: DLRS_ULTIMATE.md（已升级为 `.life` 双标准），docs/GAP_ANALYSIS.md, docs/LIFE_FILE_STANDARD.md, docs/LIFE_RUNTIME_STANDARD.md, docs/LIFE_ASSET_ARCHITECTURE.md, docs/LIFE_TIER_SPEC.md, ROADMAP.md

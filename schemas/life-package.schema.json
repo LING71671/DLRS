@@ -86,8 +86,12 @@
     },
     "verification_level": {
       "type": "string",
-      "description": "Strength of identity verification at issuance time. self_attested = subject attested without third-party verification. third_party_verified = an independent verifier (notary, KYC provider) confirmed identity. memorial_authorized = post-mortem package authorised by an executor; requires issued_by.role == memorial_executor.",
+      "description": "DEPRECATED in v0.8: prefer the `tier` block (specifically `tier.dimensions.identity_verification`). Retained as REQUIRED for v0.1 schema backward-compat so v0.7 runtimes keep validating. Strength of identity verification at issuance time. self_attested = subject attested without third-party verification. third_party_verified = an independent verifier (notary, KYC provider) confirmed identity. memorial_authorized = post-mortem package authorised by an executor; requires issued_by.role == memorial_executor. See docs/LIFE_TIER_SPEC.md §6 for the migration mapping.",
       "enum": ["self_attested", "third_party_verified", "memorial_authorized"]
+    },
+    "tier": {
+      "$ref": "#/$defs/tier_block",
+      "description": "v0.8 multi-dimensional tier block. OPTIONAL for v0.1 back-compat: packages built by v0.7 tools omit it, v0.8 builders populate it. When present, it takes precedence over `verification_level` for credit-rating purposes. See `docs/LIFE_TIER_SPEC.md` and `schemas/tier.schema.json` for the authoritative definition — the `$defs.tier_block` and `$defs.tier_dimensions` below are copied verbatim from `tier.schema.json` to keep this file self-contained for offline validators."
     },
     "withdrawal_endpoint": {
       "type": "string",
@@ -280,5 +284,94 @@
         }
       }
     }
-  ]
+  ],
+  "$defs": {
+    "tier_block": {
+      "type": "object",
+      "description": "v0.8 tier block — multi-dimensional credit rating for a `.life` package. Shape copied verbatim from `schemas/tier.schema.json::$defs.tier_block` so this schema remains self-contained (no cross-file $ref resolution required).",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "level",
+        "name",
+        "glyph",
+        "dimensions",
+        "computed_at",
+        "computed_by"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "description": "Composite tier score on a 0–100 scale. Auto-computed by the builder from the six `dimensions` using default weights: `consent_completeness` ×2, `identity_verification` ×2, others ×1.",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "level": {
+          "type": "string",
+          "description": "Roman-numeral tier level I–XII. Derived deterministically from `score` via the boundaries fixed in `docs/appendix/TIER_NAMING_SCHEMA_D.md`.",
+          "enum": ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable tier name from the active naming appendix. Schema D: I=Quark, II=Atom, III=Molecule, IV=Stardust, V=Nebula, VI=Protostar, VII=Main Sequence, VIII=Red Giant, IX=White Dwarf, X=Neutron Star, XI=Pulsar, XII=Singularity.",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "glyph": {
+          "type": "string",
+          "description": "Single visual glyph (1–16 codepoints) representing the tier. Schema D: ⋅ ⊙ ⋮⋮ ✧ 🌫 ✦ ★ ◉ ⚪ ⚫ ◎ ●.",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "dimensions": { "$ref": "#/$defs/tier_dimensions" },
+        "computed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "RFC 3339 / ISO 8601 UTC timestamp at which the tier was computed. SHOULD equal `created_at`."
+        },
+        "computed_by": {
+          "type": "string",
+          "description": "Builder identifier `<path>@<semver>`. The `@` separator is mandatory; hand-rolled tier blocks are explicitly rejected by the pattern.",
+          "pattern": "^[A-Za-z0-9_./-]+@[A-Za-z0-9_.+-]+$",
+          "minLength": 3,
+          "maxLength": 256
+        }
+      },
+      "allOf": [
+        { "description": "Score → level binding for tier I (0–8).", "if": { "properties": { "score": { "minimum": 0, "maximum": 8 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "I" } } } },
+        { "description": "Score → level binding for tier II (9–16).", "if": { "properties": { "score": { "minimum": 9, "maximum": 16 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "II" } } } },
+        { "description": "Score → level binding for tier III (17–24).", "if": { "properties": { "score": { "minimum": 17, "maximum": 24 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "III" } } } },
+        { "description": "Score → level binding for tier IV (25–32).", "if": { "properties": { "score": { "minimum": 25, "maximum": 32 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "IV" } } } },
+        { "description": "Score → level binding for tier V (33–40).", "if": { "properties": { "score": { "minimum": 33, "maximum": 40 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "V" } } } },
+        { "description": "Score → level binding for tier VI (41–50).", "if": { "properties": { "score": { "minimum": 41, "maximum": 50 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "VI" } } } },
+        { "description": "Score → level binding for tier VII (51–60).", "if": { "properties": { "score": { "minimum": 51, "maximum": 60 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "VII" } } } },
+        { "description": "Score → level binding for tier VIII (61–68).", "if": { "properties": { "score": { "minimum": 61, "maximum": 68 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "VIII" } } } },
+        { "description": "Score → level binding for tier IX (69–76).", "if": { "properties": { "score": { "minimum": 69, "maximum": 76 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "IX" } } } },
+        { "description": "Score → level binding for tier X (77–84).", "if": { "properties": { "score": { "minimum": 77, "maximum": 84 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "X" } } } },
+        { "description": "Score → level binding for tier XI (85–92).", "if": { "properties": { "score": { "minimum": 85, "maximum": 92 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "XI" } } } },
+        { "description": "Score → level binding for tier XII (93–100).", "if": { "properties": { "score": { "minimum": 93, "maximum": 100 } }, "required": ["score"] }, "then": { "properties": { "level": { "const": "XII" } } } }
+      ]
+    },
+    "tier_dimensions": {
+      "type": "object",
+      "description": "The six independent tier dimensions. Shape copied verbatim from `schemas/tier.schema.json::$defs.tier_dimensions`.",
+      "additionalProperties": false,
+      "required": [
+        "identity_verification",
+        "asset_completeness",
+        "consent_completeness",
+        "detail_level",
+        "audit_chain_strength",
+        "jurisdiction_clarity"
+      ],
+      "properties": {
+        "identity_verification": { "type": "string", "enum": ["unverified", "self_attested", "email_verified", "id_verified", "kyc_verified", "notarized"] },
+        "asset_completeness":    { "type": "string", "enum": ["minimal", "partial", "standard", "comprehensive", "archive_grade"] },
+        "consent_completeness":  { "type": "string", "enum": ["none", "text_only", "signed", "notarized", "multi_party_attested"] },
+        "detail_level":          { "type": "string", "enum": ["low_fidelity", "medium", "high_fidelity", "cinematic"] },
+        "audit_chain_strength":  { "type": "string", "enum": ["minimal", "linked", "signed_chain", "notarized_chain"] },
+        "jurisdiction_clarity":  { "type": "string", "enum": ["unspecified", "declared", "cross_validated", "court_recognized"] }
+      }
+    }
+  }
 }
