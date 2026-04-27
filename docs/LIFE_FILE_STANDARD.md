@@ -176,7 +176,8 @@ asset, used as a stable identifier.
 | `expires_at` | yes | string (RFC 3339) | Runtimes MUST refuse to mount after this. |
 | `issued_by` | yes | object | `{role, identifier, signature_ref}` — see below. |
 | `consent_evidence_ref` | yes | string | Path inside `.life` (e.g., `consent/consent.md`) or external URI. |
-| `verification_level` | yes | enum | `"self_attested"`, `"third_party_verified"`, `"memorial_authorized"`. |
+| `verification_level` | yes (DEPRECATED v0.8) | enum | `"self_attested"`, `"third_party_verified"`, `"memorial_authorized"`. Retained required for v0.1 back-compat; new packages SHOULD carry a `tier` block and new consumers SHOULD read `tier.dimensions.identity_verification` instead. Mapping table in `docs/LIFE_TIER_SPEC.md` §6. |
+| `tier` | no (v0.8+) | object | v0.8 multi-dimensional credit rating. Auto-computed at build time; see `docs/LIFE_TIER_SPEC.md` for the full normative definition. Absent in v0.7 packages; present in v0.8+ packages built with `tools/build_life_package.py` ≥ 0.2.0. |
 | `withdrawal_endpoint` | yes | string (URI) | Runtimes MUST poll this at session start + at least every 24h. |
 | `runtime_compatibility` | yes | array of strings | Required runtime interfaces (e.g., `["dlrs-runtime-v0", "openai-chat-tool", "vrm-1.0"]`). |
 | `ai_disclosure` | yes | enum | Mirrors v0.4 `ai_disclosure`. Minimum is `visible_label_required`. |

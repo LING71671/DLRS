@@ -143,6 +143,17 @@ def main() -> int:
             assert "impersonation_for_fraud" in descriptor["forbidden_uses"]
             assert "encryption" not in descriptor, "pointer mode must not have encryption block"
 
+            # v0.8 tier block: present and well-formed by default.
+            assert "tier" in descriptor, "v0.8 builder must emit a tier block"
+            t = descriptor["tier"]
+            assert isinstance(t["score"], int) and 0 <= t["score"] <= 100
+            assert t["level"] in {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"}
+            assert t["computed_by"].startswith("tools/build_life_package.py@")
+            assert "@" in t["computed_by"]
+            for dim in ("identity_verification", "asset_completeness", "consent_completeness",
+                        "detail_level", "audit_chain_strength", "jurisdiction_clarity"):
+                assert dim in t["dimensions"], f"tier.dimensions missing {dim}"
+
             _verify_descriptor_against_zip(zf, descriptor)
             _verify_audit_chain(zf, descriptor)
 

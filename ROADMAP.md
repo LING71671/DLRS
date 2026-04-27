@@ -52,7 +52,8 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 | `.life` 格式版本 | 状态 | 主题 | 主要交付物 |
 |---|---|---|---|
-| **life-format v0.1.0** | 进行中（v0.7-vision-shift） | 双形态档案（pointer / encrypted）+ 不透明 `signature_ref` | `LIFE_FILE_STANDARD.md`、`life-package.schema.json`、`examples/minimal-life-package/` + `build_life.sh` |
+| life-format v0.1.0 | 已交付（v0.7-vision-shift） | 双形态档案（pointer / encrypted）+ 不透明 `signature_ref` | `LIFE_FILE_STANDARD.md`、`life-package.schema.json`、`examples/minimal-life-package/` + `build_life.sh` |
+| **life-format v0.1.1**（Asset Architecture） | 已交付（v0.8-asset-architecture） | Genesis / Lifecycle / Binding / Tier 四层资产架构 + Schema D Cosmic Evolution 12 档命名 + `tier` 块集成入 `life-package.json` | `LIFE_ASSET_ARCHITECTURE.md`、`LIFE_GENESIS_SPEC.md`、`LIFE_LIFECYCLE_SPEC.md`、`LIFE_BINDING_SPEC.md`、`LIFE_TIER_SPEC.md` + 对应 schemas + `tools/build_life_package.py` v0.2（auto-tier） |
 | life-format v0.2.0 | 计划 | 加密签名规范（C2PA / 等价方案）：把不透明 `signature_ref` 替换为可验证签名；引入完整性签名而非仅 sha256 清单 | 签名规范文档、签名/校验 CLI、reference 验证脚本 |
 | life-format v0.3.0 | 计划 | 联邦撤回登记表 + 跨 runtime 同步：`withdrawal_endpoint` 之外，引入可解析的"被撤回包标识符"集合，使 runtime 在断网时也能就近查询 | 撤回登记 schema、参考客户端、跨实现互通测试 |
 
@@ -67,12 +68,13 @@ DLRS Hub 致力于建立一个**全球化、标准化、可审计的数字生命
 
 | 运行时协议版本 | 状态 | 主题 | 主要交付物 |
 |---|---|---|---|
-| **life-runtime v0.1** | 进行中（v0.7-vision-shift） | 加载序列、挂载语义、运行时义务（disclosure / forbidden_uses / 撤回轮询 / 身份冒充防护）、终止条件 | `LIFE_RUNTIME_STANDARD.md`（spec only） |
+| life-runtime v0.1 | 已交付（v0.7-vision-shift） | 加载序列、挂载语义、运行时义务（disclosure / forbidden_uses / 撤回轮询 / 身份冒充防护）、终止条件 | `LIFE_RUNTIME_STANDARD.md`（spec only） |
+| **life-runtime v0.1.1**（Assembly） | 已交付（v0.8-asset-architecture） | Part B：5 阶段 assembly（Verify / Resolve / Assemble / Run / Guard）+ Provider Registry + `LifeCapabilityProvider` 接口 + 分级沙箱 + hosted-API AND-gate + OS 包管理器 bootstrap + 4 条新审计事件（capability_bound / assembly_aborted / withdrawal_poll / lifecycle_transition_observed） | `LIFE_RUNTIME_STANDARD.md` Part B（spec only） |
 | life-runtime v0.2 | 计划 | 跨实现互操作测试套件 + 加密签名验证（与 life-format v0.2 配套） | conformance suite、`tools/test_life_runtime.py`、签名验证测试 |
 | life-runtime v0.3 | 计划 | 多 `.life` ensemble 协议（一个 runtime 同时挂载多个 `.life`，各自独立实例 + 跨实例隔离 invariants） | ensemble 协议文档、隔离不变量测试 |
 
 **v0.1 范围内非目标**（明确推迟）：
-- 参考实现（runtime 实现本身推迟到 DLRS v0.8+，或下游项目独立实现）
+- 参考实现（runtime 实现本身推迟到 DLRS v0.9+，或下游项目独立实现）
 - 具体 transport（WebSocket / gRPC / REST 任选；spec 只规定语义）
 - LLM / TTS / avatar 选型（不在 spec 控制内）
 
