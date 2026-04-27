@@ -150,12 +150,24 @@ def poll_withdrawal_endpoint(
         vr.add_error("withdrawal", "response_not_json", "(mock)")
         return False
 
-    # Real HTTP GET path (default).
-    req = urllib.request.Request(
-        endpoint,
-        method="GET",
-        headers={"User-Agent": "lifectl/0.9"},
-    )
+    # Real HTTP GET path (default). Construct the Request defensively —
+    # urllib raises ``ValueError("unknown url type")`` for schemeless URLs,
+    # which the descriptor schema does not currently reject.
+    try:
+        req = urllib.request.Request(
+            endpoint,
+            method="GET",
+            headers={"User-Agent": "lifectl/0.9"},
+        )
+    except ValueError as exc:
+        if audit_emit:
+            audit_emit(
+                "withdrawal_poll",
+                endpoint=endpoint,
+                result="malformed_url",
+            )
+        vr.add_error("withdrawal", "endpoint_malformed_url", str(exc))
+        return False
     try:
         with urllib.request.urlopen(req, timeout=policy.timeout_seconds) as resp:
             status_code = getattr(resp, "status", 200)

@@ -47,7 +47,11 @@ def verify_audit_chain(
         vr.add_error("audit_chain", "audit_log_missing", _AUDIT_PATH)
         return False
 
-    raw = zf.read(_AUDIT_PATH).decode("utf-8")
+    try:
+        raw = zf.read(_AUDIT_PATH).decode("utf-8")
+    except UnicodeDecodeError as exc:
+        vr.add_error("audit_chain", "audit_log_not_utf8", str(exc))
+        return False
     lines = [line for line in raw.splitlines() if line.strip()]
     if not lines:
         vr.add_error("audit_chain", "audit_log_empty")

@@ -422,6 +422,73 @@ def test_lifecycle_withdrawn_rejected() -> None:
         assert "lifecycle" in steps
 
 
+def test_audit_log_non_utf8_returns_structured_error() -> None:
+    """Regression: crafted audit/events.jsonl with non-UTF-8 bytes must not crash."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        good = _build_life(
+            withdrawal_endpoint="http://127.0.0.1:1/withdraw",
+            workdir=tmp_path / "build",
+        )
+        broken = tmp_path / "non-utf8-audit.life"
+
+        def mutate(name: str, data: bytes) -> Any:
+            if name == "audit/events.jsonl":
+                return (name, b"\xff\xfe\xfd not utf-8\n")
+            return True
+
+        _rebuild_zip_with(good, broken, mutate)
+        result = verify(broken, withdrawal_policy=WithdrawalPolicy(mode="mock-not-revoked"))
+        assert not result.ok
+        first = result.first_error()
+        # Inventory may catch it first (mutated bytes hash differently) — that's
+        # also a valid spec rejection. The point is we got a structured
+        # rejection, not a crash.
+        assert first.step in {"audit_chain", "inventory"}
+
+
+def test_naive_datetime_in_descriptor_returns_structured_error() -> None:
+    """Regression: naive (no-tz) timestamps must return parse_failure, not crash."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        good = _build_life(
+            withdrawal_endpoint="http://127.0.0.1:1/withdraw",
+            workdir=tmp_path / "build",
+        )
+        bad = tmp_path / "naive-time.life"
+
+        def mutate(name: str, data: bytes) -> Any:
+            if name == "life-package.json":
+                pkg = json.loads(data)
+                pkg["created_at"] = "2026-04-26T00:00:00"  # no Z, no offset
+                return (name, json.dumps(pkg).encode("utf-8"))
+            return True
+
+        _rebuild_zip_with(good, bad, mutate)
+        result = verify(bad, withdrawal_policy=WithdrawalPolicy(mode="mock-not-revoked"))
+        assert not result.ok
+        # Inventory hash of life-package.json now differs, so inventory may
+        # fail first; either step counts as fail-close.
+        steps = {e.step for e in result.errors}
+        assert steps & {"time", "inventory", "schema"}
+
+
+def test_schemeless_withdrawal_endpoint_returns_structured_error() -> None:
+    """Regression: schemeless withdrawal_endpoint must not crash urllib."""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        good = _build_life(
+            withdrawal_endpoint="example.invalid/withdraw",
+            workdir=tmp_path / "build",
+        )
+        # Default policy = online -> hits the urllib.Request constructor
+        # path that previously crashed with ValueError("unknown url type").
+        result = verify(good)
+        assert not result.ok
+        reasons = [e.reason for e in result.errors]
+        assert "endpoint_malformed_url" in reasons
+
+
 def test_assembly_aborted_audit_event_emitted() -> None:
     """Stage gating: any fail emits assembly_aborted{stage="verify"}."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -541,6 +608,9 @@ def main() -> int:
         test_unreachable_endpoint_rejected,
         test_withdrawal_4xx_rejected,
         test_lifecycle_withdrawn_rejected,
+        test_audit_log_non_utf8_returns_structured_error,
+        test_naive_datetime_in_descriptor_returns_structured_error,
+        test_schemeless_withdrawal_endpoint_returns_structured_error,
         test_assembly_aborted_audit_event_emitted,
         test_lifectl_info_passes_for_good_package,
         test_lifectl_info_json_contains_structured_errors,

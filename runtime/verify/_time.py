@@ -18,13 +18,18 @@ _FUTURE_SKEW_TOLERANCE = timedelta(seconds=30)
 
 def _parse_iso(s: str) -> datetime | None:
     # The schema mandates RFC 3339 UTC. ``fromisoformat`` accepts both
-    # ``Z`` (Python ≥3.11) and explicit offset; normalise both.
+    # ``Z`` (Python ≥3.11) and explicit offset; normalise both. Naive
+    # datetimes (no tzinfo) violate RFC 3339 and are rejected — letting
+    # them through would crash the offset-aware comparisons below.
     try:
         if s.endswith("Z"):
             s = s[:-1] + "+00:00"
-        return datetime.fromisoformat(s)
+        dt = datetime.fromisoformat(s)
     except (TypeError, ValueError):
         return None
+    if dt.tzinfo is None:
+        return None
+    return dt
 
 
 def check_time_bounds(vr: VerifyResult, now: datetime | None = None) -> bool:
