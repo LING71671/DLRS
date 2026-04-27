@@ -74,6 +74,48 @@ are upheld trivially: the scaffold cannot violate them because none of
 the gates run yet. Sub-issues #121–#126 reinstate each invariant as
 they implement the corresponding Stage.
 
+### Added (sub-issue #121 — Stage 1 Verify)
+
+- `runtime/verify/` populated with the seven §2.1–§2.5 + lifecycle gate
+  sub-steps (`_structural`, `_schema`, `_time`, `_inventory`,
+  `_audit_chain`, `_consent`, `_lifecycle`) plus a public
+  `verify(life_path, *, audit, withdrawal_policy)` entry point in
+  `runtime/verify/__init__.py`. The function returns a structured
+  `VerifyResult` (with `package_id`, `lifecycle_state`, audit-chain
+  length, inventory entry count, errors, warnings) on every call —
+  ok or not — so the caller can present a structured rejection
+  reason to the user (D6=fail-close).
+- `runtime/audit/recorder.py` — minimal in-memory `AuditRecorder` used
+  by Stages 1-4 until v0.9 sub-issue #125 ships the full v0.4 hash-chain
+  emitter that links the runtime's session log back to the bundled
+  `audit/events.jsonl` chain. Records `mount_attempted`,
+  `withdrawal_poll`, and `assembly_aborted{stage="verify"}` events.
+- `runtime/cli/lifectl.py` — `lifectl info <pkg>` now prints a
+  structured Stage 1 report (human-readable by default, JSON via
+  `--json`) and exits 0 on PASS / 1 on FAIL. `lifectl run <pkg>`
+  executes Stage 1 and exits 1 on Stage 1 FAIL or 2 (with
+  `Stage 2+ pending sub-issues #122-#126` to stderr) on Stage 1 PASS.
+  Both subcommands accept `--withdrawal-mock {not-revoked|revoked|
+  unreachable|malformed}` (test-only; production runtimes MUST omit it
+  — spec mandates a real HTTP poll per §2.5).
+- `tools/test_runtime_verify.py` — 15 sanity-test cases covering the
+  seven verify sub-steps plus three CLI surface assertions. Negative
+  fixtures are constructed by mutating a freshly-built `.life` zip
+  (`_rebuild_zip_with`) and the happy path drives a real local
+  `http.server` so the §2.5 `urllib.request.urlopen` path is exercised
+  end-to-end. The driver is wired into the existing
+  `runtime-scaffold` CI job as a new `Run runtime-verify test suite
+  (Stage 1)` step.
+- `.github/workflows/validate.yml` — `runtime-scaffold` job renamed to
+  cover both #120 and #121, installs `tools/requirements.txt` (for
+  `jsonschema`) before running Stage 1 tests.
+
+Hard-rule invariants now enforced for Stage 1: D6=fail-close (any
+sub-step failure aborts Stage 1, emits `assembly_aborted`, and refuses
+to proceed); the §2.5 withdrawal pre-flight rejects 4xx/5xx/network
+failures; the lifecycle gate refuses `withdrawn` and `tainted`
+packages.
+
 ## v0.8-asset-architecture (2026-04-26)
 
 **Status**: Released. v0.8 closes the four asset-architecture gaps left
