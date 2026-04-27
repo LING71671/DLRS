@@ -3,12 +3,13 @@
 This package implements the protocol defined in
 ``docs/LIFE_RUNTIME_STANDARD.md`` (v0.7 §1-10 + v0.8 Part B 5-stage assembly).
 
-Public surface today (v0.9 sub-issue #120 — scaffold only):
+Public surface as of v0.9 sub-issue #121 (Stage 1 Verify wired):
 
 - ``__version__`` — runtime package version (``0.9.0.dev0``).
 - ``LIFE_RUNTIME_PROTOCOL_VERSION`` — declared life-runtime spec version.
-- ``Runtime`` — placeholder class; concrete assembly stages land in sub-issues
-  #121-#126.
+- ``Runtime`` — placeholder class; concrete Stages 2-5 land in sub-issues
+  #122-#125, end-to-end echo Provider in #126.
+- ``runtime.verify.verify`` — Stage 1 Verify entry point.
 
 The ``runtime.cli.lifectl`` module exposes the ``lifectl`` console script.
 """
@@ -29,7 +30,7 @@ class Runtime:
     def __repr__(self) -> str:
         return (
             f"Runtime(version={self.version!r}, "
-            f"protocol={self.protocol!r}, stages_implemented=[])"
+            f"protocol={self.protocol!r}, stages_implemented=['verify'])"
         )
 
 

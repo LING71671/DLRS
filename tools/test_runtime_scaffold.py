@@ -68,7 +68,9 @@ def test_lifectl_version_via_module() -> None:
     assert "life-runtime v0.1.1" in out, out
 
 
-def test_lifectl_info_not_implemented() -> None:
+def test_lifectl_info_rejects_missing_path() -> None:
+    # Post-#121: `lifectl info` is wired to Stage 1 Verify. A missing
+    # path still exits non-zero (life_path validation runs first).
     proc = subprocess.run(
         [_python(), "-m", "runtime.cli.lifectl", "info", "pretend.life"],
         cwd=REPO_ROOT,
@@ -76,11 +78,12 @@ def test_lifectl_info_not_implemented() -> None:
         text=True,
     )
     assert proc.returncode != 0
-    assert "not yet implemented" in proc.stderr
-    assert "#121" in proc.stderr  # points the reader at the right sub-issue
+    assert "life_path" in proc.stderr or "does not exist" in proc.stderr
 
 
-def test_lifectl_run_not_implemented() -> None:
+def test_lifectl_run_rejects_missing_path() -> None:
+    # Post-#121: `lifectl run` runs Stage 1; a missing path produces a
+    # structural failure that exits non-zero.
     proc = subprocess.run(
         [_python(), "-m", "runtime.cli.lifectl", "run", "pretend.life"],
         cwd=REPO_ROOT,
@@ -88,8 +91,10 @@ def test_lifectl_run_not_implemented() -> None:
         text=True,
     )
     assert proc.returncode != 0
-    assert "not yet implemented" in proc.stderr
-    assert "#121-#126" in proc.stderr or "121" in proc.stderr
+    assert (
+        "Stage 1 Verify FAIL" in proc.stderr
+        or "life_path" in proc.stderr
+    )
 
 
 def test_lifectl_help_lists_three_commands() -> None:
@@ -151,8 +156,8 @@ def main() -> int:
         test_runtime_module_importable,
         test_runtime_class_present,
         test_lifectl_version_via_module,
-        test_lifectl_info_not_implemented,
-        test_lifectl_run_not_implemented,
+        test_lifectl_info_rejects_missing_path,
+        test_lifectl_run_rejects_missing_path,
         test_lifectl_help_lists_three_commands,
         test_pyproject_parses_and_declares_lifectl_script,
         test_runtime_subpackages_present,

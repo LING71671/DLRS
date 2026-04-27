@@ -26,12 +26,21 @@ runtime/
 ```
 pip install -e .                      # from repo root
 lifectl version                       # confirm install
-lifectl run examples/minimal-life-package/out/*.life
+lifectl info  examples/minimal-life-package/out/*.life --withdrawal-mock not-revoked
+lifectl run   examples/minimal-life-package/out/*.life --withdrawal-mock not-revoked
 ```
 
-Until v0.9 sub-issues #121-#126 land, `lifectl info` and `lifectl run` exit
-with a "not yet implemented in this sub-issue" message — only `lifectl version`
-is functional.
+As of v0.9 sub-issue #121, Stage 1 Verify is wired:
+
+- `lifectl info <pkg>` prints a structured §2.1–§2.5 + lifecycle report
+  (human-readable by default, JSON via `--json`) and exits **0** on PASS /
+  **1** on FAIL.
+- `lifectl run <pkg>` runs Stage 1 then exits **2** with a "Stage 2+ pending
+  sub-issues #122-#126" message; full mount comes online sub-issue by
+  sub-issue.
+
+`--withdrawal-mock` is **test-only**; production runtimes MUST omit it so
+the §2.5 withdrawal endpoint is genuinely polled over HTTP.
 
 ## Why a separate Python package?
 
