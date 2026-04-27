@@ -437,75 +437,91 @@ def test_assembly_aborted_audit_event_emitted() -> None:
 
 
 def test_lifectl_info_passes_for_good_package() -> None:
-    """CLI path: `lifectl info` exits 0 + prints PASS for the bundled fixture."""
-    fixture = SOURCE_RECORD / "out" / "NVDM0QDA25233QQCEKWE4A5VKQ.life"
-    assert fixture.is_file(), f"missing bundled fixture: {fixture}"
-    proc = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "runtime.cli.lifectl",
-            "info",
-            str(fixture),
-            "--withdrawal-mock",
-            "not-revoked",
-        ],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-    )
-    assert proc.returncode == 0, proc.stderr
-    assert "verification:     PASS" in proc.stdout
-    assert "package_id:       NVDM0QDA25233QQCEKWE4A5VKQ" in proc.stdout
+    """CLI path: `lifectl info` exits 0 + prints PASS for a freshly-built package.
+
+    Builds the fixture on the fly because the bundled
+    ``examples/minimal-life-package/out/*.life`` is gitignored — see
+    ``examples/minimal-life-package/.gitignore``.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        fixture = _build_life(
+            withdrawal_endpoint="http://127.0.0.1:1/withdraw",
+            workdir=Path(tmp),
+        )
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "runtime.cli.lifectl",
+                "info",
+                str(fixture),
+                "--withdrawal-mock",
+                "not-revoked",
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert "verification:     PASS" in proc.stdout
+        assert "package_id:       " in proc.stdout
 
 
 def test_lifectl_info_json_contains_structured_errors() -> None:
     """CLI path: `--json` returns parsable structured output."""
-    fixture = SOURCE_RECORD / "out" / "NVDM0QDA25233QQCEKWE4A5VKQ.life"
-    proc = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "runtime.cli.lifectl",
-            "info",
-            str(fixture),
-            "--withdrawal-mock",
-            "revoked",
-            "--json",
-        ],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-    )
-    assert proc.returncode == 1, proc.stderr
-    payload = json.loads(proc.stdout)
-    assert payload["ok"] is False
-    assert payload["package_id"] == "NVDM0QDA25233QQCEKWE4A5VKQ"
-    reasons = [e["reason"] for e in payload["errors"]]
-    assert "package_withdrawn" in reasons
+    with tempfile.TemporaryDirectory() as tmp:
+        fixture = _build_life(
+            withdrawal_endpoint="http://127.0.0.1:1/withdraw",
+            workdir=Path(tmp),
+        )
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "runtime.cli.lifectl",
+                "info",
+                str(fixture),
+                "--withdrawal-mock",
+                "revoked",
+                "--json",
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        assert proc.returncode == 1, proc.stderr
+        payload = json.loads(proc.stdout)
+        assert payload["ok"] is False
+        assert isinstance(payload["package_id"], str) and payload["package_id"]
+        reasons = [e["reason"] for e in payload["errors"]]
+        assert "package_withdrawn" in reasons
 
 
 def test_lifectl_run_stage1_pass_then_pending() -> None:
     """CLI path: `lifectl run` exits 2 once Stage 1 passes (pending Stage 2)."""
-    fixture = SOURCE_RECORD / "out" / "NVDM0QDA25233QQCEKWE4A5VKQ.life"
-    proc = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "runtime.cli.lifectl",
-            "run",
-            str(fixture),
-            "--withdrawal-mock",
-            "not-revoked",
-            "--once",
-        ],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-    )
-    assert proc.returncode == 2, (proc.stdout, proc.stderr)
-    assert "Stage 1 Verify   ✓" in proc.stdout
-    assert "Stage 2+ pending" in proc.stderr
+    with tempfile.TemporaryDirectory() as tmp:
+        fixture = _build_life(
+            withdrawal_endpoint="http://127.0.0.1:1/withdraw",
+            workdir=Path(tmp),
+        )
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "runtime.cli.lifectl",
+                "run",
+                str(fixture),
+                "--withdrawal-mock",
+                "not-revoked",
+                "--once",
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+        assert proc.returncode == 2, (proc.stdout, proc.stderr)
+        assert "Stage 1 Verify   ✓" in proc.stdout
+        assert "Stage 2+ pending" in proc.stderr
 
 
 # ---------------------------------------------------------------------------
